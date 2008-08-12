@@ -34,6 +34,7 @@ demos =						\
 	pickers.c				\
 	pixbufs.c				\
 	printing.c				\
+	resolution_independence.c		\
 	rotated_text.c				\
 	search_entry.c				\
 	sizegroup.c				\
