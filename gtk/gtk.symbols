@@ -5252,6 +5252,7 @@ gtk_widget_set_realized
 gtk_widget_get_realized
 gtk_widget_set_mapped
 gtk_widget_get_mapped
+gtk_widget_get_monitor_num
 #endif
 #endif
 
@@ -5379,6 +5380,7 @@ gtk_window_stick
 gtk_window_unfullscreen
 gtk_window_unmaximize
 gtk_window_unstick
+gtk_window_get_monitor_num
 #endif
 #endif
 
