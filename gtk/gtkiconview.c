@@ -45,7 +45,7 @@
 
 #undef DEBUG_ICON_VIEW
 
-#define SCROLL_EDGE_SIZE 15
+#define SCROLL_EDGE_SIZE GTK_SIZE_ONE_TWELFTH_EM(15)
 
 #define GTK_ICON_VIEW_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), GTK_TYPE_ICON_VIEW, GtkIconViewPrivate))
 
@@ -645,11 +645,11 @@ gtk_icon_view_class_init (GtkIconViewClass *klass)
    */
   g_object_class_install_property (gobject_class,
 				   PROP_ITEM_WIDTH,
-				   g_param_spec_int ("item-width",
-						     P_("Width for each item"),
-						     P_("The width used for each item"),
-						     -1, G_MAXINT, -1,
-						     GTK_PARAM_READWRITE));  
+				   gtk_param_spec_size ("item-width",
+                                                        P_("Width for each item"),
+                                                        P_("The width used for each item"),
+                                                        -1, G_MAXINT, -1,
+                                                        GTK_PARAM_READWRITE));
 
   /**
    * GtkIconView:spacing:
@@ -661,11 +661,11 @@ gtk_icon_view_class_init (GtkIconViewClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_SPACING,
-                                   g_param_spec_int ("spacing",
-						     P_("Spacing"),
-						     P_("Space which is inserted between cells of an item"),
-						     0, G_MAXINT, 0,
-						     GTK_PARAM_READWRITE));
+                                   gtk_param_spec_size ("spacing",
+                                                        P_("Spacing"),
+                                                        P_("Space which is inserted between cells of an item"),
+                                                        0, G_MAXINT, 0,
+                                                        GTK_PARAM_READWRITE));
 
   /**
    * GtkIconView:row-spacing:
@@ -677,11 +677,11 @@ gtk_icon_view_class_init (GtkIconViewClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_ROW_SPACING,
-                                   g_param_spec_int ("row-spacing",
-						     P_("Row Spacing"),
-						     P_("Space which is inserted between grid rows"),
-						     0, G_MAXINT, 6,
-						     GTK_PARAM_READWRITE));
+                                   gtk_param_spec_size ("row-spacing",
+                                                        P_("Row Spacing"),
+                                                        P_("Space which is inserted between grid rows"),
+                                                        0, G_MAXINT, GTK_SIZE_ONE_TWELFTH_EM (6),
+                                                        GTK_PARAM_READWRITE));
 
   /**
    * GtkIconView:column-spacing:
@@ -693,11 +693,11 @@ gtk_icon_view_class_init (GtkIconViewClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_COLUMN_SPACING,
-                                   g_param_spec_int ("column-spacing",
-						     P_("Column Spacing"),
-						     P_("Space which is inserted between grid columns"),
-						     0, G_MAXINT, 6,
-						     GTK_PARAM_READWRITE));
+                                   gtk_param_spec_size ("column-spacing",
+                                                        P_("Column Spacing"),
+                                                        P_("Space which is inserted between grid columns"),
+                                                        0, G_MAXINT, GTK_SIZE_ONE_TWELFTH_EM (6),
+                                                        GTK_PARAM_READWRITE));
 
   /**
    * GtkIconView:margin:
@@ -709,11 +709,11 @@ gtk_icon_view_class_init (GtkIconViewClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_MARGIN,
-                                   g_param_spec_int ("margin",
-						     P_("Margin"),
-						     P_("Space which is inserted at the edges of the icon view"),
-						     0, G_MAXINT, 6,
-						     GTK_PARAM_READWRITE));
+                                   gtk_param_spec_size ("margin",
+                                                        P_("Margin"),
+                                                        P_("Space which is inserted at the edges of the icon view"),
+                                                        0, G_MAXINT, GTK_SIZE_ONE_TWELFTH_EM (6),
+                                                        GTK_PARAM_READWRITE));
 
   /**
    * GtkIconView:orientation:
@@ -768,11 +768,11 @@ gtk_icon_view_class_init (GtkIconViewClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_ITEM_PADDING,
-                                   g_param_spec_int ("item-padding",
-						     P_("Item Padding"),
-						     P_("Padding around icon view items"),
-						     0, G_MAXINT, 6,
-						     GTK_PARAM_READWRITE));
+                                   g_param_spec_size ("item-padding",
+						      P_("Item Padding"),
+						      P_("Padding around icon view items"),
+						      0, G_MAXINT, GTK_SIZE_ONE_TWELFTH_EM (6),
+						      GTK_PARAM_READWRITE));
 
 
 
@@ -1119,10 +1119,10 @@ gtk_icon_view_init (GtkIconView *icon_view)
   icon_view->priv->columns = -1;
   icon_view->priv->item_width = -1;
   icon_view->priv->spacing = 0;
-  icon_view->priv->row_spacing = 6;
-  icon_view->priv->column_spacing = 6;
-  icon_view->priv->margin = 6;
-  icon_view->priv->item_padding = 6;
+  icon_view->priv->row_spacing = GTK_SIZE_ONE_TWELFTH_EM (6);
+  icon_view->priv->column_spacing = GTK_SIZE_ONE_TWELFTH_EM (6);
+  icon_view->priv->margin = GTK_SIZE_ONE_TWELFTH_EM (6);
+  icon_view->priv->item_padding = GTK_SIZE_ONE_TWELFTH_EM (6);
 
   icon_view->priv->draw_focus = TRUE;
 }
@@ -1211,19 +1211,19 @@ gtk_icon_view_set_property (GObject      *object,
       gtk_icon_view_set_columns (icon_view, g_value_get_int (value));
       break;
     case PROP_ITEM_WIDTH:
-      gtk_icon_view_set_item_width (icon_view, g_value_get_int (value));
+      gtk_icon_view_set_item_width (icon_view, gtk_value_get_size (value));
       break;
     case PROP_SPACING:
-      gtk_icon_view_set_spacing (icon_view, g_value_get_int (value));
+      gtk_icon_view_set_spacing (icon_view, gtk_value_get_size (value));
       break;
     case PROP_ROW_SPACING:
-      gtk_icon_view_set_row_spacing (icon_view, g_value_get_int (value));
+      gtk_icon_view_set_row_spacing (icon_view, gtk_value_get_size (value));
       break;
     case PROP_COLUMN_SPACING:
-      gtk_icon_view_set_column_spacing (icon_view, g_value_get_int (value));
+      gtk_icon_view_set_column_spacing (icon_view, gtk_value_get_size (value));
       break;
     case PROP_MARGIN:
-      gtk_icon_view_set_margin (icon_view, g_value_get_int (value));
+      gtk_icon_view_set_margin (icon_view, gtk_value_get_size (value));
       break;
     case PROP_REORDERABLE:
       gtk_icon_view_set_reorderable (icon_view, g_value_get_boolean (value));
@@ -1277,19 +1277,19 @@ gtk_icon_view_get_property (GObject      *object,
       g_value_set_int (value, icon_view->priv->columns);
       break;
     case PROP_ITEM_WIDTH:
-      g_value_set_int (value, icon_view->priv->item_width);
+      gtk_value_set_size (value, icon_view->priv->item_width, icon_view);
       break;
     case PROP_SPACING:
-      g_value_set_int (value, icon_view->priv->spacing);
+      gtk_value_set_size (value, icon_view->priv->spacing, icon_view);
       break;
     case PROP_ROW_SPACING:
-      g_value_set_int (value, icon_view->priv->row_spacing);
+      gtk_value_set_size (value, icon_view->priv->row_spacing, icon_view);
       break;
     case PROP_COLUMN_SPACING:
-      g_value_set_int (value, icon_view->priv->column_spacing);
+      gtk_value_set_size (value, icon_view->priv->column_spacing, icon_view);
       break;
     case PROP_MARGIN:
-      g_value_set_int (value, icon_view->priv->margin);
+      gtk_value_set_size (value, icon_view->priv->margin, icon_view);
       break;
     case PROP_REORDERABLE:
       g_value_set_boolean (value, icon_view->priv->reorderable);
@@ -2694,8 +2694,8 @@ gtk_icon_view_layout_single_row (GtkIconView *icon_view,
 			"focus-line-width", &focus_width,
 			NULL);
 
-  x += icon_view->priv->margin + focus_width;
-  current_width += 2 * (icon_view->priv->margin + focus_width);
+  x += gtk_widget_size_to_pixel (icon_view, icon_view->priv->margin) + focus_width;
+  current_width += 2 * (gtk_widget_size_to_pixel (icon_view, icon_view->priv->margin) + focus_width);
 
   items = first_item;
   while (items)
@@ -2703,9 +2703,9 @@ gtk_icon_view_layout_single_row (GtkIconView *icon_view,
       GtkIconViewItem *item = items->data;
 
       gtk_icon_view_calculate_item_size (icon_view, item);
-      colspan = 1 + (item->width - 1) / (item_width + icon_view->priv->column_spacing);
+      colspan = 1 + (item->width - 1) / (item_width + gtk_widget_size_to_pixel (icon_view, icon_view->priv->column_spacing));
 
-      item->width = colspan * item_width + (colspan - 1) * icon_view->priv->column_spacing;
+      item->width = colspan * item_width + (colspan - 1) * gtk_widget_size_to_pixel (icon_view, icon_view->priv->column_spacing);
 
       current_width += item->width;
 
@@ -2716,12 +2716,12 @@ gtk_icon_view_layout_single_row (GtkIconView *icon_view,
 	    break;
 	}
 
-      current_width += icon_view->priv->column_spacing + 2 * focus_width;
+      current_width += gtk_widget_size_to_pixel (icon_view, icon_view->priv->column_spacing) + 2 * focus_width;
 
       item->y = *y + focus_width;
       item->x = x;
 
-      x = current_width - (icon_view->priv->margin + focus_width); 
+      x = current_width - (gtk_widget_size_to_pixel (icon_view, icon_view->priv->margin) + focus_width);
 
       for (i = 0; i < icon_view->priv->n_cells; i++)
 	max_height[i] = MAX (max_height[i], item->box[i].height);
@@ -2752,8 +2752,8 @@ gtk_icon_view_layout_single_row (GtkIconView *icon_view,
       gtk_icon_view_calculate_item_size2 (icon_view, item, max_height);
 
       /* We may want to readjust the new y coordinate. */
-      if (item->y + item->height + focus_width + icon_view->priv->row_spacing > *y)
-	*y = item->y + item->height + focus_width + icon_view->priv->row_spacing;
+      if (item->y + item->height + focus_width + gtk_widget_size_to_pixel (icon_view, icon_view->priv->row_spacing) > *y)
+	*y = item->y + item->height + focus_width + gtk_widget_size_to_pixel (icon_view, icon_view->priv->row_spacing);
     }
 
   g_free (max_height);
@@ -2805,7 +2805,7 @@ gtk_icon_view_layout (GtkIconView *icon_view)
 
   widget = GTK_WIDGET (icon_view);
 
-  item_width = icon_view->priv->item_width;
+  item_width = gtk_widget_size_to_pixel (icon_view, icon_view->priv->item_width);
 
   if (item_width < 0)
     {
@@ -2819,7 +2819,7 @@ gtk_icon_view_layout (GtkIconView *icon_view)
 
 
   icons = icon_view->priv->items;
-  y += icon_view->priv->margin;
+  y += gtk_widget_size_to_pixel (icon_view, icon_view->priv->margin);
   row = 0;
 
   if (icons)
@@ -2840,7 +2840,7 @@ gtk_icon_view_layout (GtkIconView *icon_view)
   if (maximum_width != icon_view->priv->width)
     icon_view->priv->width = maximum_width;
 
-  y += icon_view->priv->margin;
+  y += gtk_widget_size_to_pixel (icon_view, icon_view->priv->margin);
   
   if (y != icon_view->priv->height)
     icon_view->priv->height = y;
@@ -2941,11 +2941,12 @@ adjust_wrap_width (GtkIconView     *icon_view,
 				  NULL);
 	  
 
-      if (icon_view->priv->item_width > 0)
-	item_width = icon_view->priv->item_width;
+      if (gtk_widget_size_to_pixel (icon_view, icon_view->priv->item_width) > 0)
+	item_width = gtk_widget_size_to_pixel (icon_view, icon_view->priv->item_width);
       else
 	item_width = item->width;
 
+<<<<<<< HEAD
       if (icon_view->priv->orientation == GTK_ORIENTATION_VERTICAL)
         wrap_width = item_width;
       else {
@@ -2954,6 +2955,19 @@ adjust_wrap_width (GtkIconView     *icon_view,
         else
           wrap_width = item_width - pixbuf_width - icon_view->priv->spacing;
         }
+=======
+      if (item->width == -1)
+        {
+	  if (item_width > 0)
+	    wrap_width = item_width - pixbuf_width - gtk_widget_size_to_pixel (icon_view, icon_view->priv->spacing);
+	  else
+	    wrap_width = MAX (2 * pixbuf_width, 50);
+	}
+      else if (icon_view->priv->orientation == GTK_ORIENTATION_VERTICAL)
+	wrap_width = item_width;
+      else
+	wrap_width = item_width - pixbuf_width - gtk_widget_size_to_pixel (icon_view, icon_view->priv->spacing);
+>>>>>>> port GtkTreeView, GtkIconView, GtkComboBox and all GtkCellRenderer's to RI
 
       wrap_width -= icon_view->priv->item_padding * 2;
 
@@ -2987,7 +3001,7 @@ gtk_icon_view_calculate_item_size (GtkIconView     *icon_view,
 
   gtk_icon_view_set_cell_data (icon_view, item);
 
-  spacing = icon_view->priv->spacing;
+  spacing = gtk_widget_size_to_pixel (icon_view, icon_view->priv->spacing);
 
   item->width = 0;
   item->height = 0;
@@ -3035,7 +3049,7 @@ gtk_icon_view_calculate_item_size2 (GtkIconView     *icon_view,
 
   gtk_icon_view_set_cell_data (icon_view, item);
 
-  spacing = icon_view->priv->spacing;
+  spacing = gtk_widget_size_to_pixel (icon_view, icon_view->priv->spacing);
 
   item->height = 0;
   for (i = 0; i < icon_view->priv->n_cells; i++)
@@ -3481,8 +3495,8 @@ gtk_icon_view_get_item_at_coords (GtkIconView          *icon_view,
     {
       GtkIconViewItem *item = items->data;
 
-      if (x >= item->x - icon_view->priv->column_spacing/2 && x <= item->x + item->width + icon_view->priv->column_spacing/2 &&
-	  y >= item->y - icon_view->priv->row_spacing/2 && y <= item->y + item->height + icon_view->priv->row_spacing/2)
+      if (x >= item->x - gtk_widget_size_to_pixel (icon_view, icon_view->priv->column_spacing)/2 && x <= item->x + item->width + gtk_widget_size_to_pixel (icon_view, icon_view->priv->column_spacing)/2 &&
+	  y >= item->y - gtk_widget_size_to_pixel (icon_view, icon_view->priv->row_spacing)/2 && y <= item->y + item->height + gtk_widget_size_to_pixel (icon_view, icon_view->priv->row_spacing)/2)
 	{
 	  if (only_in_cell || cell_at_pos)
 	    {
@@ -6047,7 +6061,7 @@ gtk_icon_view_get_columns (GtkIconView *icon_view)
  */
 void 
 gtk_icon_view_set_item_width (GtkIconView *icon_view,
-			      gint         item_width)
+			      GtkSize      item_width)
 {
   g_return_if_fail (GTK_IS_ICON_VIEW (icon_view));
   
@@ -6080,6 +6094,24 @@ gtk_icon_view_get_item_width (GtkIconView *icon_view)
 {
   g_return_val_if_fail (GTK_IS_ICON_VIEW (icon_view), -1);
 
+  return gtk_widget_size_to_pixel (icon_view, icon_view->priv->item_width);
+}
+
+/**
+ * gtk_icon_view_get_item_width_unit:
+ * @icon_view: a #GtkIconView
+ *
+ * Like gtk_icon_view_get_item_width() but preserves the unit.
+ *
+ * Return value: the width_unit of a single item, or -1
+ *
+ * Since: 2.14
+ */
+GtkSize
+gtk_icon_view_get_item_width_unit (GtkIconView *icon_view)
+{
+  g_return_val_if_fail (GTK_IS_ICON_VIEW (icon_view), -1);
+
   return icon_view->priv->item_width;
 }
 
@@ -6097,7 +6129,7 @@ gtk_icon_view_get_item_width (GtkIconView *icon_view)
  */
 void 
 gtk_icon_view_set_spacing (GtkIconView *icon_view,
-			   gint         spacing)
+			   GtkSize      spacing)
 {
   g_return_if_fail (GTK_IS_ICON_VIEW (icon_view));
   
@@ -6128,6 +6160,24 @@ gtk_icon_view_get_spacing (GtkIconView *icon_view)
 {
   g_return_val_if_fail (GTK_IS_ICON_VIEW (icon_view), -1);
 
+  return gtk_widget_size_to_pixel (icon_view, icon_view->priv->spacing);
+}
+
+/**
+ * gtk_icon_view_get_spacing_unit:
+ * @icon_view: a #GtkIconView
+ *
+ * Like gtk_icon_view_get_spacing() but preserves the unit.
+ *
+ * Return value: the space between cells
+ *
+ * Since: 2.14
+ */
+GtkSize
+gtk_icon_view_get_spacing_unit (GtkIconView *icon_view)
+{
+  g_return_val_if_fail (GTK_IS_ICON_VIEW (icon_view), -1);
+
   return icon_view->priv->spacing;
 }
 
@@ -6143,7 +6193,7 @@ gtk_icon_view_get_spacing (GtkIconView *icon_view)
  */
 void 
 gtk_icon_view_set_row_spacing (GtkIconView *icon_view,
-			       gint         row_spacing)
+			       GtkSize      row_spacing)
 {
   g_return_if_fail (GTK_IS_ICON_VIEW (icon_view));
   
@@ -6174,6 +6224,24 @@ gtk_icon_view_get_row_spacing (GtkIconView *icon_view)
 {
   g_return_val_if_fail (GTK_IS_ICON_VIEW (icon_view), -1);
 
+  return gtk_widget_size_to_pixel (icon_view, icon_view->priv->row_spacing);
+}
+
+/**
+ * gtk_icon_view_get_row_spacing_unit:
+ * @icon_view: a #GtkIconView
+ *
+ * Like gtk_icon_view_get_row_spacing() but preserves the unit.
+ *
+ * Return value: the space between rows
+ *
+ * Since: 2.14
+ */
+GtkSize
+gtk_icon_view_get_row_spacing_unit (GtkIconView *icon_view)
+{
+  g_return_val_if_fail (GTK_IS_ICON_VIEW (icon_view), -1);
+
   return icon_view->priv->row_spacing;
 }
 
@@ -6189,7 +6257,7 @@ gtk_icon_view_get_row_spacing (GtkIconView *icon_view)
  */
 void 
 gtk_icon_view_set_column_spacing (GtkIconView *icon_view,
-				  gint         column_spacing)
+				  GtkSize      column_spacing)
 {
   g_return_if_fail (GTK_IS_ICON_VIEW (icon_view));
   
@@ -6220,6 +6288,24 @@ gtk_icon_view_get_column_spacing (GtkIconView *icon_view)
 {
   g_return_val_if_fail (GTK_IS_ICON_VIEW (icon_view), -1);
 
+  return gtk_widget_size_to_pixel (icon_view, icon_view->priv->column_spacing);
+}
+
+/**
+ * gtk_icon_view_get_column_spacing_unit:
+ * @icon_view: a #GtkIconView
+ *
+ * Like gtk_icon_view_get_column_spacing() but preserves the unit.
+ *
+ * Return value: the space between columns
+ *
+ * Since: 2.14
+ */
+GtkSize
+gtk_icon_view_get_column_spacing_unit (GtkIconView *icon_view)
+{
+  g_return_val_if_fail (GTK_IS_ICON_VIEW (icon_view), -1);
+
   return icon_view->priv->column_spacing;
 }
 
@@ -6236,7 +6322,7 @@ gtk_icon_view_get_column_spacing (GtkIconView *icon_view)
  */
 void 
 gtk_icon_view_set_margin (GtkIconView *icon_view,
-			  gint         margin)
+			  GtkSize      margin)
 {
   g_return_if_fail (GTK_IS_ICON_VIEW (icon_view));
   
@@ -6264,6 +6350,24 @@ gtk_icon_view_set_margin (GtkIconView *icon_view,
  */
 gint
 gtk_icon_view_get_margin (GtkIconView *icon_view)
+{
+  g_return_val_if_fail (GTK_IS_ICON_VIEW (icon_view), -1);
+
+  return gtk_widget_size_to_pixel (icon_view, icon_view->priv->margin);
+}
+
+/**
+ * gtk_icon_view_get_margin_unit:
+ * @icon_view: a #GtkIconView
+ *
+ * Like gtk_icon_view_get_margin() but preserves the unit.
+ *
+ * Return value: the space at the borders
+ *
+ * Since: 2.14
+ */
+GtkSize
+gtk_icon_view_get_margin_unit (GtkIconView *icon_view)
 {
   g_return_val_if_fail (GTK_IS_ICON_VIEW (icon_view), -1);
 
@@ -6310,6 +6414,24 @@ gtk_icon_view_set_item_padding (GtkIconView *icon_view,
  */
 gint
 gtk_icon_view_get_item_padding (GtkIconView *icon_view)
+{
+  g_return_val_if_fail (GTK_IS_ICON_VIEW (icon_view), -1);
+
+  return gtk_widget_size_to_pixel (icon_view, icon_view->priv->item_padding);
+}
+
+/**
+ * gtk_icon_view_get_item_padding_unit:
+ * @icon_view: a #GtkIconView
+ *
+ * Returns the value of the ::item-padding property.
+ *
+ * Return value: the padding around items
+ *
+ * Since: RIMERGE
+ */
+gint
+gtk_icon_view_get_item_padding_unit (GtkIconView *icon_view)
 {
   g_return_val_if_fail (GTK_IS_ICON_VIEW (icon_view), -1);
 
@@ -6491,13 +6613,13 @@ gtk_icon_view_autoscroll (GtkIconView *icon_view)
   gdk_window_get_geometry (GTK_WIDGET (icon_view)->window, &x, &y, &width, &height, NULL);
 
   /* see if we are near the edge. */
-  voffset = py - (y + 2 * SCROLL_EDGE_SIZE);
+  voffset = py - (y + 2 * gtk_widget_size_to_pixel (icon_view, SCROLL_EDGE_SIZE));
   if (voffset > 0)
-    voffset = MAX (py - (y + height - 2 * SCROLL_EDGE_SIZE), 0);
+    voffset = MAX (py - (y + height - 2 * gtk_widget_size_to_pixel (icon_view, SCROLL_EDGE_SIZE)), 0);
 
-  hoffset = px - (x + 2 * SCROLL_EDGE_SIZE);
+  hoffset = px - (x + 2 * gtk_widget_size_to_pixel (icon_view, SCROLL_EDGE_SIZE));
   if (hoffset > 0)
-    hoffset = MAX (px - (x + width - 2 * SCROLL_EDGE_SIZE), 0);
+    hoffset = MAX (px - (x + width - 2 * gtk_widget_size_to_pixel (icon_view, SCROLL_EDGE_SIZE)), 0);
 
   if (voffset != 0)
     {
@@ -8366,7 +8488,7 @@ gtk_icon_view_item_accessible_text_get_character_extents (AtkText      *text,
   atk_component_get_position (ATK_COMPONENT (text), x, y, coord_type);
   *x += item->item->layout_x - item->item->x + char_rect.x / PANGO_SCALE;
   /* Look at gtk_icon_view_paint_item() to see where the text is. */
-  *x -=  ((item->item->width - item->item->layout_width) / 2) + (MAX (item->item->pixbuf_width, icon_view->priv->item_width) - item->item->width) / 2,
+  *x -=  ((item->item->width - item->item->layout_width) / 2) + (MAX (item->item->pixbuf_width, gtk_widget_size_to_pixel (icon_view, icon_view->priv->item_width)) - gtk_widget_size_to_pixel (icon_view, item->item->width)) / 2,
   *y += item->item->layout_y - item->item->y + char_rect.y / PANGO_SCALE;
   *width = char_rect.width / PANGO_SCALE;
   *height = char_rect.height / PANGO_SCALE;
@@ -8402,7 +8524,7 @@ gtk_icon_view_item_accessible_text_get_offset_at_point (AtkText      *text,
   gtk_icon_view_update_item_text (icon_view, item->item);
   atk_component_get_position (ATK_COMPONENT (text), &l_x, &l_y, coord_type);
   x -= l_x + item->item->layout_x - item->item->x;
-  x +=  ((item->item->width - item->item->layout_width) / 2) + (MAX (item->item->pixbuf_width, icon_view->priv->item_width) - item->item->width) / 2,
+  x +=  ((item->item->width - item->item->layout_width) / 2) + (MAX (item->item->pixbuf_width, gtk_widget_size_to_pixel (icon_view, icon_view->priv->item_width)) - gtk_widget_size_to_pixel (icon_view, item->item->width)) / 2,
   y -= l_y + item->item->layout_y - item->item->y;
   item_text = pango_layout_get_text (icon_view->priv->layout);
   if (!pango_layout_xy_to_index (icon_view->priv->layout, 
