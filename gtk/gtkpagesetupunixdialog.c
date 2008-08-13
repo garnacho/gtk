@@ -858,7 +858,7 @@ create_radio_button (GSList      *group,
   image = gtk_image_new_from_stock (stock_id, GTK_ICON_SIZE_LARGE_TOOLBAR);
   gtk_stock_lookup (stock_id, &item);
   label = gtk_label_new (item.label);
-  hbox = gtk_hbox_new (0, 6);
+  hbox = gtk_hbox_new (0, GTK_SIZE_ONE_TWELFTH_EM (6));
   gtk_container_add (GTK_CONTAINER (radio_button), hbox);
   gtk_container_add (GTK_CONTAINER (hbox), image);
   gtk_container_add (GTK_CONTAINER (hbox), label);
@@ -879,15 +879,15 @@ populate_dialog (GtkPageSetupUnixDialog *ps_dialog)
   gtk_window_set_resizable (GTK_WINDOW (dialog), FALSE);
 
   gtk_dialog_set_has_separator (dialog, FALSE);
-  gtk_container_set_border_width (GTK_CONTAINER (dialog), 5);
-  gtk_box_set_spacing (GTK_BOX (dialog->vbox), 2); /* 2 * 5 + 2 = 12 */
-  gtk_container_set_border_width (GTK_CONTAINER (dialog->action_area), 5);
-  gtk_box_set_spacing (GTK_BOX (dialog->action_area), 6);
+  gtk_container_set_border_width (GTK_CONTAINER (dialog), GTK_SIZE_ONE_TWELFTH_EM (5));
+  gtk_box_set_spacing (GTK_BOX (dialog->vbox), GTK_SIZE_ONE_TWELFTH_EM (2)); /* 2 * 5 + 2 = 12 */
+  gtk_container_set_border_width (GTK_CONTAINER (dialog->action_area), GTK_SIZE_ONE_TWELFTH_EM (5));
+  gtk_box_set_spacing (GTK_BOX (dialog->action_area), GTK_SIZE_ONE_TWELFTH_EM (6));
 
   table = gtk_table_new (5, 4, FALSE);
-  gtk_table_set_row_spacings (GTK_TABLE (table), 6);
-  gtk_table_set_col_spacings (GTK_TABLE (table), 12);
-  gtk_container_set_border_width (GTK_CONTAINER (table), 5);
+  gtk_table_set_row_spacings (GTK_TABLE (table), GTK_SIZE_ONE_TWELFTH_EM (6));
+  gtk_table_set_col_spacings (GTK_TABLE (table), GTK_SIZE_ONE_TWELFTH_EM (12));
+  gtk_container_set_border_width (GTK_CONTAINER (table), GTK_SIZE_ONE_TWELFTH_EM (5));
   gtk_box_pack_start (GTK_BOX (dialog->vbox), table, TRUE, TRUE, 0);
   gtk_widget_show (table);
 
