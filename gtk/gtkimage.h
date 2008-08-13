@@ -232,7 +232,7 @@ void gtk_image_set_from_gicon     (GtkImage        *image,
 				   GIcon           *icon,
 				   GtkIconSize      size);
 void gtk_image_set_pixel_size     (GtkImage        *image,
-				   gint             pixel_size);
+				   GtkSize          pixel_size);
 
 GtkImageType gtk_image_get_storage_type (GtkImage   *image);
 
@@ -257,6 +257,7 @@ void       gtk_image_get_gicon     (GtkImage              *image,
 				    GIcon                **gicon,
 				    GtkIconSize           *size);
 gint       gtk_image_get_pixel_size (GtkImage             *image);
+GtkSize    gtk_image_get_pixel_size_unit (GtkImage *image);
 
 #ifndef GTK_DISABLE_DEPRECATED
 /* These three are deprecated */

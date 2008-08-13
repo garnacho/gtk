@@ -134,7 +134,7 @@ struct _GtkImagePrivate
   /* Only used with GTK_IMAGE_ANIMATION, GTK_IMAGE_PIXBUF */
   gchar *filename;
 
-  gint pixel_size;
+  GtkSize pixel_size;
   guint need_calc_size : 1;
 };
 
@@ -152,6 +152,7 @@ static void gtk_image_style_set    (GtkWidget      *widget,
 				    GtkStyle       *prev_style);
 static void gtk_image_screen_changed (GtkWidget    *widget,
 				      GdkScreen    *prev_screen);
+static void gtk_image_unit_changed (GtkWidget    *widget);
 static void gtk_image_destroy      (GtkObject      *object);
 static void gtk_image_reset        (GtkImage       *image);
 static void gtk_image_calc_size    (GtkImage       *image);
@@ -215,6 +216,7 @@ gtk_image_class_init (GtkImageClass *class)
   widget_class->unrealize = gtk_image_unrealize;
   widget_class->style_set = gtk_image_style_set;
   widget_class->screen_changed = gtk_image_screen_changed;
+  widget_class->unit_changed = gtk_image_unit_changed;
   
   g_object_class_install_property (gobject_class,
                                    PROP_PIXBUF,
@@ -292,12 +294,11 @@ gtk_image_class_init (GtkImageClass *class)
    */
   g_object_class_install_property (gobject_class,
 				   PROP_PIXEL_SIZE,
-				   g_param_spec_int ("pixel-size",
-						     P_("Pixel size"),
-						     P_("Pixel size to use for named icon"),
-						     -1, G_MAXINT,
-						     -1,
-						     GTK_PARAM_READWRITE));
+				   gtk_param_spec_size ("pixel-size",
+                                                        P_("Pixel size"),
+                                                        P_("Pixel size to use for named icon"),
+                                                        -1, G_MAXINT, -1,
+                                                        GTK_PARAM_READWRITE));
   
   g_object_class_install_property (gobject_class,
                                    PROP_PIXBUF_ANIMATION,
@@ -460,7 +461,7 @@ gtk_image_set_property (GObject      *object,
         image->icon_size = g_value_get_int (value);
       break;
     case PROP_PIXEL_SIZE:
-      gtk_image_set_pixel_size (image, g_value_get_int (value));
+      gtk_image_set_pixel_size (image, gtk_value_get_size (value));
       break;
     case PROP_PIXBUF_ANIMATION:
       gtk_image_set_from_animation (image,
@@ -546,7 +547,7 @@ gtk_image_get_property (GObject     *object,
       g_value_set_int (value, image->icon_size);
       break;
     case PROP_PIXEL_SIZE:
-      g_value_set_int (value, priv->pixel_size);
+      gtk_value_set_size (value, priv->pixel_size, image);
       break;
     case PROP_PIXBUF_ANIMATION:
       if (image->storage_type != GTK_IMAGE_ANIMATION)
@@ -1669,12 +1670,13 @@ ensure_pixbuf_for_icon_name (GtkImage *image)
     {
       if (priv->pixel_size != -1)
 	{
-	  width = height = priv->pixel_size;
+	  width = height = gtk_widget_size_to_pixel (image, priv->pixel_size);
           flags |= GTK_ICON_LOOKUP_FORCE_SIZE;
 	}
-      else if (!gtk_icon_size_lookup_for_settings (settings,
-						   image->icon_size,
-						   &width, &height))
+      else if (!gtk_icon_size_lookup_for_settings_for_monitor (settings,
+                                                               gtk_widget_get_monitor_num (GTK_WIDGET (image)),
+                                                               image->icon_size,
+                                                               &width, &height))
 	{
 	  if (image->icon_size == -1)
 	    {
@@ -1752,12 +1754,13 @@ ensure_pixbuf_for_gicon (GtkImage *image)
     {
       if (priv->pixel_size != -1)
 	{
-	  width = height = priv->pixel_size;
+	  width = height = gtk_widget_size_to_pixel (image, priv->pixel_size);
           flags |= GTK_ICON_LOOKUP_FORCE_SIZE;
 	}
-      else if (!gtk_icon_size_lookup_for_settings (settings,
-						   image->icon_size,
-						   &width, &height))
+      else if (!gtk_icon_size_lookup_for_settings_for_monitor (settings,
+                                                               gtk_widget_get_monitor_num (GTK_WIDGET (image)),
+                                                               image->icon_size,
+                                                               &width, &height))
 	{
 	  if (image->icon_size == -1)
 	    width = height = 48;
@@ -2475,6 +2478,28 @@ gtk_image_get_pixel_size (GtkImage *image)
   
   priv = GTK_IMAGE_GET_PRIVATE (image);
 
+  return gtk_widget_size_to_pixel (image, priv->pixel_size);
+}
+
+/**
+ * gtk_image_get_pixel_size_unit:
+ * @image: a #GtkImage
+ *
+ * Like gtk_image_get_pixel_size() but preserves the unit.
+ *
+ * Returns: the pixel size used for named icons.
+ *
+ * Since: 2.14
+ */
+GtkSize
+gtk_image_get_pixel_size_unit (GtkImage *image)
+{
+  GtkImagePrivate *priv;
+
+  g_return_val_if_fail (GTK_IS_IMAGE (image), -1);
+
+  priv = GTK_IMAGE_GET_PRIVATE (image);
+
   return priv->pixel_size;
 }
 
@@ -2509,6 +2534,19 @@ gtk_image_set_from_file   (GtkImage    *image,
 }
 
 #endif
+
+static void
+gtk_image_unit_changed (GtkWidget *widget)
+{
+  GtkImage *image = GTK_IMAGE (widget);
+
+  /* must chain up */
+  if (GTK_WIDGET_CLASS (gtk_image_parent_class)->unit_changed != NULL)
+    GTK_WIDGET_CLASS (gtk_image_parent_class)->unit_changed (widget);
+
+  icon_theme_changed (image);
+}
+
 
 #define __GTK_IMAGE_C__
 #include "gtkaliasdef.c"

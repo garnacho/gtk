@@ -208,8 +208,8 @@ gtk_statusbar_init (GtkStatusbar *statusbar)
 
   gtk_widget_set_redraw_on_allocate (GTK_WIDGET (box), TRUE);
 
-  box->spacing = 2;
-  box->homogeneous = FALSE;
+  gtk_box_set_spacing (box, GTK_SIZE_ONE_TWELFTH_EM (2));
+  gtk_box_set_homogeneous (box, FALSE);
 
   statusbar->has_resize_grip = TRUE;
 
