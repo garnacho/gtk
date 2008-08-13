@@ -211,7 +211,7 @@ do_clipboard (GtkWidget *do_widget)
                         G_CALLBACK (gtk_widget_destroyed), &window);
 
       vbox = gtk_vbox_new (FALSE, 0);
-      gtk_container_set_border_width (GTK_CONTAINER (vbox), 8);
+      gtk_container_set_border_width (GTK_CONTAINER (vbox), GTK_SIZE_ONE_TWELFTH_EM (8));
 
       gtk_container_add (GTK_CONTAINER (window), vbox);
 
@@ -219,8 +219,8 @@ do_clipboard (GtkWidget *do_widget)
 
       gtk_box_pack_start (GTK_BOX (vbox), label, FALSE, FALSE, 0);
 
-      hbox = gtk_hbox_new (FALSE, 4);
-      gtk_container_set_border_width (GTK_CONTAINER (hbox), 8);
+      hbox = gtk_hbox_new (FALSE, GTK_SIZE_ONE_TWELFTH_EM (4));
+      gtk_container_set_border_width (GTK_CONTAINER (hbox), GTK_SIZE_ONE_TWELFTH_EM (8));
       gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
 
       /* Create the first entry */
@@ -236,8 +236,8 @@ do_clipboard (GtkWidget *do_widget)
       label = gtk_label_new ("\"Paste\" will paste the text from the clipboard to the entry");
       gtk_box_pack_start (GTK_BOX (vbox), label, FALSE, FALSE, 0);
 
-      hbox = gtk_hbox_new (FALSE, 4);
-      gtk_container_set_border_width (GTK_CONTAINER (hbox), 8);
+      hbox = gtk_hbox_new (FALSE, GTK_SIZE_ONE_TWELFTH_EM (4));
+      gtk_container_set_border_width (GTK_CONTAINER (hbox), GTK_SIZE_ONE_TWELFTH_EM (8));
       gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
 
       /* Create the second entry */
@@ -253,8 +253,8 @@ do_clipboard (GtkWidget *do_widget)
       label = gtk_label_new ("Images can be transferred via the clipboard, too");
       gtk_box_pack_start (GTK_BOX (vbox), label, FALSE, FALSE, 0);
 
-      hbox = gtk_hbox_new (FALSE, 4);
-      gtk_container_set_border_width (GTK_CONTAINER (hbox), 8);
+      hbox = gtk_hbox_new (FALSE, GTK_SIZE_ONE_TWELFTH_EM (4));
+      gtk_container_set_border_width (GTK_CONTAINER (hbox), GTK_SIZE_ONE_TWELFTH_EM (8));
       gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
 
       /* Create the first image */
