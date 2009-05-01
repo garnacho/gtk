@@ -821,8 +821,10 @@ gtk_table_set_row_spacing (GtkTable *table,
  * @table: a #GtkTable
  * @row: a row in the table, 0 indicates the first row
  *
- * Gets the amount of space between row @row, and
- * row @row + 1. See gtk_table_set_row_spacing().
+ * Gets the amount of space between row @row and
+ * row @row + 1 in pixels. See gtk_table_set_row_spacing().
+ *
+ * Use gtk_table_get_row_spacing_unit() to preserve units.
  *
  * Return value: the row spacing
  **/
@@ -847,7 +849,7 @@ gtk_table_get_row_spacing (GtkTable *table,
  *
  * Return value: the column spacing
  *
- * Since: 2.14
+ * Since: RIMERGE
  **/
 GtkUSize
 gtk_table_get_row_spacing_unit (GtkTable *table,
@@ -885,8 +887,10 @@ gtk_table_set_col_spacing (GtkTable *table,
  * @table: a #GtkTable
  * @column: a column in the table, 0 indicates the first column
  *
- * Gets the amount of space between column @col, and
- * column @col + 1. See gtk_table_set_col_spacing().
+ * Gets the amount of space between column @col and
+ * column @col + 1 in pixels. See gtk_table_set_col_spacing().
+ *
+ * Use gtk_table_get_col_spacing_unit() to preserve units.
  *
  * Return value: the column spacing
  **/
@@ -911,7 +915,7 @@ gtk_table_get_col_spacing (GtkTable *table,
  *
  * Return value: the column spacing
  *
- * Since: 2.14
+ * Since: RIMERGE
  **/
 GtkUSize
 gtk_table_get_col_spacing_unit (GtkTable *table,
@@ -953,9 +957,11 @@ gtk_table_set_row_spacings (GtkTable *table,
  * gtk_table_get_default_row_spacing:
  * @table: a #GtkTable
  *
- * Gets the default row spacing for the table. This is
+ * Gets the default row spacing for the table in pixels. This is
  * the spacing that will be used for newly added rows.
  * (See gtk_table_set_row_spacings())
+ *
+ * Use gtk_table_get_default_row_spacing_unit() to preserve units.
  *
  * Return value: the default row spacing
  **/
@@ -977,7 +983,7 @@ gtk_table_get_default_row_spacing (GtkTable *table)
  *
  * Return value: the default row spacing
  *
- * Since: 2.14
+ * Since: RIMERGE
  **/
 GtkUSize
 gtk_table_get_default_row_spacing_unit (GtkTable *table)
@@ -1021,9 +1027,11 @@ gtk_table_set_col_spacings (GtkTable *table,
  * gtk_table_get_default_col_spacing:
  * @table: a #GtkTable
  *
- * Gets the default column spacing for the table. This is
+ * Gets the default column spacing for the table in pixels. This is
  * the spacing that will be used for newly added columns.
  * (See gtk_table_set_col_spacings())
+ *
+ * Use gtk_table_get_default_col_spacing_unit() to preserve units.
  *
  * Return value: the default column spacing
  **/
@@ -1045,7 +1053,7 @@ gtk_table_get_default_col_spacing (GtkTable *table)
  *
  * Return value: the default column spacing
  *
- * Since: 2.14
+ * Since: RIMERGE
  **/
 GtkUSize
 gtk_table_get_default_col_spacing_unit (GtkTable *table)

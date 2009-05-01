@@ -1258,7 +1258,7 @@ gtk_widget_class_init (GtkWidgetClass *klass)
    * The ::unit-changed signal is emitted when the units
    * change. @widget should recompute internal pixel sizes.
    *
-   * Since: 2.14
+   * Since: RIMERGE
    */
   widget_signals[UNIT_CHANGED] =
     g_signal_new (I_("unit_changed"),
@@ -8085,7 +8085,7 @@ gtk_widget_get_size_request (GtkWidget *widget,
  *
  * Like gtk_widget_get_size_request() but preserves the unit.
  *
- * Since: 2.14
+ * Since: RIMERGE
  **/
 void
 gtk_widget_get_size_request_unit (GtkWidget *widget,
@@ -10103,7 +10103,7 @@ gtk_widget_style_get (GtkWidget   *widget,
  *
  * Like gtk_widget_style_get_property() but preserves units.
  *
- * Since: 2.14
+ * Since: RIMERGE
  */
 void
 gtk_widget_style_get_property_unit (GtkWidget   *widget,
@@ -10225,7 +10225,7 @@ gtk_widget_style_get_unit_valist (GtkWidget   *widget,
  * Like gtk_widget_stylet_get() but preserves all #GtkSize values
  * rather than using gtk_size_to_pixel().
  *
- * Since: 2.14
+ * Since: RIMERGE
  */
 void
 gtk_widget_style_get_unit (GtkWidget   *widget,
@@ -11796,7 +11796,7 @@ gtk_widget_get_unit_valist (GtkWidget *widget,
  * Like g_object_get() but preserves the unit for properties of type
  * #GtkSize and #GtkUSize.
  *
- * Since: 2.14
+ * Since: RIMERGE
  **/
 void
 gtk_widget_get_unit (gpointer widget,

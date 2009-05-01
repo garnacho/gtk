@@ -957,7 +957,7 @@ gtk_icon_size_lookup_for_settings (GtkSettings *settings,
  *
  * Return value: %TRUE if @size was a valid size
  *
- * Since: 2.14
+ * Since: RIMERGE
  **/
 gboolean
 gtk_icon_size_lookup_for_settings_for_monitor (GtkSettings *settings,
@@ -984,7 +984,7 @@ gtk_icon_size_lookup_for_settings_for_monitor (GtkSettings *settings,
  *
  * Return value: %TRUE if @size was a valid size
  *
- * Since: 2.14
+ * Since: RIMERGE
  **/
 gboolean
 gtk_icon_size_lookup_for_settings_unit (GtkSettings *settings,
@@ -1040,7 +1040,7 @@ gtk_icon_size_lookup (GtkIconSize  size,
  *
  * Return value: %TRUE if @size was a valid size
  *
- * Since: 2.14
+ * Since: RIMERGE
  **/
 gboolean
 gtk_icon_size_lookup_unit (GtkIconSize  size,
