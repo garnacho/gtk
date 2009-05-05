@@ -759,29 +759,36 @@ request_password (GtkPrintBackend  *backend,
   /* Left */
   icon = gtk_image_new_from_stock (GTK_STOCK_DIALOG_AUTHENTICATION, GTK_ICON_SIZE_DIALOG);
   gtk_misc_set_alignment (GTK_MISC (icon), 0.5, 0.0);
-  gtk_misc_set_padding (GTK_MISC (icon), 6, 6);
+  gtk_misc_set_padding (GTK_MISC (icon),
+		  GTK_SIZE_ONE_TWELFTH_EM (6),
+		  GTK_SIZE_ONE_TWELFTH_EM (6));
 
 
   /* Right */
   vbox = gtk_vbox_new (FALSE, 0);
-  gtk_widget_set_size_request (GTK_WIDGET (vbox), 320, -1);
+  gtk_widget_set_size_request (GTK_WIDGET (vbox),
+		  GTK_SIZE_ONE_TWELFTH_EM (320), -1);
 
   /* Right - 1. */
   label = gtk_label_new (NULL);
   markup = g_markup_printf_escaped ("<span weight=\"bold\" size=\"large\">%s</span>", prompt);
   gtk_label_set_markup (GTK_LABEL (label), markup);
   gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
-  gtk_widget_set_size_request (GTK_WIDGET (label), 320, -1);
+  gtk_widget_set_size_request (GTK_WIDGET (label),
+		  GTK_SIZE_ONE_TWELFTH_EM (320), -1);
   g_free (markup);
 
 
   /* Packing */
   gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)->vbox), main_box, TRUE, FALSE, 0);
 
-  gtk_box_pack_start (GTK_BOX (main_box), icon, FALSE, FALSE, 6);
-  gtk_box_pack_start (GTK_BOX (main_box), vbox, FALSE, FALSE, 6);
+  gtk_box_pack_start (GTK_BOX (main_box), icon, FALSE, FALSE,
+		  GTK_SIZE_ONE_TWELFTH_EM (6));
+  gtk_box_pack_start (GTK_BOX (main_box), vbox, FALSE, FALSE,
+		  GTK_SIZE_ONE_TWELFTH_EM (6));
 
-  gtk_box_pack_start (GTK_BOX (vbox), label, FALSE, TRUE, 6);
+  gtk_box_pack_start (GTK_BOX (vbox), label, FALSE, TRUE,
+		  GTK_SIZE_ONE_TWELFTH_EM (6));
   
   /* Right - 2. */
   for (i = 0; i < length; i++)
@@ -804,6 +811,8 @@ request_password (GtkPrintBackend  *backend,
           gtk_entry_set_activates_default (GTK_ENTRY (entry), TRUE);
 
           gtk_box_pack_start (GTK_BOX (vbox), box, FALSE, TRUE, 6);
+          gtk_box_pack_start (GTK_BOX (vbox), username_box, FALSE, TRUE,
+                              GTK_SIZE_ONE_TWELFTH_EM (6));
 
           gtk_box_pack_start (GTK_BOX (box), label, TRUE, TRUE, 0);
           gtk_box_pack_start (GTK_BOX (box), entry, TRUE, TRUE, 0);
