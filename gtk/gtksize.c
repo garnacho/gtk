@@ -28,6 +28,7 @@
 
 /**
  * SECTION:gtksize
+ * @title: Units
  * @short_description: Resolution independent rendering
  *
  * The #GtkSize type is used to implement resolution independent
