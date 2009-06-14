@@ -18,11 +18,49 @@
  */
 
 #include "config.h"
+#include "gdkx.h"
 #include "gdkdevicemanager-core.h"
+
+#ifdef XINPUT_2
+#include "gdkdevicemanager-xi2.h"
+#endif /* XINPUT_2 */
 
 GdkDeviceManager *
 _gdk_device_manager_new (GdkDisplay *display)
 {
+  GdkDeviceManager *device_manager;
+  int opcode, firstevent, firsterror;
+  int major, minor;
+  Display *xdisplay;
+
+#if defined (XINPUT_2) || defined (XINPUT_XFREE)
+  xdisplay = GDK_DISPLAY_XDISPLAY (display);
+
+  if (XQueryExtension (xdisplay, "XInputExtension",
+                       &opcode, &firstevent, &firsterror))
+    {
+#if defined (XINPUT_2)
+      major = 2;
+      minor = 0;
+
+      if (XIQueryVersion (xdisplay, &major, &minor) != BadRequest)
+        {
+          GdkDeviceManagerXI2 *device_manager_xi2;
+
+          device_manager = g_object_new (GDK_TYPE_DEVICE_MANAGER_XI2,
+                                         "display", display,
+                                         NULL);
+
+          device_manager_xi2 = GDK_DEVICE_MANAGER_XI2 (device_manager);
+          device_manager_xi2->opcode = opcode;
+
+          return device_manager;
+        }
+#endif
+    }
+
+#endif /* XINPUT_2 || XINPUT_XFREE */
+
   return g_object_new (GDK_TYPE_DEVICE_MANAGER_CORE,
                        "display", display,
                        NULL);
