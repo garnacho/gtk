@@ -409,6 +409,26 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
                                 (XIHierarchyEvent *) ev);
       return_val = FALSE;
       break;
+    case XI_Motion:
+      {
+        XIDeviceEvent *xev = (XIDeviceEvent *) ev;
+
+        event->motion.type = GDK_MOTION_NOTIFY;
+
+        event->motion.window = gdk_window_lookup_for_display (display, xev->event);
+
+        event->motion.time = xev->time;
+        event->motion.x = (gdouble) xev->event_x;
+        event->motion.y = (gdouble) xev->event_y;
+        event->motion.x_root = (gdouble) xev->root_x;
+        event->motion.y_root = (gdouble) xev->root_y;
+
+        event->motion.device = g_hash_table_lookup (device_manager->id_table,
+                                                    GINT_TO_POINTER (xev->deviceid));
+
+        /* FIXME: missing axes, state, is_hint */
+      }
+      break;
     case XI_Enter:
     case XI_Leave:
       {
@@ -423,15 +443,8 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
         event->crossing.time = xev->time;
         event->crossing.focus = xev->focus;
 
-        if (xev->event != None)
-          event->crossing.window = gdk_window_lookup_for_display (display, xev->event);
-        else
-          event->crossing.window = NULL;
-
-        if (xev->child != None)
-          event->crossing.subwindow = gdk_window_lookup_for_display (display, xev->child);
-        else
-          event->crossing.subwindow = NULL;
+        event->crossing.window = gdk_window_lookup_for_display (display, xev->event);
+        event->crossing.subwindow = gdk_window_lookup_for_display (display, xev->child);
 
         event->crossing.mode = translate_crossing_mode (xev->mode);
         event->crossing.detail = translate_notify_type (xev->detail);
