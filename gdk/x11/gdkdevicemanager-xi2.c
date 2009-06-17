@@ -350,6 +350,42 @@ handle_hierarchy_changed (GdkDeviceManagerXI2 *device_manager,
     }
 }
 
+static GdkCrossingMode
+translate_crossing_mode (int mode)
+{
+  switch (mode)
+    {
+    case NotifyNormal:
+      return GDK_CROSSING_NORMAL;
+    case NotifyGrab:
+      return GDK_CROSSING_GRAB;
+    case NotifyUngrab:
+      return GDK_CROSSING_UNGRAB;
+    default:
+      g_assert_not_reached ();
+    }
+}
+
+static GdkNotifyType
+translate_notify_type (int detail)
+{
+  switch (detail)
+    {
+    case NotifyInferior:
+      return GDK_NOTIFY_INFERIOR;
+    case NotifyAncestor:
+      return GDK_NOTIFY_ANCESTOR;
+    case NotifyVirtual:
+      return GDK_NOTIFY_VIRTUAL;
+    case NotifyNonlinear:
+      return GDK_NOTIFY_NONLINEAR;
+    case NotifyNonlinearVirtual:
+      return GDK_NOTIFY_NONLINEAR_VIRTUAL;
+    default:
+      g_assert_not_reached ();
+    }
+}
+
 static gboolean
 gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
                                         GdkDisplay         *display,
@@ -373,9 +409,58 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
                                 (XIHierarchyEvent *) ev);
       return_val = FALSE;
       break;
+    case XI_Enter:
+    case XI_Leave:
+      {
+        XIEnterEvent *xev = (XIEnterEvent *) ev;
+
+        event->crossing.type = (ev->evtype == XI_Enter) ? GDK_ENTER_NOTIFY : GDK_LEAVE_NOTIFY;
+
+        event->crossing.x = (gdouble) xev->event_x;
+        event->crossing.y = (gdouble) xev->event_y;
+        event->crossing.x_root = (gdouble) xev->root_x;
+        event->crossing.y_root = (gdouble) xev->root_y;
+        event->crossing.time = xev->time;
+        event->crossing.focus = xev->focus;
+
+        if (xev->event != None)
+          event->crossing.window = gdk_window_lookup_for_display (display, xev->event);
+        else
+          event->crossing.window = NULL;
+
+        if (xev->child != None)
+          event->crossing.subwindow = gdk_window_lookup_for_display (display, xev->child);
+        else
+          event->crossing.subwindow = NULL;
+
+        event->crossing.mode = translate_crossing_mode (xev->mode);
+        event->crossing.detail = translate_notify_type (xev->detail);
+
+        /* FIXME: missing event->crossing.state */
+      }
+      break;
     default:
       return_val = FALSE;
       break;
+    }
+
+  event->any.send_event = ev->send_event;
+
+  if (return_val)
+    {
+      if (event->any.window)
+        g_object_ref (event->any.window);
+
+      if (((event->any.type == GDK_ENTER_NOTIFY) ||
+	   (event->any.type == GDK_LEAVE_NOTIFY)) &&
+	  (event->crossing.subwindow != NULL))
+        g_object_ref (event->crossing.subwindow);
+    }
+  else
+    {
+      /* Mark this event as having no resources to be freed */
+      event->any.window = NULL;
+      event->any.type = GDK_NOTHING;
     }
 
   XIFreeEventData (ev);
