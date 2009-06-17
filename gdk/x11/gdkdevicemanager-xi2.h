@@ -39,6 +39,8 @@ struct _GdkDeviceManagerXI2
 {
   GdkDeviceManager parent_object;
 
+  GHashTable *id_table;
+
   GList *master_devices;
   GList *slave_devices;
   GList *floating_devices;
