@@ -22,6 +22,8 @@
 #include "gdkinputprivate.h"
 #include "gdkx.h"
 
+#define BIT_IS_ON(ptr, bit) (((unsigned char *) (ptr))[(bit)>>3] & (1 << ((bit) & 7)))
+
 static void    gdk_device_manager_xi2_constructed (GObject *object);
 static void    gdk_device_manager_xi2_finalize    (GObject *object);
 
@@ -386,6 +388,56 @@ translate_notify_type (int detail)
     }
 }
 
+static guint
+translate_state (XIModifierState *mods_state,
+                 XIButtonState   *buttons_state)
+{
+  guint state = 0;
+
+  if (mods_state)
+    {
+      /* FIXME: What is mods_state->latched for? */
+      state = ((guint) mods_state->base | (guint) mods_state->locked);
+    }
+
+  if (buttons_state)
+    {
+      gint len, i;
+
+      /* We're only interested in the first 5 buttons */
+      len = MIN (5, buttons_state->mask_len * 8);
+
+      for (i = 0; i < len; i++)
+        {
+          if (!BIT_IS_ON (buttons_state->mask, i))
+            continue;
+
+          switch (i)
+            {
+            case 1:
+              state |= GDK_BUTTON1_MASK;
+              break;
+            case 2:
+              state |= GDK_BUTTON2_MASK;
+              break;
+            case 3:
+              state |= GDK_BUTTON3_MASK;
+              break;
+            case 4:
+              state |= GDK_BUTTON4_MASK;
+              break;
+            case 5:
+              state |= GDK_BUTTON5_MASK;
+              break;
+            default:
+              break;
+            }
+        }
+    }
+
+  return state;
+}
+
 static gboolean
 gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
                                         GdkDisplay         *display,
@@ -426,7 +478,12 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
         event->motion.device = g_hash_table_lookup (device_manager->id_table,
                                                     GINT_TO_POINTER (xev->deviceid));
 
-        /* FIXME: missing axes, state, is_hint */
+        event->motion.state = translate_state (xev->mods, xev->buttons);
+
+        /* FIXME: There doesn't seem to be motion hints in XI */
+        event->motion.is_hint = FALSE;
+
+        /* FIXME: missing axes */
       }
       break;
     case XI_Enter:
@@ -448,8 +505,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
 
         event->crossing.mode = translate_crossing_mode (xev->mode);
         event->crossing.detail = translate_notify_type (xev->detail);
-
-        /* FIXME: missing event->crossing.state */
+        event->crossing.state = translate_state (xev->mods, xev->buttons);
       }
       break;
     default:
