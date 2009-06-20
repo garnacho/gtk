@@ -24,6 +24,8 @@
 #include "gdkx.h"
 
 #define BIT_IS_ON(ptr, bit) (((unsigned char *) (ptr))[(bit)>>3] & (1 << ((bit) & 7)))
+#define HAS_FOCUS(toplevel) ((toplevel)->has_focus || (toplevel)->has_pointer_focus)
+
 
 static void    gdk_device_manager_xi2_constructed (GObject *object);
 static void    gdk_device_manager_xi2_finalize    (GObject *object);
@@ -540,6 +542,84 @@ translate_keyboard_string (GdkEventKey *event)
     }
 }
 
+static void
+generate_focus_event (GdkWindow *window,
+		      gboolean   in)
+{
+  GdkEvent event;
+
+  event.type = GDK_FOCUS_CHANGE;
+  event.focus_change.window = window;
+  event.focus_change.send_event = FALSE;
+  event.focus_change.in = in;
+
+  gdk_event_put (&event);
+}
+
+static void
+handle_focus_change (GdkWindow *window,
+                     gint       detail,
+                     gint       mode,
+                     gboolean   in)
+{
+  GdkToplevelX11 *toplevel;
+  gboolean had_focus;
+
+  toplevel = _gdk_x11_window_get_toplevel (window);
+
+  if (!toplevel)
+    return;
+
+  had_focus = HAS_FOCUS (toplevel);
+
+  switch (detail)
+    {
+    case NotifyAncestor:
+    case NotifyVirtual:
+      /* When the focus moves from an ancestor of the window to
+       * the window or a descendent of the window, *and* the
+       * pointer is inside the window, then we were previously
+       * receiving keystroke events in the has_pointer_focus
+       * case and are now receiving them in the
+       * has_focus_window case.
+       */
+      if (toplevel->has_pointer &&
+          mode != NotifyGrab &&
+          mode != NotifyUngrab)
+        toplevel->has_pointer_focus = (in) ? FALSE : TRUE;
+
+      /* fall through */
+    case NotifyNonlinear:
+    case NotifyNonlinearVirtual:
+      if (mode != NotifyGrab &&
+          mode != NotifyUngrab)
+        toplevel->has_focus_window = (in) ? TRUE : FALSE;
+      /* We pretend that the focus moves to the grab
+       * window, so we pay attention to NotifyGrab
+       * NotifyUngrab, and ignore NotifyWhileGrabbed
+       */
+      if (mode != NotifyWhileGrabbed)
+        toplevel->has_focus = (in) ? TRUE : FALSE;
+      break;
+    case NotifyPointer:
+      /* The X server sends NotifyPointer/NotifyGrab,
+       * but the pointer focus is ignored while a
+       * grab is in effect
+       */
+      if (mode != NotifyGrab &&
+          mode != NotifyUngrab)
+        toplevel->has_pointer_focus = (in) ? TRUE :FALSE;
+      break;
+    case NotifyInferior:
+    case NotifyPointerRoot:
+    case NotifyDetailNone:
+      break;
+    }
+
+  if (HAS_FOCUS (toplevel) != had_focus)
+    generate_focus_event (window, (in) ? TRUE : FALSE);
+}
+
 static gboolean
 gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
                                         GdkDisplay         *display,
@@ -721,6 +801,18 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
         event->crossing.state = translate_state (xev->mods, xev->buttons);
       }
       break;
+    case XI_FocusIn:
+    case XI_FocusOut:
+      {
+        XIEnterEvent *xev = (XIEnterEvent *) ev;
+        GdkWindow *win;
+
+        win = gdk_window_lookup_for_display (display, xev->event);
+        handle_focus_change (win, xev->detail, xev->mode,
+                             (ev->evtype == XI_FocusIn) ? TRUE : FALSE);
+
+        return_val = FALSE;
+      }
     default:
       return_val = FALSE;
       break;
