@@ -795,6 +795,8 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
 
         event->crossing.window = gdk_window_lookup_for_display (display, xev->event);
         event->crossing.subwindow = gdk_window_lookup_for_display (display, xev->child);
+        event->crossing.device = g_hash_table_lookup (device_manager->id_table,
+                                                      GINT_TO_POINTER (xev->deviceid));
 
         event->crossing.mode = translate_crossing_mode (xev->mode);
         event->crossing.detail = translate_notify_type (xev->detail);

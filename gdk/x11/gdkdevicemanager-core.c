@@ -685,6 +685,7 @@ gdk_device_manager_translate_event (GdkEventTranslator *translator,
 
       event->crossing.type = GDK_ENTER_NOTIFY;
       event->crossing.window = window;
+      event->crossing.device = device_manager->core_pointer;
 
       /* If the subwindow field of the XEvent is non-NULL, then
        *  lookup the corresponding GdkWindow.
@@ -744,6 +745,7 @@ gdk_device_manager_translate_event (GdkEventTranslator *translator,
 
       event->crossing.type = GDK_LEAVE_NOTIFY;
       event->crossing.window = window;
+      event->crossing.device = device_manager->core_pointer;
 
       /* If the subwindow field of the XEvent is non-NULL, then
        *  lookup the corresponding GdkWindow.
