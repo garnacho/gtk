@@ -20,6 +20,7 @@
 #include "gdkdevicemanager-xi2.h"
 #include "gdkeventtranslator.h"
 #include "gdkinputprivate.h"
+#include "gdkkeysyms.h"
 #include "gdkx.h"
 
 #define BIT_IS_ON(ptr, bit) (((unsigned char *) (ptr))[(bit)>>3] & (1 << ((bit) & 7)))
@@ -475,6 +476,70 @@ set_user_time (GdkEvent *event)
     gdk_x11_window_set_user_time (window, time);
 }
 
+static void
+translate_keyboard_string (GdkEventKey *event)
+{
+  gunichar c = 0;
+  gchar buf[7];
+
+  /* Fill in event->string crudely, since various programs
+   * depend on it.
+   */
+  event->string = NULL;
+
+  if (event->keyval != GDK_VoidSymbol)
+    c = gdk_keyval_to_unicode (event->keyval);
+
+  if (c)
+    {
+      gsize bytes_written;
+      gint len;
+
+      /* Apply the control key - Taken from Xlib
+       */
+      if (event->state & GDK_CONTROL_MASK)
+	{
+	  if ((c >= '@' && c < '\177') || c == ' ') c &= 0x1F;
+	  else if (c == '2')
+	    {
+	      event->string = g_memdup ("\0\0", 2);
+	      event->length = 1;
+	      buf[0] = '\0';
+              return;
+	    }
+	  else if (c >= '3' && c <= '7') c -= ('3' - '\033');
+	  else if (c == '8') c = '\177';
+	  else if (c == '/') c = '_' & 0x1F;
+	}
+
+      len = g_unichar_to_utf8 (c, buf);
+      buf[len] = '\0';
+
+      event->string = g_locale_from_utf8 (buf, len,
+                                          NULL, &bytes_written,
+                                          NULL);
+      if (event->string)
+	event->length = bytes_written;
+    }
+  else if (event->keyval == GDK_Escape)
+    {
+      event->length = 1;
+      event->string = g_strdup ("\033");
+    }
+  else if (event->keyval == GDK_Return ||
+	  event->keyval == GDK_KP_Enter)
+    {
+      event->length = 1;
+      event->string = g_strdup ("\r");
+    }
+
+  if (!event->string)
+    {
+      event->length = 0;
+      event->string = g_strdup ("");
+    }
+}
+
 static gboolean
 gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
                                         GdkDisplay         *display,
@@ -504,6 +569,43 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
       handle_hierarchy_changed (device_manager,
                                 (XIHierarchyEvent *) ev);
       return_val = FALSE;
+      break;
+    case XI_KeyPress:
+    case XI_KeyRelease:
+      {
+        XIDeviceEvent *xev = (XIDeviceEvent *) ev;
+        GdkKeymap *keymap = gdk_keymap_get_for_display (display);
+
+        event->key.type = xev->evtype == XI_KeyPress ? GDK_KEY_PRESS : GDK_KEY_RELEASE;
+
+        event->key.window = gdk_window_lookup_for_display (display, xev->event);
+
+        event->key.time = xev->time;
+        event->key.state = translate_state (xev->mods, xev->buttons);
+        event->key.group = _gdk_x11_get_group_for_state (display, event->key.state);
+
+        event->key.hardware_keycode = xev->detail;
+        event->key.is_modifier = _gdk_keymap_key_is_modifier (keymap, event->key.hardware_keycode);
+
+        _gdk_keymap_add_virtual_modifiers (keymap, &event->key.state);
+
+        event->key.keyval = GDK_VoidSymbol;
+
+        gdk_keymap_translate_keyboard_state (keymap,
+                                             event->key.hardware_keycode,
+                                             event->key.state,
+                                             event->key.group,
+                                             &event->key.keyval,
+                                             NULL, NULL, NULL);
+
+        translate_keyboard_string ((GdkEventKey *) event);
+
+        if (ev->evtype == XI_KeyPress)
+          set_user_time (event);
+
+        /* FIXME: emulate autorepeat on key release? */
+      }
+
       break;
     case XI_ButtonPress:
     case XI_ButtonRelease:
