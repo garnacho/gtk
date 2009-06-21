@@ -334,7 +334,7 @@ handle_hierarchy_changed (GdkDeviceManagerXI2 *device_manager,
       !(ev->flags & XIDeviceDisabled))
     return;
 
-  for (i = 0; i < ev->num_devices; i++)
+  for (i = 0; i < ev->num_info; i++)
     {
       if (ev->info[i].flags & XIDeviceEnabled)
         {
