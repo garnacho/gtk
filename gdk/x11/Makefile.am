@@ -23,6 +23,7 @@ libgdk_x11_la_SOURCES =    	\
 	gdkasync.h		\
 	gdkcolor-x11.c	   	\
 	gdkcursor-x11.c	   	\
+	gdkdevice-core.c	\
 	gdkdevicemanager-core.c \
 	gdkdevicemanager-x11.c	\
 	gdkdisplay-x11.c	\
@@ -41,7 +42,6 @@ libgdk_x11_la_SOURCES =    	\
 	gdkglobals-x11.c   	\
 	gdkim-x11.c	   	\
 	gdkimage-x11.c	   	\
-	gdkinput.c	   	\
 	gdkkeys-x11.c		\
 	gdkmain-x11.c	   	\
 	gdkpixmap-x11.c	   	\
@@ -59,20 +59,13 @@ libgdk_x11_la_SOURCES =    	\
 	gdkxid.c	   	\
 	gdkx.h		   	\
 	gdkprivate-x11.h   	\
-	gdkinputprivate.h  	\
 	xsettings-client.h	\
 	xsettings-client.c	\
 	xsettings-common.h	\
 	xsettings-common.c
 
 if XINPUT_2
-libgdk_x11_la_SOURCES += gdkinput-x11.c gdkinput-xfree.c gdkdevicemanager-xi2.c
-else
-if XINPUT_XFREE
-libgdk_x11_la_SOURCES += gdkinput-x11.c gdkinput-xfree.c
-else
-libgdk_x11_la_SOURCES += gdkinput-none.c
-endif
+libgdk_x11_la_SOURCES += gdkdevicemanager-xi2.c
 endif
 
 
