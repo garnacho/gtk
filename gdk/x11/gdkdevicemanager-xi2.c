@@ -19,7 +19,7 @@
 
 #include "gdkdevicemanager-xi2.h"
 #include "gdkeventtranslator.h"
-#include "gdkinputprivate.h"
+#include "gdkdevice-xi2.h"
 #include "gdkkeysyms.h"
 #include "gdkx.h"
 
@@ -145,23 +145,27 @@ _gdk_device_manager_xi2_select_events (GdkDeviceManager *device_manager,
 }
 
 static GdkDevice *
-create_device (XIDeviceInfo *dev)
+create_device (GdkDisplay   *display,
+               XIDeviceInfo *dev)
 {
-  GdkDevice *device;
+  GdkInputSource input_source;
 
-  device = g_object_new (GDK_TYPE_DEVICE, NULL);
+  if (dev->use == XIMasterKeyboard || dev->use == XISlaveKeyboard)
+    input_source = GDK_SOURCE_KEYBOARD;
+  else
+    {
+      /* FIXME: Set other input sources */
+      input_source = GDK_SOURCE_MOUSE;
+    }
 
-  device->name = g_strdup (dev->name);
-  device->source = GDK_SOURCE_MOUSE;
 
-  device->mode = (dev->use == XIMasterPointer) ? GDK_MODE_SCREEN : GDK_MODE_DISABLED;
-  device->has_cursor = (dev->use == XIMasterPointer);
-  device->num_axes = 0;
-  device->axes = NULL;
-  device->num_keys = 0;
-  device->keys = NULL;
-
-  return device;
+  /* FIXME: set mode */
+  return g_object_new (GDK_TYPE_DEVICE_XI2,
+                       "name", dev->name,
+                       "input-source", input_source,
+                       "has-cursor", (dev->use == XIMasterPointer),
+                       "display", display,
+                       NULL);
 }
 
 static GdkDevice *
@@ -169,20 +173,22 @@ add_device (GdkDeviceManagerXI2 *device_manager,
             XIDeviceInfo        *dev,
             gboolean             emit_signal)
 {
+  GdkDisplay *display;
   GdkDevice *device;
 
-  device = create_device (dev);
+  display = gdk_device_manager_get_display (GDK_DEVICE_MANAGER (device_manager));
+  device = create_device (display, dev);
 
   g_hash_table_replace (device_manager->id_table,
                         GINT_TO_POINTER (dev->deviceid),
                         device);
 
-  if (dev->use == XIMasterPointer)
-    device_manager->master_devices = g_list_prepend (device_manager->master_devices, device);
-  else if (dev->use == XISlavePointer)
-    device_manager->slave_devices = g_list_prepend (device_manager->slave_devices, device);
+  if (dev->use == XIMasterPointer || dev->use == XIMasterKeyboard)
+    device_manager->master_devices = g_list_append (device_manager->master_devices, device);
+  else if (dev->use == XISlavePointer || dev->use == XISlaveKeyboard)
+    device_manager->slave_devices = g_list_append (device_manager->slave_devices, device);
   else if (dev->use == XIFloatingSlave)
-    device_manager->floating_devices = g_list_prepend (device_manager->floating_devices, device);
+    device_manager->floating_devices = g_list_append (device_manager->floating_devices, device);
   else
     g_warning ("Unhandled device: %s\n", device->name);
 
@@ -235,16 +241,9 @@ gdk_device_manager_xi2_constructed (GObject *object)
   for (i = 0; i < ndevices; i++)
     {
       GdkDevice *device;
-      GdkDevicePrivate *private;
 
       dev = &info[i];
       device = add_device (device_manager_xi2, dev, FALSE);
-
-      if (device)
-        {
-          private = (GdkDevicePrivate *) device;
-          private->display = display;
-        }
     }
 
   XIFreeDeviceInfo(info);
