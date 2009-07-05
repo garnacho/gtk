@@ -674,6 +674,29 @@ handle_focus_change (GdkWindow *window,
     generate_focus_event (window, (in) ? TRUE : FALSE);
 }
 
+static gdouble *
+translate_axes (GdkDevice       *device,
+                XIValuatorState *valuators)
+{
+  guint n_axes, i, n;
+  gdouble *axes;
+  double *vals;
+
+  g_object_get (device, "n-axes", &n_axes, NULL);
+
+  axes = g_new0 (gdouble, n_axes);
+  vals = valuators->values;
+  n = 0;
+
+  for (i = 0; i <= valuators->mask_len * 8; i++)
+    {
+      if (XIMaskIsSet (valuators->mask, i))
+        axes[n++] = *vals++;
+    }
+
+  return axes;
+}
+
 static gboolean
 gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
                                         GdkDisplay         *display,
@@ -788,6 +811,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
             event->button.device = g_hash_table_lookup (device_manager->id_table,
                                                         GUINT_TO_POINTER (xev->deviceid));
 
+            event->button.axes = translate_axes (event->button.device, xev->valuators);
             event->button.state = translate_state (xev->mods, xev->buttons);
             event->button.button = xev->detail;
           }
@@ -829,8 +853,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
         /* FIXME: There doesn't seem to be motion hints in XI */
         event->motion.is_hint = FALSE;
 
-        /* FIXME: missing axes */
-        event->motion.axes = NULL;
+        event->motion.axes = translate_axes (event->motion.device, xev->valuators);
       }
       break;
     case XI_Enter:

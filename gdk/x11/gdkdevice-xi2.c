@@ -53,7 +53,8 @@ G_DEFINE_TYPE (GdkDeviceXI2, gdk_device_xi2, GDK_TYPE_DEVICE)
 
 enum {
   PROP_0,
-  PROP_DEVICE_ID
+  PROP_DEVICE_ID,
+  PROP_N_AXES
 };
 
 static void
@@ -75,6 +76,13 @@ gdk_device_xi2_class_init (GdkDeviceXI2Class *klass)
                                                      P_("Device identifier"),
                                                      0, G_MAXINT, 0,
                                                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+  g_object_class_install_property (object_class,
+				   PROP_N_AXES,
+				   g_param_spec_uint ("n-axes",
+                                                     P_("Number of axes"),
+                                                     P_("Number of axes"),
+                                                     0, G_MAXUINT, 0,
+                                                     G_PARAM_READABLE));
 
   g_type_class_add_private (object_class, sizeof (GdkDeviceXI2Private));
 }
@@ -102,6 +110,9 @@ gdk_device_xi2_get_property (GObject    *object,
     {
     case PROP_DEVICE_ID:
       g_value_set_int (value, priv->device_id);
+      break;
+    case PROP_N_AXES:
+      g_value_set_uint (value, priv->axes->len);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
