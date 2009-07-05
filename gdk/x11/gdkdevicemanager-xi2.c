@@ -144,11 +144,46 @@ _gdk_device_manager_xi2_select_events (GdkDeviceManager *device_manager,
   XISelectEvents (xdisplay, xwindow, &event_mask, 1);
 }
 
+static void
+translate_valuator_class (GdkDisplay          *display,
+                          GdkDevice           *device,
+                          XIValuatorClassInfo *info,
+                          gint                 n_valuator)
+{
+  static gboolean initialized = FALSE;
+  static Atom label_atoms [GDK_AXIS_LAST] = { 0 };
+  GdkDeviceXI2 *device_xi2;
+  GdkAxisUse i;
+
+  device_xi2 = GDK_DEVICE_XI2 (device);
+
+  if (!initialized)
+    {
+      label_atoms [GDK_AXIS_X] = gdk_x11_get_xatom_by_name_for_display (display, "Rel X");
+      label_atoms [GDK_AXIS_Y] = gdk_x11_get_xatom_by_name_for_display (display, "Rel Y");
+      initialized = TRUE;
+    }
+
+  for (i = GDK_AXIS_IGNORE; i <= GDK_AXIS_LAST; i++)
+    {
+      if (label_atoms[i] == info->label)
+        {
+          gdk_device_xi2_add_axis (device_xi2, i);
+          return;
+        }
+    }
+
+  g_warning ("Unhandled axis");
+  gdk_device_xi2_add_axis (device_xi2, GDK_AXIS_IGNORE);
+}
+
 static GdkDevice *
 create_device (GdkDisplay   *display,
                XIDeviceInfo *dev)
 {
   GdkInputSource input_source;
+  GdkDevice *device;
+  gint i, n_valuator = 0;
 
   if (dev->use == XIMasterKeyboard || dev->use == XISlaveKeyboard)
     input_source = GDK_SOURCE_KEYBOARD;
@@ -158,14 +193,34 @@ create_device (GdkDisplay   *display,
       input_source = GDK_SOURCE_MOUSE;
     }
 
-
   /* FIXME: set mode */
-  return g_object_new (GDK_TYPE_DEVICE_XI2,
-                       "name", dev->name,
-                       "input-source", input_source,
-                       "has-cursor", (dev->use == XIMasterPointer),
-                       "display", display,
-                       NULL);
+  device = g_object_new (GDK_TYPE_DEVICE_XI2,
+                         "name", dev->name,
+                         "input-source", input_source,
+                         "has-cursor", (dev->use == XIMasterPointer),
+                         "display", display,
+                         "device-id", dev->deviceid,
+                         NULL);
+
+  for (i = 0; i < dev->num_classes; i++)
+    {
+      XIAnyClassInfo *class_info = dev->classes[i];
+
+      switch (class_info->type)
+        {
+        case XIValuatorClass:
+          translate_valuator_class (display, device,
+                                    (XIValuatorClassInfo *) class_info,
+                                    n_valuator);
+          n_valuator++;
+          break;
+        default:
+          /* Ignore */
+          break;
+        }
+    }
+
+  return device;
 }
 
 static GdkDevice *

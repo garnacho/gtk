@@ -28,6 +28,7 @@ typedef struct GdkDeviceXI2Private GdkDeviceXI2Private;
 struct GdkDeviceXI2Private
 {
   int device_id;
+  GArray *axes;
 };
 
 static void gdk_device_xi2_get_property (GObject      *object,
@@ -81,6 +82,10 @@ gdk_device_xi2_class_init (GdkDeviceXI2Class *klass)
 static void
 gdk_device_xi2_init (GdkDeviceXI2 *device)
 {
+  GdkDeviceXI2Private *priv;
+
+  priv = GDK_DEVICE_XI2_GET_PRIVATE (device);
+  priv->axes = g_array_new (FALSE, TRUE, sizeof (GdkDeviceAxis));
 }
 
 static void
@@ -139,5 +144,56 @@ gdk_device_xi2_get_axis (GdkDevice  *device,
                          GdkAxisUse  use,
                          gdouble    *value)
 {
+  GdkDeviceXI2Private *priv;
+  gint i;
+
+  priv = GDK_DEVICE_XI2_GET_PRIVATE (device);
+
+  for (i = 0; i < priv->axes->len; i++)
+    {
+      GdkDeviceAxis axis_info;
+
+      axis_info = g_array_index (priv->axes, GdkDeviceAxis, i);
+
+      if (axis_info.use == use)
+        {
+          if (value)
+            *value = axes[i];
+
+          return TRUE;
+        }
+    }
+
   return FALSE;
+}
+
+void
+gdk_device_xi2_add_axis (GdkDeviceXI2 *device,
+                         GdkAxisUse    use)
+{
+  GdkDeviceXI2Private *priv;
+  GdkDeviceAxis axis_info;
+
+  priv = GDK_DEVICE_XI2_GET_PRIVATE (device);
+  axis_info.use = use;
+
+  switch (use)
+    {
+    case GDK_AXIS_X:
+    case GDK_AXIS_Y:
+      axis_info.min = 0.;
+      axis_info.max = 0.;
+      break;
+    case GDK_AXIS_XTILT:
+    case GDK_AXIS_YTILT:
+      axis_info.min = -1.;
+      axis_info.max = 1.;
+      break;
+    default:
+      axis_info.min = 0.;
+      axis_info.max = 1.;
+      break;
+    }
+
+  g_array_append_val (priv->axes, axis_info);
 }
