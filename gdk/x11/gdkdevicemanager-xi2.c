@@ -715,8 +715,8 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
   if (ev->type != GenericEvent || ev->extension != device_manager->opcode)
     return FALSE;
 
-  if (ev->type == XI_Motion ||
-      ev->type == XI_ButtonRelease)
+  if (ev->evtype == XI_Motion ||
+      ev->evtype == XI_ButtonRelease)
     {
       if (_gdk_moveresize_handle_event (xevent))
         return FALSE;
