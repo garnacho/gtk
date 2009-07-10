@@ -28,10 +28,12 @@ endif
 
 noinst_PROGRAMS =  $(TEST_PROGS)	\
 	simple				\
+	flicker				\
 	print-editor			\
 	testaccel			\
 	testassistant			\
 	testbbox			\
+	testbuttons			\
 	testcairo			\
 	testcalendar			\
 	testcombo			\
@@ -57,6 +59,8 @@ noinst_PROGRAMS =  $(TEST_PROGS)	\
 	testmultiscreen			\
 	testnotebookdnd			\
 	testnouiprint			\
+	testoffscreen			\
+	testorientable			\
 	testprint			\
 	testrgb				\
 	testrecentchooser 		\
@@ -80,6 +84,7 @@ noinst_PROGRAMS =  $(TEST_PROGS)	\
 	testtreesort			\
 	treestoretest			\
 	testxinerama			\
+	testwindows			\
 	pixbuf-read			\
 	pixbuf-lowmem			\
 	pixbuf-randomly-modified	\
@@ -105,6 +110,7 @@ endif
 
 endif
 
+flicker_DEPENDENCIES = $(TEST_DEPS)
 simple_DEPENDENCIES = $(TEST_DEPS)
 print_editor_DEPENDENCIES = $(TEST_DEPS)
 testicontheme_DEPENDENCIES = $(TEST_DEPS)
@@ -112,6 +118,7 @@ testiconview_DEPENDENCIES = $(TEST_DEPS)
 testaccel_DEPENDENCIES = $(TEST_DEPS)
 testassistant_DEPENDENCIES = $(TEST_DEPS)
 testbbox_DEPENDENCIES = $(TEST_DEPS)
+testbuttons_DEPENDENCIES = $(TEST_DEPS)
 testframe_DEPENDENCIES = $(TEST_DEPS)
 testcairo_DEPENDENCIES = $(TEST_DEPS)
 testcalendar_DEPENDENCIES = $(TEST_DEPS)
@@ -135,6 +142,8 @@ testmultidisplay_DEPENDENCIES = $(TEST_DEPS)
 testmultiscreen_DEPENDENCIES = $(TEST_DEPS)
 testnotebookdnd_DEPENDENCIES = $(TEST_DEPS)
 testnouiprint_DEPENDENCIES = $(TEST_DEPS)
+testoffscreen_DEPENDENCIES = $(TEST_DEPS)
+testorientable_DEPENDENCIES = $(TEST_DEPS)
 testprint_DEPENDENCIES = $(TEST_DEPS)
 testrecentchooser_DEPENDENCIES = $(TEST_DEPS)
 testrecentchoosermenu_DEPENDENCIES = $(TEST_DEPS)
@@ -162,12 +171,15 @@ testactions_DEPENDENCIES = $(TEST_DEPS)
 testgrouping_DEPENDENCIES = $(TEST_DEPS)
 testtooltips_DEPENDENCIES = $(TEST_DEPS)
 testvolumebutton_DEPENDENCIES = $(TEST_DEPS)
+testwindows_DEPENDENCIES = $(TEST_DEPS)
 
+flicker_LDADD = $(LDADDS)
 simple_LDADD = $(LDADDS)
 print_editor_LDADD = $(LDADDS)
 testaccel_LDADD = $(LDADDS)
 testassistant_LDADD = $(LDADDS)
 testbbox_LDADD = $(LDADDS)
+testbuttons_LDADD = $(LDADDS)
 testframe_LDADD = $(LDADDS)
 testcairo_LDADD = $(LDADDS)
 testcalendar_LDADD = $(LDADDS)
@@ -193,6 +205,8 @@ testmultidisplay_LDADD = $(LDADDS)
 testmultiscreen_LDADD = $(LDADDS)
 testnotebookdnd_LDADD = $(LDADDS)
 testnouiprint_LDADD = $(LDADDS)
+testoffscreen_LDADD = $(LDADDS)
+testorientable_LDADD = $(LDADDS)
 testprint_LDADD = $(LDADDS)
 testrecentchooser_LDADD = $(LDADDS)
 testrecentchoosermenu_LDADD = $(LDADDS)
@@ -227,6 +241,7 @@ testactions_LDADD = $(LDADDS)
 testgrouping_LDADD = $(LDADDS)
 testtooltips_LDADD = $(LDADDS)
 testvolumebutton_LDADD = $(LDADDS)
+testwindows_LDADD = $(LDADDS)
 
 
 testentrycompletion_SOURCES = 	\
@@ -296,6 +311,9 @@ testactions_SOURCES = 		\
 testbbox_SOURCES = 		\
 	testbbox.c
 
+testbuttons_SOURCES = 		\
+	testbuttons.c
+
 testframe_SOURCES = 		\
 	testframe.c
 
@@ -318,6 +336,14 @@ testrecentchoosermenu_SOURCES =	\
 
 testvolumebutton_SOURCES =	\
 	testvolumebutton.c
+
+testoffscreen_SOURCES = 	\
+	gtkoffscreenbox.c	\
+	gtkoffscreenbox.h	\
+	testoffscreen.c
+
+testwindow_SOURCES = 	\
+	testwindows.c
 
 EXTRA_DIST += 			\
 	prop-editor.h		\
