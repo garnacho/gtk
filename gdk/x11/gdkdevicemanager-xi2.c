@@ -376,6 +376,7 @@ static void
 gdk_device_manager_xi2_event_translator_init (GdkEventTranslatorIface *iface)
 {
   iface->translate_event = gdk_device_manager_xi2_translate_event;
+  iface->get_event_window = gdk_device_manager_xi2_get_event_window;
 }
 
 static void
@@ -923,14 +924,34 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
   return return_val;
 }
 
+static gboolean
+is_parent_of (GdkWindow *parent,
+              GdkWindow *child)
+{
+  GdkWindow *w;
+
+  w = child;
+  while (w != NULL)
+    {
+      if (w == parent)
+	return TRUE;
+
+      w = gdk_window_get_parent (w);
+    }
+
+  return FALSE;
+}
+
 static Window
 gdk_device_manager_xi2_get_event_window (GdkEventTranslator *translator,
                                          XEvent             *xevent)
 {
+  GdkDeviceManagerXI2 *device_manager;
   GdkDisplay *display;
   XIEvent *ev;
 
   ev = (XIEvent *) xevent;
+  device_manager = GDK_DEVICE_MANAGER_XI2 (translator);
 
   if (ev->type != GenericEvent || ev->extension != device_manager->opcode)
     return None;
