@@ -918,6 +918,28 @@ gdk_event_get_axis (const GdkEvent *event,
   return gdk_device_get_axis (device, axes, axis_use, value);
 }
 
+GdkDevice *
+gdk_event_get_device (const GdkEvent *event)
+{
+  switch (event->type)
+    {
+    case GDK_MOTION_NOTIFY:
+      return ((GdkEventMotion *) event)->device;
+    case GDK_BUTTON_PRESS:
+    case GDK_2BUTTON_PRESS:
+    case GDK_3BUTTON_PRESS:
+    case GDK_BUTTON_RELEASE:
+      return ((GdkEventButton *) event)->device;
+    case GDK_ENTER_NOTIFY:
+    case GDK_LEAVE_NOTIFY:
+      return ((GdkEventCrossing *) event)->device;
+    case GDK_SCROLL:
+      return ((GdkEventScroll *) event)->device;
+    default:
+      return NULL;
+    }
+}
+
 /**
  * gdk_event_request_motions:
  * @event: a valid #GdkEvent

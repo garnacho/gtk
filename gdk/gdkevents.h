@@ -539,6 +539,7 @@ gboolean  gdk_event_get_root_coords	(const GdkEvent  *event,
 gboolean  gdk_event_get_axis            (const GdkEvent  *event,
                                          GdkAxisUse       axis_use,
                                          gdouble         *value);
+GdkDevice* gdk_event_get_device         (const GdkEvent  *event);
 void      gdk_event_request_motions     (const GdkEventMotion *event);
 
 gboolean  gdk_events_get_distance       (GdkEvent        *event1,
