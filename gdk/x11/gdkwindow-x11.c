@@ -142,6 +142,8 @@ static void
 gdk_window_impl_x11_init (GdkWindowImplX11 *impl)
 {  
   impl->toplevel_window_type = -1;
+  impl->device_cursor = g_hash_table_new_full (NULL, NULL, NULL,
+                                               (GDestroyNotify) gdk_cursor_unref);
 }
 
 GdkToplevelX11 *
@@ -205,6 +207,8 @@ gdk_window_impl_x11_finalize (GObject *object)
 
   if (window_impl->cursor)
     gdk_cursor_unref (window_impl->cursor);
+
+  g_hash_table_destroy (window_impl->device_cursor);
 
   G_OBJECT_CLASS (gdk_window_impl_x11_parent_class)->finalize (object);
 }
@@ -2732,6 +2736,35 @@ gdk_window_x11_set_cursor (GdkWindow *window,
       if (cursor)
 	impl->cursor = gdk_cursor_ref (cursor);
     }
+}
+
+static void
+gdk_window_x11_set_device_cursor (GdkWindow *window,
+                                  GdkDevice *device,
+                                  GdkCursor *cursor)
+{
+  GdkWindowObject *private;
+  GdkCursorPrivate *cursor_private;
+  GdkWindowImplX11 *impl;
+
+  g_return_if_fail (GDK_IS_WINDOW (window));
+  g_return_if_fail (GDK_IS_DEVICE (device));
+
+  private = (GdkWindowObject *) window;
+  impl = GDK_WINDOW_IMPL_X11 (private->impl);
+  cursor_private = (GdkCursorPrivate *) cursor;
+
+  if (!cursor)
+    g_hash_table_remove (impl->device_cursor, device);
+  else
+    {
+      _gdk_x11_cursor_update_theme (cursor);
+      g_hash_table_replace (impl->device_cursor,
+                            device, gdk_cursor_ref (cursor));
+    }
+
+  if (!GDK_WINDOW_DESTROYED (window))
+    GDK_DEVICE_GET_CLASS (device)->set_window_cursor (device, window, cursor);
 }
 
 GdkCursor *
@@ -5578,6 +5611,7 @@ gdk_window_impl_iface_init (GdkWindowImplIface *iface)
   iface->reparent = gdk_window_x11_reparent;
   iface->clear_region = gdk_window_x11_clear_region;
   iface->set_cursor = gdk_window_x11_set_cursor;
+  iface->set_device_cursor = gdk_window_x11_set_device_cursor;
   iface->get_geometry = gdk_window_x11_get_geometry;
   iface->get_root_coords = gdk_window_x11_get_root_coords;
   iface->get_pointer = gdk_window_x11_get_pointer;

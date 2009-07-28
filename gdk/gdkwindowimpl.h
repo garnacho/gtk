@@ -77,6 +77,9 @@ struct _GdkWindowImplIface
   
   void         (* set_cursor)           (GdkWindow       *window,
                                          GdkCursor       *cursor);
+  void         (* set_device_cursor)    (GdkWindow       *window,
+                                         GdkDevice       *device,
+                                         GdkCursor       *cursor);
 
   void         (* get_geometry)         (GdkWindow       *window,
                                          gint            *x,
