@@ -127,6 +127,13 @@ gdk_display_class_init (GdkDisplayClass *class)
 }
 
 static void
+free_pointer_info (GdkPointerWindowInfo *info)
+{
+  g_object_unref (info->toplevel_under_pointer);
+  g_slice_free (GdkPointerWindowInfo, info);
+}
+
+static void
 gdk_display_init (GdkDisplay *display)
 {
   _gdk_displays = g_slist_prepend (_gdk_displays, display);
@@ -141,6 +148,9 @@ gdk_display_init (GdkDisplay *display)
   display->double_click_distance = 5;
 
   display->pointer_hooks = &default_pointer_hooks;
+
+  display->pointers_info = g_hash_table_new_full (NULL, NULL, NULL,
+                                                  (GDestroyNotify) free_pointer_info);
 }
 
 static void
@@ -856,26 +866,28 @@ synthesize_crossing_events (GdkDisplay *display,
       gdk_window_get_pointer (dest_toplevel,
 			      &x, &y, &state);
       _gdk_synthesize_crossing_events (display,
-				      src_window,
-				      dest_window,
-				      crossing_mode,
-				      x, y, state,
-				      time,
-				      NULL,
-				      serial);
+                                       src_window,
+                                       dest_window,
+                                       display->core_pointer, /* FIXME */
+                                       crossing_mode,
+                                       x, y, state,
+                                       time,
+                                       NULL,
+                                       serial);
     }
   else if (dest_toplevel == NULL)
     {
       gdk_window_get_pointer (src_toplevel,
 			      &x, &y, &state);
       _gdk_synthesize_crossing_events (display,
-				      src_window,
-				      NULL,
-				      crossing_mode,
-				      x, y, state,
-				      time,
-				      NULL,
-				      serial);
+                                       src_window,
+                                       NULL,
+                                       display->core_pointer, /* FIXME */
+                                       crossing_mode,
+                                       x, y, state,
+                                       time,
+                                       NULL,
+                                       serial);
     }
   else
     {
@@ -883,23 +895,25 @@ synthesize_crossing_events (GdkDisplay *display,
       gdk_window_get_pointer (src_toplevel,
 			      &x, &y, &state);
       _gdk_synthesize_crossing_events (display,
-				      src_window,
-				      NULL,
-				      crossing_mode,
-				      x, y, state,
-				      time,
-				      NULL,
-				      serial);
+                                       src_window,
+                                       NULL,
+                                       display->core_pointer, /* FIXME */
+                                       crossing_mode,
+                                       x, y, state,
+                                       time,
+                                       NULL,
+                                       serial);
       gdk_window_get_pointer (dest_toplevel,
 			      &x, &y, &state);
       _gdk_synthesize_crossing_events (display,
-				      NULL,
-				      dest_window,
-				      crossing_mode,
-				      x, y, state,
-				      time,
-				      NULL,
-				      serial);
+                                       NULL,
+                                       dest_window,
+                                       display->core_pointer, /* FIXME */
+                                       crossing_mode,
+                                       x, y, state,
+                                       time,
+                                       NULL,
+                                       serial);
     }
 }
 
@@ -947,8 +961,9 @@ switch_to_pointer_grab (GdkDisplay *display,
 	  
 	  /* !owner_event Grabbing a window that we're not inside, current status is
 	     now NULL (i.e. outside grabbed window) */
+          /* FIXME: which device you said? */
 	  if (!grab->owner_events && display->pointer_info.window_under_pointer != grab->window)
-	    _gdk_display_set_window_under_pointer (display, NULL);
+	    _gdk_display_set_window_under_pointer (display, display->core_pointer, NULL);
 	}
   
       grab->activated = TRUE;
@@ -998,7 +1013,8 @@ switch_to_pointer_grab (GdkDisplay *display,
 				    GDK_CROSSING_UNGRAB, time, serial);
       
       /* We're now ungrabbed, update the window_under_pointer */
-      _gdk_display_set_window_under_pointer (display, pointer_window);
+      /* FIXME: which device you said? */
+      _gdk_display_set_window_under_pointer (display, display->core_pointer, pointer_window);
       
       if (last_grab->implicit_ungrab)
 	generate_grab_broken_event (last_grab->window,
@@ -1159,6 +1175,45 @@ _gdk_display_unset_has_keyboard_grab (GdkDisplay *display,
     generate_grab_broken_event (display->keyboard_grab.window,
 				TRUE, FALSE, NULL);
   display->keyboard_grab.window = NULL;  
+}
+
+GdkPointerWindowInfo *
+_gdk_display_get_pointer_info (GdkDisplay *display,
+                               GdkDevice  *device)
+{
+  GdkPointerWindowInfo *info;
+
+  if (G_UNLIKELY (!device))
+    return &display->pointer_info;
+
+  info = g_hash_table_lookup (display->pointers_info, device);
+
+  if (G_UNLIKELY (!info))
+    {
+      info = g_slice_new0 (GdkPointerWindowInfo);
+      g_hash_table_insert (display->pointers_info, device, info);
+    }
+
+  return info;
+}
+
+void
+_gdk_display_pointer_info_foreach (GdkDisplay                   *display,
+                                   GdkDisplayPointerInfoForeach  func,
+                                   gpointer                      user_data)
+{
+  GHashTableIter iter;
+  gpointer key, value;
+
+  g_hash_table_iter_init (&iter, display->pointers_info);
+
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      GdkPointerWindowInfo *info = value;
+      GdkDevice *device = key;
+
+      (func) (display, device, info, user_data);
+    }
 }
 
 /**

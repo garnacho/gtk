@@ -189,6 +189,11 @@ typedef struct
 
 typedef struct _GdkInputWindow GdkInputWindow;
 
+typedef void (* GdkDisplayPointerInfoForeach) (GdkDisplay           *display,
+                                               GdkDevice            *device,
+                                               GdkPointerWindowInfo *device_info,
+                                               gpointer              user_data);
+
 /* Private version of GdkWindowObject. The initial part of this strucuture
    is public for historical reasons. Don't change that part */
 typedef struct _GdkWindowPaint             GdkWindowPaint;
@@ -604,6 +609,12 @@ void _gdk_display_unset_has_keyboard_grab (GdkDisplay *display,
 					   gboolean implicit);
 void _gdk_display_enable_motion_hints     (GdkDisplay *display);
 
+GdkPointerWindowInfo * _gdk_display_get_pointer_info (GdkDisplay *display,
+                                                      GdkDevice  *device);
+
+void _gdk_display_pointer_info_foreach (GdkDisplay                   *display,
+                                        GdkDisplayPointerInfoForeach  func,
+                                        gpointer                      user_data);
 
 void _gdk_window_invalidate_for_expose (GdkWindow       *window,
 					const GdkRegion *region);
@@ -631,17 +642,19 @@ GdkEvent * _gdk_make_event (GdkWindow    *window,
 			    gboolean      before_event);
 
 void _gdk_synthesize_crossing_events (GdkDisplay                 *display,
-				     GdkWindow                  *src,
-				     GdkWindow                  *dest,
-				     GdkCrossingMode             mode,
-				     gint                        toplevel_x,
-				     gint                        toplevel_y,
-				     GdkModifierType             mask,
-				     guint32                     time_,
-				     GdkEvent                   *event_in_queue,
-				     gulong                      serial);
+                                      GdkWindow                  *src,
+                                      GdkWindow                  *dest,
+                                      GdkDevice                  *device,
+                                      GdkCrossingMode             mode,
+                                      gint                        toplevel_x,
+                                      gint                        toplevel_y,
+                                      GdkModifierType             mask,
+                                      guint32                     time_,
+                                      GdkEvent                   *event_in_queue,
+                                      gulong                      serial);
 void _gdk_display_set_window_under_pointer (GdkDisplay *display,
-					    GdkWindow *window);
+                                            GdkDevice  *device,
+					    GdkWindow  *window);
 
 
 void _gdk_synthesize_crossing_events_for_geometry_change (GdkWindow *changed_window);

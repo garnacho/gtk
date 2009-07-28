@@ -99,7 +99,12 @@ struct _GdkDisplay
 
   GList *pointer_grabs;
   GdkKeyboardGrabInfo keyboard_grab;
+
+  /* FIXME: should be removed at some point */
   GdkPointerWindowInfo pointer_info;
+
+  /* Hashtable containing a GdkPointerWindowInfo for each device */
+  GHashTable *pointers_info;
 
   /* Last reported event time from server */
   guint32 last_event_time;
