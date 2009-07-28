@@ -837,7 +837,7 @@ _gdk_window_impl_new (GdkWindow     *window,
     gdk_window_set_type_hint (window, attributes->type_hint);
 
   device_manager = gdk_device_manager_get_for_display (GDK_WINDOW_DISPLAY (window));
-  gdk_device_manager_set_window_events (device_manager, window, attributes->event_mask);
+  gdk_device_manager_set_window_events (device_manager, window, event_mask);
 }
 
 static GdkEventMask
