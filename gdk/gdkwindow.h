@@ -517,6 +517,9 @@ void	      gdk_window_set_back_pixmap (GdkWindow	  *window,
 					  gboolean	   parent_relative);
 void	      gdk_window_set_cursor	 (GdkWindow	  *window,
 					  GdkCursor	  *cursor);
+void	      gdk_window_set_device_cursor (GdkWindow	  *window,
+                                            GdkDevice     *device,
+                                            GdkCursor	  *cursor);
 void	      gdk_window_get_user_data	 (GdkWindow	  *window,
 					  gpointer	  *data);
 void	      gdk_window_get_geometry	 (GdkWindow	  *window,

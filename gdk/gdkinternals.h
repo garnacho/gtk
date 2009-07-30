@@ -260,6 +260,7 @@ struct _GdkWindowObject
   GdkRegion *clip_region; /* Clip region (wrt toplevel) in window coords */
   GdkRegion *clip_region_with_children; /* Clip region in window coords */
   GdkCursor *cursor;
+  GHashTable *device_cursor;
   gint8 toplevel_window_type;
   guint synthesize_crossing_event_queued : 1;
   guint effective_visibility : 2;

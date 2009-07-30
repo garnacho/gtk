@@ -565,6 +565,9 @@ gdk_window_finalize (GObject *object)
   if (obj->cursor)
     gdk_cursor_unref (obj->cursor);
 
+  if (obj->device_cursor)
+    g_hash_table_destroy (obj->device_cursor);
+
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
 
@@ -1249,6 +1252,8 @@ gdk_window_new (GdkWindow     *parent,
 				  (attributes->cursor) :
 				  NULL));
 
+  private->device_cursor = g_hash_table_new_full (NULL, NULL, NULL,
+                                                  (GDestroyNotify) gdk_cursor_unref);
   return window;
 }
 
@@ -6968,6 +6973,36 @@ gdk_window_set_cursor (GdkWindow *window,
       _gdk_display_pointer_info_foreach (display,
                                          update_cursor_foreach,
                                          window);
+    }
+}
+
+void
+gdk_window_set_device_cursor (GdkWindow *window,
+                              GdkDevice *device,
+                              GdkCursor *cursor)
+{
+  GdkWindowObject *private;
+  GdkDisplay *display;
+
+  g_return_if_fail (GDK_IS_WINDOW (window));
+  g_return_if_fail (GDK_IS_DEVICE (window));
+
+  private = (GdkWindowObject *) window;
+  display = gdk_drawable_get_display (window);
+
+  if (!cursor)
+    g_hash_table_remove (private->device_cursor, device);
+  else
+    g_hash_table_replace (private->device_cursor, device, cursor);
+
+  if (!GDK_WINDOW_DESTROYED (window))
+    {
+      GdkPointerWindowInfo *pointer_info;
+
+      pointer_info = _gdk_display_get_pointer_info (display, device);
+
+      if (_gdk_window_event_parent_of (window, pointer_info->window_under_pointer))
+        update_cursor (display, device);
     }
 }
 
