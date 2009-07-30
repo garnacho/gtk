@@ -2701,44 +2701,6 @@ gdk_window_x11_set_back_pixmap (GdkWindow *window,
 }
 
 static void
-gdk_window_x11_set_cursor (GdkWindow *window,
-                           GdkCursor *cursor)
-{
-  GdkWindowObject *private;
-  GdkWindowImplX11 *impl;
-  GdkCursorPrivate *cursor_private;
-  Cursor xcursor;
-  
-  private = (GdkWindowObject *)window;
-  impl = GDK_WINDOW_IMPL_X11 (private->impl);
-  cursor_private = (GdkCursorPrivate*) cursor;
-
-  if (impl->cursor)
-    {
-      gdk_cursor_unref (impl->cursor);
-      impl->cursor = NULL;
-    }
-
-  if (!cursor)
-    xcursor = None;
-  else
-    {
-      _gdk_x11_cursor_update_theme (cursor);
-      xcursor = cursor_private->xcursor;
-    }
-  
-  if (!GDK_WINDOW_DESTROYED (window))
-    {
-      XDefineCursor (GDK_WINDOW_XDISPLAY (window),
-		     GDK_WINDOW_XID (window),
-		     xcursor);
-      
-      if (cursor)
-	impl->cursor = gdk_cursor_ref (cursor);
-    }
-}
-
-static void
 gdk_window_x11_set_device_cursor (GdkWindow *window,
                                   GdkDevice *device,
                                   GdkCursor *cursor)
@@ -5608,7 +5570,6 @@ gdk_window_impl_iface_init (GdkWindowImplIface *iface)
   iface->set_back_pixmap = gdk_window_x11_set_back_pixmap;
   iface->reparent = gdk_window_x11_reparent;
   iface->clear_region = gdk_window_x11_clear_region;
-  iface->set_cursor = gdk_window_x11_set_cursor;
   iface->set_device_cursor = gdk_window_x11_set_device_cursor;
   iface->get_geometry = gdk_window_x11_get_geometry;
   iface->get_root_coords = gdk_window_x11_get_root_coords;

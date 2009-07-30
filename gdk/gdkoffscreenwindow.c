@@ -1090,27 +1090,6 @@ gdk_offscreen_window_set_static_gravities (GdkWindow *window,
 }
 
 static void
-gdk_offscreen_window_set_cursor (GdkWindow *window,
-				 GdkCursor *cursor)
-{
-  GdkWindowObject *private = (GdkWindowObject *)window;
-  GdkOffscreenWindow *offscreen;
-
-  offscreen = GDK_OFFSCREEN_WINDOW (private->impl);
-
-  if (offscreen->cursor)
-    {
-      gdk_cursor_unref (offscreen->cursor);
-      offscreen->cursor = NULL;
-    }
-
-  if (cursor)
-    offscreen->cursor = gdk_cursor_ref (cursor);
-
-  /* TODO: The cursor is never actually used... */
-}
-
-static void
 gdk_offscreen_window_get_geometry (GdkWindow *window,
 				   gint      *x,
 				   gint      *y,
@@ -1264,7 +1243,6 @@ gdk_offscreen_window_impl_iface_init (GdkWindowImplIface *iface)
   iface->get_events = gdk_offscreen_window_get_events;
   iface->set_events = gdk_offscreen_window_set_events;
   iface->reparent = gdk_offscreen_window_reparent;
-  iface->set_cursor = gdk_offscreen_window_set_cursor;
   iface->get_geometry = gdk_offscreen_window_get_geometry;
   iface->shape_combine_region = gdk_offscreen_window_shape_combine_region;
   iface->input_shape_combine_region = gdk_offscreen_window_input_shape_combine_region;

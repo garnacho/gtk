@@ -74,9 +74,7 @@ struct _GdkWindowImplIface
   void         (* clear_region)         (GdkWindow       *window,
 					 GdkRegion       *region,
 					 gboolean         send_expose);
-  
-  void         (* set_cursor)           (GdkWindow       *window,
-                                         GdkCursor       *cursor);
+
   void         (* set_device_cursor)    (GdkWindow       *window,
                                          GdkDevice       *device,
                                          GdkCursor       *cursor);
