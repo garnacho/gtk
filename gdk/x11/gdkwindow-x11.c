@@ -2744,7 +2744,6 @@ gdk_window_x11_set_device_cursor (GdkWindow *window,
                                   GdkCursor *cursor)
 {
   GdkWindowObject *private;
-  GdkCursorPrivate *cursor_private;
   GdkWindowImplX11 *impl;
 
   g_return_if_fail (GDK_IS_WINDOW (window));
@@ -2752,7 +2751,6 @@ gdk_window_x11_set_device_cursor (GdkWindow *window,
 
   private = (GdkWindowObject *) window;
   impl = GDK_WINDOW_IMPL_X11 (private->impl);
-  cursor_private = (GdkCursorPrivate *) cursor;
 
   if (!cursor)
     g_hash_table_remove (impl->device_cursor, device);
