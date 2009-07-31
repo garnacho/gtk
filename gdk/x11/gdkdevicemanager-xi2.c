@@ -708,20 +708,35 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
                                         XEvent             *xevent)
 {
   GdkDeviceManagerXI2 *device_manager;
-  XIEvent *ev;
+  XGenericEventCookie *cookie;
   gboolean return_val = TRUE;
+  XIEvent *ev;
+  Display *dpy;
 
-  ev = (XIEvent *) xevent;
+  dpy = GDK_DISPLAY_XDISPLAY (display);
   device_manager = (GdkDeviceManagerXI2 *) translator;
+  cookie = &xevent->xcookie;
 
-  if (ev->type != GenericEvent || ev->extension != device_manager->opcode)
+  if (!XGetEventData (dpy, cookie))
     return FALSE;
+
+  if (cookie->type != GenericEvent ||
+      cookie->extension != device_manager->opcode)
+    {
+      XFreeEventData (dpy, cookie);
+      return FALSE;
+    }
+
+  ev = (XIEvent *) cookie->data;
 
   if (ev->evtype == XI_Motion ||
       ev->evtype == XI_ButtonRelease)
     {
       if (_gdk_moveresize_handle_event (xevent))
-        return FALSE;
+        {
+          XFreeEventData (dpy, cookie);
+          return FALSE;
+        }
     }
 
   switch (ev->evtype)
@@ -742,7 +757,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
         event->key.window = gdk_window_lookup_for_display (display, xev->event);
 
         event->key.time = xev->time;
-        event->key.state = translate_state (xev->mods, xev->buttons);
+        event->key.state = translate_state (&xev->mods, &xev->buttons);
         event->key.group = _gdk_x11_get_group_for_state (display, event->key.state);
 
         event->key.hardware_keycode = xev->detail;
@@ -800,7 +815,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
             event->scroll.device = g_hash_table_lookup (device_manager->id_table,
                                                         GUINT_TO_POINTER (xev->deviceid));
 
-            event->scroll.state = translate_state (xev->mods, xev->buttons);
+            event->scroll.state = translate_state (&xev->mods, &xev->buttons);
             break;
           default:
             event->button.type = (ev->evtype == XI_ButtonPress) ? GDK_BUTTON_PRESS : GDK_BUTTON_RELEASE;
@@ -815,8 +830,8 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
             event->button.device = g_hash_table_lookup (device_manager->id_table,
                                                         GUINT_TO_POINTER (xev->deviceid));
 
-            event->button.axes = translate_axes (event->button.device, xev->valuators);
-            event->button.state = translate_state (xev->mods, xev->buttons);
+            event->button.axes = translate_axes (event->button.device, &xev->valuators);
+            event->button.state = translate_state (&xev->mods, &xev->buttons);
             event->button.button = xev->detail;
           }
 
@@ -852,12 +867,12 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
         event->motion.device = g_hash_table_lookup (device_manager->id_table,
                                                     GINT_TO_POINTER (xev->deviceid));
 
-        event->motion.state = translate_state (xev->mods, xev->buttons);
+        event->motion.state = translate_state (&xev->mods, &xev->buttons);
 
         /* FIXME: There doesn't seem to be motion hints in XI */
         event->motion.is_hint = FALSE;
 
-        event->motion.axes = translate_axes (event->motion.device, xev->valuators);
+        event->motion.axes = translate_axes (event->motion.device, &xev->valuators);
       }
       break;
     case XI_Enter:
@@ -881,7 +896,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
 
         event->crossing.mode = translate_crossing_mode (xev->mode);
         event->crossing.detail = translate_notify_type (xev->detail);
-        event->crossing.state = translate_state (xev->mods, xev->buttons);
+        event->crossing.state = translate_state (&xev->mods, &xev->buttons);
       }
       break;
     case XI_FocusIn:
@@ -920,7 +935,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
       event->any.type = GDK_NOTHING;
     }
 
-  XIFreeEventData (ev);
+  XFreeEventData (dpy, cookie);
 
   return return_val;
 }
