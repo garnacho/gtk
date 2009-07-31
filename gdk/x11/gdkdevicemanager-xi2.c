@@ -456,10 +456,7 @@ translate_state (XIModifierState *mods_state,
   guint state = 0;
 
   if (mods_state)
-    {
-      /* FIXME: What is mods_state->latched for? */
-      state = ((guint) mods_state->base | (guint) mods_state->locked);
-    }
+    state = (guint) mods_state->effective;
 
   if (buttons_state)
     {
