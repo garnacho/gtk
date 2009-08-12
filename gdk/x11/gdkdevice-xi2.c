@@ -53,6 +53,10 @@ static gboolean gdk_device_xi2_get_axis (GdkDevice    *device,
 static void gdk_device_xi2_set_window_cursor (GdkDevice *device,
                                               GdkWindow *window,
                                               GdkCursor *cursor);
+static void gdk_device_xi2_warp (GdkDevice *device,
+                                 GdkScreen *screen,
+                                 gint       x,
+                                 gint       y);
 
 
 G_DEFINE_TYPE (GdkDeviceXI2, gdk_device_xi2, GDK_TYPE_DEVICE)
@@ -75,6 +79,7 @@ gdk_device_xi2_class_init (GdkDeviceXI2Class *klass)
   device_class->get_state = gdk_device_xi2_get_state;
   device_class->get_axis = gdk_device_xi2_get_axis;
   device_class->set_window_cursor = gdk_device_xi2_set_window_cursor;
+  device_class->warp = gdk_device_xi2_warp;
 
   g_object_class_install_property (object_class,
 				   PROP_DEVICE_ID,
@@ -208,6 +213,23 @@ gdk_device_xi2_set_window_cursor (GdkDevice *device,
     XIUndefineCursor (GDK_WINDOW_XDISPLAY (window),
                       priv->device_id,
                       GDK_WINDOW_XWINDOW (window));
+}
+
+static void gdk_device_xi2_warp (GdkDevice *device,
+                                 GdkScreen *screen,
+                                 gint       x,
+                                 gint       y)
+{
+  GdkDeviceXI2Private *priv;
+  Window dest;
+
+  priv = GDK_DEVICE_XI2_GET_PRIVATE (device);
+  dest = GDK_WINDOW_XWINDOW (gdk_screen_get_root_window (screen));
+
+  XIWarpPointer (GDK_SCREEN_XDISPLAY (screen),
+                 priv->device_id,
+                 None, dest,
+                 0, 0, 0, 0, x, y);
 }
 
 void
