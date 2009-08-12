@@ -3188,6 +3188,21 @@ gdk_display_warp_pointer (GdkDisplay *display,
   GDK_DEVICE_GET_CLASS (device)->warp (device, screen, x, y);
 }
 
+void
+gdk_display_warp_device (GdkDisplay *display,
+                         GdkDevice  *device,
+                         GdkScreen  *screen,
+                         gint        x,
+                         gint        y)
+{
+  g_return_if_fail (GDK_IS_DISPLAY (display));
+  g_return_if_fail (GDK_IS_DEVICE (device));
+  g_return_if_fail (GDK_IS_SCREEN (screen));
+  g_return_if_fail (display == gdk_device_get_display (device));
+
+  GDK_DEVICE_GET_CLASS (device)->warp (device, screen, x, y);
+}
+
 GdkWindow*
 _gdk_windowing_window_at_pointer (GdkDisplay *display,
                                   gint       *win_x,
