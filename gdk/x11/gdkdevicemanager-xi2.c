@@ -155,8 +155,12 @@ translate_valuator_class (GdkDisplay          *display,
 
   if (!initialized)
     {
-      label_atoms [GDK_AXIS_X] = gdk_x11_get_xatom_by_name_for_display (display, "Rel X");
-      label_atoms [GDK_AXIS_Y] = gdk_x11_get_xatom_by_name_for_display (display, "Rel Y");
+      label_atoms [GDK_AXIS_X] = gdk_x11_get_xatom_by_name_for_display (display, "Abs X");
+      label_atoms [GDK_AXIS_Y] = gdk_x11_get_xatom_by_name_for_display (display, "Abs Y");
+      label_atoms [GDK_AXIS_PRESSURE] = gdk_x11_get_xatom_by_name_for_display (display, "Abs Pressure");
+      label_atoms [GDK_AXIS_XTILT] = gdk_x11_get_xatom_by_name_for_display (display, "Abs Tilt X");
+      label_atoms [GDK_AXIS_YTILT] = gdk_x11_get_xatom_by_name_for_display (display, "Abs Tilt Y");
+      label_atoms [GDK_AXIS_WHEEL] = gdk_x11_get_xatom_by_name_for_display (display, "Abs Wheel");
       initialized = TRUE;
     }
 
@@ -169,7 +173,6 @@ translate_valuator_class (GdkDisplay          *display,
         }
     }
 
-  g_warning ("Unhandled axis");
   gdk_device_xi2_add_axis (device_xi2, GDK_AXIS_IGNORE);
 }
 
