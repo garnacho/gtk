@@ -179,13 +179,39 @@ translate_valuator_class (GdkDisplay          *display,
                         info->resolution);
 }
 
+static void
+translate_device_classes (GdkDisplay      *display,
+                          GdkDevice       *device,
+                          XIAnyClassInfo **classes,
+                          guint            n_classes)
+{
+  gint i, n_valuator = 0;
+
+  for (i = 0; i < n_classes; i++)
+    {
+      XIAnyClassInfo *class_info = classes[i];
+
+      switch (class_info->type)
+        {
+        case XIValuatorClass:
+          translate_valuator_class (display, device,
+                                    (XIValuatorClassInfo *) class_info,
+                                    n_valuator);
+          n_valuator++;
+          break;
+        default:
+          /* Ignore */
+          break;
+        }
+    }
+}
+
 static GdkDevice *
 create_device (GdkDisplay   *display,
                XIDeviceInfo *dev)
 {
   GdkInputSource input_source;
   GdkDevice *device;
-  gint i, n_valuator = 0;
 
   if (dev->use == XIMasterKeyboard || dev->use == XISlaveKeyboard)
     input_source = GDK_SOURCE_KEYBOARD;
@@ -204,23 +230,7 @@ create_device (GdkDisplay   *display,
                          "device-id", dev->deviceid,
                          NULL);
 
-  for (i = 0; i < dev->num_classes; i++)
-    {
-      XIAnyClassInfo *class_info = dev->classes[i];
-
-      switch (class_info->type)
-        {
-        case XIValuatorClass:
-          translate_valuator_class (display, device,
-                                    (XIValuatorClassInfo *) class_info,
-                                    n_valuator);
-          n_valuator++;
-          break;
-        default:
-          /* Ignore */
-          break;
-        }
-    }
+  translate_device_classes (display, device, dev->classes, dev->num_classes);
 
   return device;
 }
@@ -309,6 +319,7 @@ gdk_device_manager_xi2_constructed (GObject *object)
   /* Connect to hierarchy change events */
   screen = gdk_display_get_default_screen (display);
   XISetMask (mask, XI_HierarchyChanged);
+  XISetMask (mask, XI_DeviceChanged);
 
   event_mask.deviceid = XIAllDevices;
   event_mask.mask_len = sizeof (mask);
@@ -417,6 +428,21 @@ handle_hierarchy_changed (GdkDeviceManagerXI2 *device_manager,
       else if (ev->info[i].flags & XIDeviceDisabled)
         remove_device (device_manager, ev->info[i].deviceid);
     }
+}
+
+static void
+handle_device_changed (GdkDeviceManagerXI2  *device_manager,
+                       XIDeviceChangedEvent *ev)
+{
+  GdkDisplay *display;
+  GdkDevice *device;
+
+  display = gdk_device_manager_get_display (GDK_DEVICE_MANAGER (device_manager));
+  device = g_hash_table_lookup (device_manager->id_table,
+                                GUINT_TO_POINTER (ev->deviceid));
+
+  _gdk_device_reset_axes (device);
+  translate_device_classes (display, device, ev->classes, ev->num_classes);
 }
 
 static GdkCrossingMode
@@ -763,6 +789,11 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
     case XI_HierarchyChanged:
       handle_hierarchy_changed (device_manager,
                                 (XIHierarchyEvent *) ev);
+      return_val = FALSE;
+      break;
+    case XI_DeviceChanged:
+      handle_device_changed (device_manager,
+                             (XIDeviceChangedEvent *) ev);
       return_val = FALSE;
       break;
     case XI_KeyPress:
