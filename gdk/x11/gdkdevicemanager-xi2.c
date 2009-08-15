@@ -900,13 +900,8 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
             break;
           }
 
-        if (event->any.type == GDK_BUTTON_PRESS)
-          {
-            _gdk_event_button_generate (display, event);
-            set_user_time (event);
-          }
+        set_user_time (event);
 
-        /* _gdk_xgrab_check_button_event (event->button.window, xev); */
         break;
       }
     case XI_Motion:
