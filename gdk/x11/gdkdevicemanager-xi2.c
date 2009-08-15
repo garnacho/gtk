@@ -187,6 +187,8 @@ translate_device_classes (GdkDisplay      *display,
 {
   gint i, n_valuator = 0;
 
+  g_object_freeze_notify (G_OBJECT (device));
+
   for (i = 0; i < n_classes; i++)
     {
       XIAnyClassInfo *class_info = classes[i];
@@ -204,6 +206,8 @@ translate_device_classes (GdkDisplay      *display,
           break;
         }
     }
+
+  g_object_thaw_notify (G_OBJECT (device));
 }
 
 static GdkDevice *
