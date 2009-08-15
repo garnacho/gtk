@@ -469,6 +469,8 @@ _gdk_device_add_axis (GdkDevice   *device,
   priv->axes = g_array_append_val (priv->axes, axis_info);
   device->num_axes = priv->axes->len;
 
+  g_object_notify (G_OBJECT (device), "n-axes");
+
   return priv->axes->len - 1;
 }
 
