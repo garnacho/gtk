@@ -9195,6 +9195,8 @@ proxy_pointer_event (GdkDisplay                 *display,
 	  event->motion.state = state;
 	  event->motion.is_hint = is_hint;
 	  event->motion.device = source_event->motion.device;
+          event->motion.axes = g_memdup (source_event->motion.axes,
+                                         sizeof (gdouble) * source_event->motion.device->num_axes);
 	}
     }
 
@@ -9294,6 +9296,8 @@ proxy_button_event (GdkEvent *source_event,
       event->button.y_root = source_event->button.y_root;
       event->button.state = state;
       event->button.device = source_event->button.device;
+      event->button.axes = g_memdup (source_event->button.axes,
+                                     sizeof (gdouble) * source_event->button.device->num_axes);
 
       if (type == GDK_BUTTON_PRESS)
 	_gdk_event_button_generate (display, event);
