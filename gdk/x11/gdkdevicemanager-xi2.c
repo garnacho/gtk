@@ -148,10 +148,8 @@ translate_valuator_class (GdkDisplay          *display,
 {
   static gboolean initialized = FALSE;
   static Atom label_atoms [GDK_AXIS_LAST] = { 0 };
-  GdkDeviceXI2 *device_xi2;
-  GdkAxisUse i;
-
-  device_xi2 = GDK_DEVICE_XI2 (device);
+  GdkAxisUse use = GDK_AXIS_IGNORE;
+  gint i;
 
   if (!initialized)
     {
@@ -168,12 +166,17 @@ translate_valuator_class (GdkDisplay          *display,
     {
       if (label_atoms[i] == info->label)
         {
-          gdk_device_xi2_add_axis (device_xi2, i);
-          return;
+          use = i;
+          break;
         }
     }
 
-  gdk_device_xi2_add_axis (device_xi2, GDK_AXIS_IGNORE);
+  _gdk_device_add_axis (device,
+                        gdk_x11_xatom_to_atom_for_display (display, info->label),
+                        use,
+                        info->min,
+                        info->max,
+                        info->resolution);
 }
 
 static GdkDevice *
@@ -192,10 +195,10 @@ create_device (GdkDisplay   *display,
       input_source = GDK_SOURCE_MOUSE;
     }
 
-  /* FIXME: set mode */
   device = g_object_new (GDK_TYPE_DEVICE_XI2,
                          "name", dev->name,
                          "input-source", input_source,
+                         "input-mode", (dev->use == XIMasterPointer) ? GDK_MODE_SCREEN : GDK_MODE_DISABLED,
                          "has-cursor", (dev->use == XIMasterPointer),
                          "display", display,
                          "device-id", dev->deviceid,
@@ -680,9 +683,13 @@ handle_focus_change (GdkWindow *window,
 
 static gdouble *
 translate_axes (GdkDevice       *device,
+                gdouble          x,
+                gdouble          y,
+                GdkWindow       *window,
                 XIValuatorState *valuators)
 {
-  guint n_axes, i, n;
+  guint n_axes, i;
+  gint width, height;
   gdouble *axes;
   double *vals;
 
@@ -690,12 +697,24 @@ translate_axes (GdkDevice       *device,
 
   axes = g_new0 (gdouble, n_axes);
   vals = valuators->values;
-  n = 0;
+
+  gdk_drawable_get_size (GDK_DRAWABLE (window), &width, &height);
 
   for (i = 0; i <= valuators->mask_len * 8; i++)
     {
       if (XIMaskIsSet (valuators->mask, i))
-        axes[n++] = *vals++;
+        {
+          gdouble value;
+
+          _gdk_device_translate_axis (device,
+                                      (gdouble) width,
+                                      (gdouble) height,
+                                      x, y,
+                                      i,
+                                      *vals++,
+                                      &value);
+          axes[i] = value;
+        }
     }
 
   return axes;
@@ -830,7 +849,12 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
             event->button.device = g_hash_table_lookup (device_manager->id_table,
                                                         GUINT_TO_POINTER (xev->deviceid));
 
-            event->button.axes = translate_axes (event->button.device, &xev->valuators);
+            event->button.axes = translate_axes (event->button.device,
+                                                 event->button.x,
+                                                 event->button.y,
+                                                 event->button.window,
+                                                 &xev->valuators);
+
             event->button.state = translate_state (&xev->mods, &xev->buttons);
             event->button.button = xev->detail;
           }
@@ -872,7 +896,11 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
         /* FIXME: There doesn't seem to be motion hints in XI */
         event->motion.is_hint = FALSE;
 
-        event->motion.axes = translate_axes (event->motion.device, &xev->valuators);
+        event->motion.axes = translate_axes (event->motion.device,
+                                             event->motion.x,
+                                             event->motion.y,
+                                             event->motion.window,
+                                             &xev->valuators);
       }
       break;
     case XI_Enter:

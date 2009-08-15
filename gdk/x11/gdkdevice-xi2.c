@@ -46,10 +46,6 @@ static void gdk_device_xi2_get_state (GdkDevice       *device,
                                       GdkWindow       *window,
                                       gdouble         *axes,
                                       GdkModifierType *mask);
-static gboolean gdk_device_xi2_get_axis (GdkDevice    *device,
-                                         gdouble      *axes,
-                                         GdkAxisUse    use,
-                                         gdouble      *value);
 static void gdk_device_xi2_set_window_cursor (GdkDevice *device,
                                               GdkWindow *window,
                                               GdkCursor *cursor);
@@ -63,8 +59,7 @@ G_DEFINE_TYPE (GdkDeviceXI2, gdk_device_xi2, GDK_TYPE_DEVICE)
 
 enum {
   PROP_0,
-  PROP_DEVICE_ID,
-  PROP_N_AXES
+  PROP_DEVICE_ID
 };
 
 static void
@@ -77,7 +72,6 @@ gdk_device_xi2_class_init (GdkDeviceXI2Class *klass)
   object_class->set_property = gdk_device_xi2_set_property;
 
   device_class->get_state = gdk_device_xi2_get_state;
-  device_class->get_axis = gdk_device_xi2_get_axis;
   device_class->set_window_cursor = gdk_device_xi2_set_window_cursor;
   device_class->warp = gdk_device_xi2_warp;
 
@@ -88,13 +82,6 @@ gdk_device_xi2_class_init (GdkDeviceXI2Class *klass)
                                                      P_("Device identifier"),
                                                      0, G_MAXINT, 0,
                                                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-  g_object_class_install_property (object_class,
-				   PROP_N_AXES,
-				   g_param_spec_uint ("n-axes",
-                                                     P_("Number of axes"),
-                                                     P_("Number of axes"),
-                                                     0, G_MAXUINT, 0,
-                                                     G_PARAM_READABLE));
 
   g_type_class_add_private (object_class, sizeof (GdkDeviceXI2Private));
 }
@@ -122,9 +109,6 @@ gdk_device_xi2_get_property (GObject    *object,
     {
     case PROP_DEVICE_ID:
       g_value_set_int (value, priv->device_id);
-      break;
-    case PROP_N_AXES:
-      g_value_set_uint (value, priv->axes->len);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -159,35 +143,6 @@ gdk_device_xi2_get_state (GdkDevice       *device,
                           gdouble         *axes,
                           GdkModifierType *mask)
 {
-}
-
-static gboolean
-gdk_device_xi2_get_axis (GdkDevice  *device,
-                         gdouble    *axes,
-                         GdkAxisUse  use,
-                         gdouble    *value)
-{
-  GdkDeviceXI2Private *priv;
-  gint i;
-
-  priv = GDK_DEVICE_XI2_GET_PRIVATE (device);
-
-  for (i = 0; i < priv->axes->len; i++)
-    {
-      GdkDeviceAxis axis_info;
-
-      axis_info = g_array_index (priv->axes, GdkDeviceAxis, i);
-
-      if (axis_info.use == use)
-        {
-          if (value)
-            *value = axes[i];
-
-          return TRUE;
-        }
-    }
-
-  return FALSE;
 }
 
 static void
