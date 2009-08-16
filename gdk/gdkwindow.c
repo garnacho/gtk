@@ -9173,13 +9173,13 @@ proxy_pointer_event (GdkDisplay                 *display,
       if (event_win &&
 	  (evmask & GDK_POINTER_MOTION_HINT_MASK))
 	{
-	  if (pointer_info->motion_hint_serial != 0 &&
-	      serial < pointer_info->motion_hint_serial)
+	  if (display->pointer_info.motion_hint_serial != 0 &&
+	      serial < display->pointer_info.motion_hint_serial)
 	    event_win = NULL; /* Ignore event */
 	  else
 	    {
 	      is_hint = TRUE;
-	      pointer_info->motion_hint_serial = G_MAXULONG;
+	      display->pointer_info.motion_hint_serial = G_MAXULONG;
 	    }
 	}
 
