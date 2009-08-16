@@ -584,7 +584,8 @@ void  _gdk_windowing_launch_failed         (GAppLaunchContext *context,
 
 GdkPointerGrabInfo *_gdk_display_get_active_pointer_grab (GdkDisplay *display);
 void _gdk_display_pointer_grab_update                    (GdkDisplay *display,
-							  gulong current_serial);
+                                                          GdkDevice  *device,
+                                                          gulong      current_serial);
 GdkPointerGrabInfo *_gdk_display_get_last_pointer_grab (GdkDisplay *display);
 GdkPointerGrabInfo *_gdk_display_add_pointer_grab  (GdkDisplay *display,
 						    GdkWindow *window,

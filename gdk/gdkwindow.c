@@ -9267,7 +9267,7 @@ proxy_button_event (GdkEvent *source_event,
 				      serial,
 				      time_,
 				      TRUE);
-      _gdk_display_pointer_grab_update (display, serial);
+      _gdk_display_pointer_grab_update (display, device, serial);
     }
 
   pointer_window = get_pointer_window (display, toplevel_window, device,
@@ -9416,14 +9416,15 @@ _gdk_windowing_got_event (GdkDisplay *display,
   if (gdk_event_get_time (event) != GDK_CURRENT_TIME)
     display->last_event_time = gdk_event_get_time (event);
 
-  _gdk_display_pointer_grab_update (display,
-				    serial);
+  device = gdk_event_get_device (event);
+
+  if (device)
+    _gdk_display_pointer_grab_update (display, device, serial);
 
   event_window = event->any.window;
   if (!event_window)
     return;
 
-  device = gdk_event_get_device (event);
   pointer_info = _gdk_display_get_pointer_info (display, device);
   event_private = GDK_WINDOW_OBJECT (event_window);
 
@@ -9554,7 +9555,7 @@ _gdk_windowing_got_event (GdkDisplay *display,
 	{
 	  button_release_grab->serial_end = serial;
 	  button_release_grab->implicit_ungrab = TRUE;
-	  _gdk_display_pointer_grab_update (display, serial);
+	  _gdk_display_pointer_grab_update (display, device, serial);
 	}
     }
 

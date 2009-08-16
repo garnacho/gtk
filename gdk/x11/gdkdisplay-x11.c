@@ -1478,7 +1478,8 @@ pointer_ungrab_callback (GdkDisplay *display,
 			 gpointer data,
 			 gulong serial)
 {
-  _gdk_display_pointer_grab_update (display, serial);
+  /* FIXME: which device? */
+  _gdk_display_pointer_grab_update (display, display->core_pointer, serial);
 }
 
 
