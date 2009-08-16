@@ -178,7 +178,7 @@ gdk_display_dispose (GObject *object)
 static void
 gdk_display_finalize (GObject *object)
 {
-  GdkDisplay *display;
+  GdkDisplay *display = GDK_DISPLAY_OBJECT (object);
 
   g_hash_table_destroy (display->pointers_info);
   g_hash_table_destroy (display->multiple_click_info);
