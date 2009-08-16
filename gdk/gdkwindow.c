@@ -1635,12 +1635,6 @@ static void
 window_remove_from_pointer_info (GdkWindow  *window,
                                  GdkDisplay *display)
 {
-  if (display->pointer_info.toplevel_under_pointer == window)
-    {
-      g_object_unref (display->pointer_info.toplevel_under_pointer);
-      display->pointer_info.toplevel_under_pointer = NULL;
-    }
-
   _gdk_display_pointer_info_foreach (display,
                                      update_pointer_info_foreach,
                                      window);
@@ -9173,13 +9167,13 @@ proxy_pointer_event (GdkDisplay                 *display,
       if (event_win &&
 	  (evmask & GDK_POINTER_MOTION_HINT_MASK))
 	{
-	  if (display->pointer_info.motion_hint_serial != 0 &&
-	      serial < display->pointer_info.motion_hint_serial)
+	  if (display->motion_hint_serial != 0 &&
+	      serial < display->motion_hint_serial)
 	    event_win = NULL; /* Ignore event */
 	  else
 	    {
 	      is_hint = TRUE;
-	      display->pointer_info.motion_hint_serial = G_MAXULONG;
+	      display->motion_hint_serial = G_MAXULONG;
 	    }
 	}
 

@@ -461,7 +461,7 @@ _gdk_display_enable_motion_hints (GdkDisplay *display)
 {
   gulong serial;
   
-  if (display->pointer_info.motion_hint_serial != 0)
+  if (display->motion_hint_serial != 0)
     {
       serial = _gdk_windowing_window_get_next_serial (display);
       /* We might not actually generate the next request, so
@@ -470,8 +470,8 @@ _gdk_display_enable_motion_hints (GdkDisplay *display)
 	 anyway. */
       if (serial > 0)
 	serial--;
-      if (serial < display->pointer_info.motion_hint_serial)
-	display->pointer_info.motion_hint_serial = serial;
+      if (serial < display->motion_hint_serial)
+	display->motion_hint_serial = serial;
     }
 }
 
@@ -1187,7 +1187,7 @@ _gdk_display_get_pointer_info (GdkDisplay *display,
   GdkPointerWindowInfo *info;
 
   if (G_UNLIKELY (!device))
-    return &display->pointer_info;
+    return NULL;
 
   info = g_hash_table_lookup (display->pointers_info, device);
 

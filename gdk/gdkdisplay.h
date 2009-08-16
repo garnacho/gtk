@@ -67,7 +67,6 @@ typedef struct
   gdouble toplevel_x, toplevel_y; 
   guint32 state;
   guint32 button;
-  gulong motion_hint_serial; /* 0 == didn't deliver hinted motion event */
 } GdkPointerWindowInfo;
 
 typedef struct
@@ -105,8 +104,7 @@ struct _GdkDisplay
   GList *pointer_grabs;
   GdkKeyboardGrabInfo keyboard_grab;
 
-  /* FIXME: should be removed at some point */
-  GdkPointerWindowInfo pointer_info;
+  gulong motion_hint_serial; /* 0 == didn't deliver hinted motion event */
 
   /* Hashtable containing a GdkPointerWindowInfo for each device */
   GHashTable *pointers_info;
