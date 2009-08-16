@@ -1296,54 +1296,67 @@ void
 _gdk_event_button_generate (GdkDisplay *display,
 			    GdkEvent   *event)
 {
-  if ((event->button.time < (display->button_click_time[1] + 2*display->double_click_time)) &&
-      (event->button.window == display->button_window[1]) &&
-      (event->button.button == display->button_number[1]) &&
-      (ABS (event->button.x - display->button_x[1]) <= display->double_click_distance) &&
-      (ABS (event->button.y - display->button_y[1]) <= display->double_click_distance))
-{
-      gdk_synthesize_click (display, event, 3);
-            
-      display->button_click_time[1] = 0;
-      display->button_click_time[0] = 0;
-      display->button_window[1] = NULL;
-      display->button_window[0] = NULL;
-      display->button_number[1] = -1;
-      display->button_number[0] = -1;
-      display->button_x[0] = display->button_x[1] = 0;
-      display->button_y[0] = display->button_y[1] = 0;
+  GdkMultipleClickInfo *info;
+
+  info = g_hash_table_lookup (display->multiple_click_info, event->button.device);
+
+  if (G_UNLIKELY (!info))
+    {
+      info = g_new0 (GdkMultipleClickInfo, 1);
+      info->button_number[0] = info->button_number[1] = -1;
+
+      g_hash_table_insert (display->multiple_click_info,
+                           event->button.device, info);
     }
-  else if ((event->button.time < (display->button_click_time[0] + display->double_click_time)) &&
-	   (event->button.window == display->button_window[0]) &&
-	   (event->button.button == display->button_number[0]) &&
-	   (ABS (event->button.x - display->button_x[0]) <= display->double_click_distance) &&
-	   (ABS (event->button.y - display->button_y[0]) <= display->double_click_distance))
+
+  if ((event->button.time < (info->button_click_time[1] + 2 * display->double_click_time)) &&
+      (event->button.window == info->button_window[1]) &&
+      (event->button.button == info->button_number[1]) &&
+      (ABS (event->button.x - info->button_x[1]) <= display->double_click_distance) &&
+      (ABS (event->button.y - info->button_y[1]) <= display->double_click_distance))
+    {
+      gdk_synthesize_click (display, event, 3);
+
+      info->button_click_time[1] = 0;
+      info->button_click_time[0] = 0;
+      info->button_window[1] = NULL;
+      info->button_window[0] = NULL;
+      info->button_number[1] = -1;
+      info->button_number[0] = -1;
+      info->button_x[0] = info->button_x[1] = 0;
+      info->button_y[0] = info->button_y[1] = 0;
+    }
+  else if ((event->button.time < (info->button_click_time[0] + display->double_click_time)) &&
+	   (event->button.window == info->button_window[0]) &&
+	   (event->button.button == info->button_number[0]) &&
+	   (ABS (event->button.x - info->button_x[0]) <= display->double_click_distance) &&
+	   (ABS (event->button.y - info->button_y[0]) <= display->double_click_distance))
     {
       gdk_synthesize_click (display, event, 2);
       
-      display->button_click_time[1] = display->button_click_time[0];
-      display->button_click_time[0] = event->button.time;
-      display->button_window[1] = display->button_window[0];
-      display->button_window[0] = event->button.window;
-      display->button_number[1] = display->button_number[0];
-      display->button_number[0] = event->button.button;
-      display->button_x[1] = display->button_x[0];
-      display->button_x[0] = event->button.x;
-      display->button_y[1] = display->button_y[0];
-      display->button_y[0] = event->button.y;
+      info->button_click_time[1] = info->button_click_time[0];
+      info->button_click_time[0] = event->button.time;
+      info->button_window[1] = info->button_window[0];
+      info->button_window[0] = event->button.window;
+      info->button_number[1] = info->button_number[0];
+      info->button_number[0] = event->button.button;
+      info->button_x[1] = info->button_x[0];
+      info->button_x[0] = event->button.x;
+      info->button_y[1] = info->button_y[0];
+      info->button_y[0] = event->button.y;
     }
   else
     {
-      display->button_click_time[1] = 0;
-      display->button_click_time[0] = event->button.time;
-      display->button_window[1] = NULL;
-      display->button_window[0] = event->button.window;
-      display->button_number[1] = -1;
-      display->button_number[0] = event->button.button;
-      display->button_x[1] = 0;
-      display->button_x[0] = event->button.x;
-      display->button_y[1] = 0;
-      display->button_y[0] = event->button.y;
+      info->button_click_time[1] = 0;
+      info->button_click_time[0] = event->button.time;
+      info->button_window[1] = NULL;
+      info->button_window[0] = event->button.window;
+      info->button_number[1] = -1;
+      info->button_number[0] = event->button.button;
+      info->button_x[1] = 0;
+      info->button_x[0] = event->button.x;
+      info->button_y[1] = 0;
+      info->button_y[0] = event->button.y;
     }
 }
 

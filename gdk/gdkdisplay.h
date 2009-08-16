@@ -70,6 +70,15 @@ typedef struct
   gulong motion_hint_serial; /* 0 == didn't deliver hinted motion event */
 } GdkPointerWindowInfo;
 
+typedef struct
+{
+  guint32 button_click_time[2];	/* The last 2 button click times. */
+  GdkWindow *button_window[2];  /* The last 2 windows to receive button presses. */
+  gint button_number[2];        /* The last 2 buttons to be pressed. */
+  gint button_x[2];             /* The last 2 button click positions. */
+  gint button_y[2];
+} GdkMultipleClickInfo;
+
 struct _GdkDisplay
 {
   GObject parent_instance;
@@ -81,9 +90,7 @@ struct _GdkDisplay
   /* Information for determining if the latest button click
    * is part of a double-click or triple-click
    */
-  guint32 button_click_time[2];	/* The last 2 button click times. */
-  GdkWindow *button_window[2];  /* The last 2 windows to receive button presses. */
-  gint button_number[2];        /* The last 2 buttons to be pressed. */
+  GHashTable *multiple_click_info;
 
   guint double_click_time;	/* Maximum time between clicks in msecs */
   GdkDevice *core_pointer;	/* Core pointer device */
@@ -94,8 +101,6 @@ struct _GdkDisplay
   guint ignore_core_events : 1; /* Don't send core motion and button event */
 
   guint double_click_distance;	/* Maximum distance between clicks in pixels */
-  gint button_x[2];             /* The last 2 button click positions. */
-  gint button_y[2];
 
   GList *pointer_grabs;
   GdkKeyboardGrabInfo keyboard_grab;

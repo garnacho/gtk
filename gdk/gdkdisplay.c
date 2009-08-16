@@ -138,12 +138,6 @@ gdk_display_init (GdkDisplay *display)
 {
   _gdk_displays = g_slist_prepend (_gdk_displays, display);
 
-  display->button_click_time[0] = display->button_click_time[1] = 0;
-  display->button_window[0] = display->button_window[1] = NULL;
-  display->button_number[0] = display->button_number[1] = -1;
-  display->button_x[0] = display->button_x[1] = 0;
-  display->button_y[0] = display->button_y[1] = 0;
-
   display->double_click_time = 250;
   display->double_click_distance = 5;
 
@@ -151,6 +145,9 @@ gdk_display_init (GdkDisplay *display)
 
   display->pointers_info = g_hash_table_new_full (NULL, NULL, NULL,
                                                   (GDestroyNotify) free_pointer_info);
+
+  display->multiple_click_info = g_hash_table_new_full (NULL, NULL, NULL,
+                                                        (GDestroyNotify) g_free);
 }
 
 static void
@@ -181,6 +178,11 @@ gdk_display_dispose (GObject *object)
 static void
 gdk_display_finalize (GObject *object)
 {
+  GdkDisplay *display;
+
+  g_hash_table_destroy (display->pointers_info);
+  g_hash_table_destroy (display->multiple_click_info);
+
   G_OBJECT_CLASS (gdk_display_parent_class)->finalize (object);
 }
 
