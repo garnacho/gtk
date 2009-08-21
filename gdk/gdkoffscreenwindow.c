@@ -793,10 +793,11 @@ gdk_offscreen_window_get_deskrelative_origin (GdkWindow *window,
 }
 
 static gboolean
-gdk_offscreen_window_get_pointer (GdkWindow       *window,
-				  gint            *x,
-				  gint            *y,
-				  GdkModifierType *mask)
+gdk_offscreen_window_get_device_state (GdkWindow       *window,
+                                       GdkDevice       *device,
+                                       gint            *x,
+                                       gint            *y,
+                                       GdkModifierType *mask)
 {
   GdkWindowObject *private = GDK_WINDOW_OBJECT (window);
   GdkOffscreenWindow *offscreen;
@@ -811,7 +812,7 @@ gdk_offscreen_window_get_pointer (GdkWindow       *window,
   offscreen = GDK_OFFSCREEN_WINDOW (private->impl);
   if (offscreen->embedder != NULL)
     {
-      gdk_window_get_pointer (offscreen->embedder, &tmpx, &tmpy, &tmpmask);
+      gdk_window_get_device_position (offscreen->embedder, device, &tmpx, &tmpy, &tmpmask);
       from_embedder (window,
 		     tmpx, tmpy,
 		     &dtmpx, &dtmpy);
@@ -1251,7 +1252,7 @@ gdk_offscreen_window_impl_iface_init (GdkWindowImplIface *iface)
   iface->queue_translation = gdk_offscreen_window_queue_translation;
   iface->get_root_coords = gdk_offscreen_window_get_root_coords;
   iface->get_deskrelative_origin = gdk_offscreen_window_get_deskrelative_origin;
-  iface->get_pointer = gdk_offscreen_window_get_pointer;
+  iface->get_device_state = gdk_offscreen_window_get_device_state;
   iface->destroy = gdk_offscreen_window_destroy;
 }
 

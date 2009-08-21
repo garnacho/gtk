@@ -5602,29 +5602,32 @@ gdk_window_get_pointer (GdkWindow	  *window,
 			GdkModifierType   *mask)
 {
   GdkDisplay *display;
+
+  g_return_val_if_fail (GDK_IS_WINDOW (window), NULL);
+
+  display = gdk_drawable_get_display (window);
+
+  return gdk_window_get_device_position (window, display->core_pointer, x, y, mask);
+}
+
+GdkWindow *
+gdk_window_get_device_position (GdkWindow       *window,
+                                GdkDevice       *device,
+                                gint            *x,
+                                gint            *y,
+                                GdkModifierType *mask)
+{
+  GdkDisplay *display;
   gint tmp_x, tmp_y;
   GdkModifierType tmp_mask;
   GdkWindow *child;
 
-  g_return_val_if_fail (window == NULL || GDK_IS_WINDOW (window), NULL);
+  g_return_val_if_fail (GDK_IS_WINDOW (window), NULL);
+  g_return_val_if_fail (GDK_IS_DEVICE (device), NULL);
 
-  if (window)
-    {
-      display = gdk_drawable_get_display (window);
-    }
-  else
-    {
-      GdkScreen *screen = gdk_screen_get_default ();
-
-      display = gdk_screen_get_display (screen);
-      window = gdk_screen_get_root_window (screen);
-
-      GDK_NOTE (MULTIHEAD,
-		g_message ("Passing NULL for window to gdk_window_get_pointer()\n"
-			   "is not multihead safe"));
-    }
-
-  child = display->pointer_hooks->window_get_pointer (display, window, &tmp_x, &tmp_y, &tmp_mask);
+  display = gdk_drawable_get_display (window);
+  child = display->device_hooks->window_get_device_position (display, device, window,
+                                                             &tmp_x, &tmp_y, &tmp_mask);
 
   if (x)
     *x = tmp_x;

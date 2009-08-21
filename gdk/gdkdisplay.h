@@ -35,6 +35,7 @@ G_BEGIN_DECLS
 
 typedef struct _GdkDisplayClass GdkDisplayClass;
 typedef struct _GdkDisplayPointerHooks GdkDisplayPointerHooks;
+typedef struct _GdkDisplayDeviceHooks GdkDisplayDeviceHooks;
 
 #define GDK_TYPE_DISPLAY              (gdk_display_get_type ())
 #define GDK_DISPLAY_OBJECT(object)    (G_TYPE_CHECK_INSTANCE_CAST ((object), GDK_TYPE_DISPLAY, GdkDisplay))
@@ -94,7 +95,7 @@ struct _GdkDisplay
   guint double_click_time;	/* Maximum time between clicks in msecs */
   GdkDevice *core_pointer;	/* Core pointer device */
 
-  const GdkDisplayPointerHooks *pointer_hooks; /* Current hooks for querying pointer */
+  const GdkDisplayDeviceHooks *device_hooks; /* Current hooks for querying pointer */
   
   guint closed : 1;		/* Whether this display has been closed */
   guint ignore_core_events : 1; /* Don't send core motion and button event */
@@ -144,6 +145,26 @@ struct _GdkDisplayPointerHooks
   GdkWindow* (*window_at_pointer)  (GdkDisplay      *display,
 				    gint            *win_x,
 				    gint            *win_y);
+};
+
+struct _GdkDisplayDeviceHooks
+{
+  void (* get_device_state)                  (GdkDisplay       *display,
+                                              GdkDevice        *device,
+                                              GdkScreen       **screen,
+                                              gint             *x,
+                                              gint             *y,
+                                              GdkModifierType  *mask);
+  GdkWindow * (* window_get_device_position) (GdkDisplay      *display,
+                                              GdkDevice       *device,
+                                              GdkWindow       *window,
+                                              gint            *x,
+                                              gint            *y,
+                                              GdkModifierType *mask);
+  GdkWindow * (* window_at_device_position)  (GdkDisplay *display,
+                                              GdkDevice  *device,
+                                              gint       *win_x,
+                                              gint       *win_y);
 };
 
 GType       gdk_display_get_type (void) G_GNUC_CONST;
@@ -199,14 +220,28 @@ void             gdk_display_warp_pointer          (GdkDisplay             *disp
 						    GdkScreen              *screen,
 						    gint                   x,
 						    gint                   y);
-void             gdk_display_warp_device           (GdkDisplay             *display,
-                                                    GdkDevice              *device,
-                                                    GdkScreen              *screen,
-                                                    gint                    x,
-                                                    gint                    y);
+
+void             gdk_display_get_device_state              (GdkDisplay            *display,
+                                                            GdkDevice             *device,
+                                                            GdkScreen            **screen,
+                                                            gint                  *x,
+                                                            gint                  *y,
+                                                            GdkModifierType       *mask);
+GdkWindow *      gdk_display_get_window_at_device_position (GdkDisplay            *display,
+                                                            GdkDevice             *device,
+                                                            gint                  *win_x,
+                                                            gint                  *win_y);
+void             gdk_display_warp_device                   (GdkDisplay            *display,
+                                                            GdkDevice             *device,
+                                                            GdkScreen             *screen,
+                                                            gint                   x,
+                                                            gint                   y);
 
 GdkDisplayPointerHooks *gdk_display_set_pointer_hooks (GdkDisplay                   *display,
 						       const GdkDisplayPointerHooks *new_hooks);
+
+GdkDisplayDeviceHooks *gdk_display_set_device_hooks (GdkDisplay                  *display,
+                                                     const GdkDisplayDeviceHooks *new_hooks);
 
 GdkDisplay *gdk_display_open_default_libgtk_only (void);
 

@@ -456,15 +456,17 @@ GdkRegion *_gdk_windowing_get_shape_for_mask    (GdkBitmap *mask);
 void     _gdk_windowing_window_beep             (GdkWindow *window);
 
 
-void       _gdk_windowing_get_pointer        (GdkDisplay       *display,
+void       _gdk_windowing_get_device_state   (GdkDisplay       *display,
+                                              GdkDevice        *device,
 					      GdkScreen       **screen,
 					      gint             *x,
 					      gint             *y,
 					      GdkModifierType  *mask);
-GdkWindow* _gdk_windowing_window_at_pointer  (GdkDisplay       *display,
-					      gint             *win_x,
-					      gint             *win_y,
-					      GdkModifierType  *mask);
+GdkWindow* _gdk_windowing_window_at_device_position  (GdkDisplay       *display,
+                                                      GdkDevice        *device,
+                                                      gint             *win_x,
+                                                      gint             *win_y,
+                                                      GdkModifierType  *mask);
 GdkGrabStatus _gdk_windowing_pointer_grab    (GdkWindow        *window,
 					      GdkWindow        *native,
 					      gboolean          owner_events,

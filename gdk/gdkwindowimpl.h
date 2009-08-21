@@ -93,10 +93,11 @@ struct _GdkWindowImplIface
   gint         (* get_deskrelative_origin) (GdkWindow       *window,
                                          gint            *x,
                                          gint            *y);
-  gboolean     (* get_pointer)          (GdkWindow       *window,
+  gboolean     (* get_device_state)     (GdkWindow       *window,
+                                         GdkDevice       *device,
                                          gint            *x,
                                          gint            *y,
-					 GdkModifierType  *mask);
+                                         GdkModifierType *mask);
 
   void         (* shape_combine_region) (GdkWindow       *window,
                                          const GdkRegion *shape_region,
