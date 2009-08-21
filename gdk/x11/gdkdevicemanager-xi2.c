@@ -730,7 +730,7 @@ translate_axes (GdkDevice       *device,
 
   gdk_drawable_get_size (GDK_DRAWABLE (window), &width, &height);
 
-  for (i = 0; i <= valuators->mask_len * 8; i++)
+  for (i = 0; i < valuators->mask_len * 8; i++)
     {
       if (XIMaskIsSet (valuators->mask, i))
         {
