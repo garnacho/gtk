@@ -53,6 +53,18 @@ static void gdk_device_xi2_warp (GdkDevice *device,
                                  GdkScreen *screen,
                                  gint       x,
                                  gint       y);
+static gboolean gdk_device_xi2_query_state (GdkDevice        *device,
+                                            GdkWindow        *window,
+                                            GdkWindow       **root_window,
+                                            GdkWindow       **child_window,
+                                            gint             *root_x,
+                                            gint             *root_y,
+                                            gint             *win_x,
+                                            gint             *win_y,
+                                            GdkModifierType  *mask);
+static GdkWindow * gdk_device_xi2_window_at_position (GdkDevice *device,
+                                                      gint      *win_x,
+                                                      gint      *win_y);
 
 
 G_DEFINE_TYPE (GdkDeviceXI2, gdk_device_xi2, GDK_TYPE_DEVICE)
@@ -74,6 +86,8 @@ gdk_device_xi2_class_init (GdkDeviceXI2Class *klass)
   device_class->get_state = gdk_device_xi2_get_state;
   device_class->set_window_cursor = gdk_device_xi2_set_window_cursor;
   device_class->warp = gdk_device_xi2_warp;
+  device_class->query_state = gdk_device_xi2_query_state;
+  device_class->window_at_position = gdk_device_xi2_window_at_position;
 
   g_object_class_install_property (object_class,
 				   PROP_DEVICE_ID,
@@ -170,10 +184,11 @@ gdk_device_xi2_set_window_cursor (GdkDevice *device,
                       GDK_WINDOW_XWINDOW (window));
 }
 
-static void gdk_device_xi2_warp (GdkDevice *device,
-                                 GdkScreen *screen,
-                                 gint       x,
-                                 gint       y)
+static void
+gdk_device_xi2_warp (GdkDevice *device,
+                     GdkScreen *screen,
+                     gint       x,
+                     gint       y)
 {
   GdkDeviceXI2Private *priv;
   Window dest;
@@ -185,6 +200,131 @@ static void gdk_device_xi2_warp (GdkDevice *device,
                  priv->device_id,
                  None, dest,
                  0, 0, 0, 0, x, y);
+}
+
+static gboolean
+gdk_device_xi2_query_state (GdkDevice        *device,
+                            GdkWindow        *window,
+                            GdkWindow       **root_window,
+                            GdkWindow       **child_window,
+                            gint             *root_x,
+                            gint             *root_y,
+                            gint             *win_x,
+                            gint             *win_y,
+                            GdkModifierType  *mask)
+{
+  GdkDisplay *display;
+  GdkDeviceXI2Private *priv;
+  Window xroot_window, xchild_window;
+  int xroot_x, xroot_y, xwin_x, xwin_y;
+  XIButtonState button_state;
+  XIModifierState mod_state;
+  XIGroupState group_state;
+  unsigned int xmask;
+
+  if (!window || GDK_WINDOW_DESTROYED (window))
+    return FALSE;
+
+  priv = GDK_DEVICE_XI2_GET_PRIVATE (device);
+  display = gdk_drawable_get_display (window);
+
+  /* FIXME: XIQueryPointer crashes ATM, use when Xorg is fixed */
+  if (!XQueryPointer (GDK_WINDOW_XDISPLAY (window),
+                      GDK_WINDOW_XID (window),
+                      &xroot_window,
+                      &xchild_window,
+                      &xroot_x,
+                      &xroot_y,
+                      &xwin_x,
+                      &xwin_y,
+                      &xmask))
+    {
+      return FALSE;
+    }
+
+  if (root_window)
+    *root_window = gdk_window_lookup_for_display (display, xroot_window);
+
+  if (child_window)
+    *child_window = gdk_window_lookup_for_display (display, xchild_window);
+
+  if (root_x)
+    *root_x = xroot_x;
+
+  if (root_y)
+    *root_y = xroot_y;
+
+  if (win_x)
+    *win_x = xwin_x;
+
+  if (win_y)
+    *win_y = xwin_y;
+
+  if (mask)
+    *mask = xmask;
+
+  return TRUE;
+}
+
+static GdkWindow *
+gdk_device_xi2_window_at_position (GdkDevice *device,
+                                   gint      *win_x,
+                                   gint      *win_y)
+{
+  GdkDisplay *display;
+  GdkScreen *screen;
+  Display *xdisplay;
+  GdkWindow *window;
+  Window xwindow, root, child, last;
+  int xroot_x, xroot_y, xwin_x, xwin_y;
+  unsigned int xmask;
+
+  display = gdk_device_get_display (device);
+  screen = gdk_display_get_default_screen (display);
+
+  /* This function really only works if the mouse pointer is held still
+   * during its operation. If it moves from one leaf window to another
+   * than we'll end up with inaccurate values for win_x, win_y
+   * and the result.
+   */
+  gdk_x11_display_grab (display);
+
+  xdisplay = GDK_SCREEN_XDISPLAY (screen);
+  xwindow = GDK_SCREEN_XROOTWIN (screen);
+
+  /* FIXME: XIQueryPointer crashes ATM, use when Xorg is fixed */
+  XQueryPointer (xdisplay, xwindow,
+                 &root, &child,
+                 &xroot_x, &xroot_y,
+                 &xwin_x, &xwin_y,
+                 &xmask);
+
+  if (root == xwindow)
+    xwindow = child;
+  else
+    xwindow = root;
+
+  while (xwindow)
+    {
+      last = xwindow;
+      XQueryPointer (xdisplay, xwindow,
+                     &root, &xwindow,
+                     &xroot_x, &xroot_y,
+                     &xwin_x, &xwin_y,
+                     &xmask);
+    }
+
+  gdk_x11_display_ungrab (display);
+
+  window = gdk_window_lookup_for_display (display, last);
+
+  if (win_x)
+    *win_x = (window) ? xwin_x : -1;
+
+  if (win_y)
+    *win_y = (window) ? xwin_y : -1;
+
+  return window;
 }
 
 void
