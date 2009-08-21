@@ -58,6 +58,18 @@ struct _GdkDeviceClass
                               GdkScreen  *screen,
                               gint        x,
                               gint        y);
+  gboolean (* query_state)   (GdkDevice        *device,
+                              GdkWindow        *window,
+                              GdkWindow       **root_window,
+                              GdkWindow       **child_window,
+                              gint             *root_x,
+                              gint             *root_y,
+                              gint             *win_x,
+                              gint             *win_y,
+                              GdkModifierType  *mask);
+  GdkWindow * (* window_at_position) (GdkDevice *device,
+                                      gint      *win_x,
+                                      gint      *win_y);
 };
 
 
