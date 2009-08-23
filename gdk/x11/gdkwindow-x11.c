@@ -51,6 +51,7 @@
 #include "MwmUtil.h"
 #include "gdkwindow-x11.h"
 #include "gdkdeviceprivate.h"
+#include "gdkeventsource.h"
 #include "gdkalias.h"
 
 #include <stdlib.h>
@@ -511,18 +512,31 @@ check_leader_window_title (GdkDisplay *display)
 }
 
 static Window
-create_focus_window (Display *xdisplay,
-		     XID      parent)
+create_focus_window (GdkDisplay *display,
+		     XID         parent)
 {
-  Window focus_window = XCreateSimpleWindow (xdisplay, parent,
-					     -1, -1, 1, 1, 0,
-					     0, 0);
-  
+  GdkDisplayX11 *display_x11;
+  GdkEventMask event_mask;
+  Display *xdisplay;
+  Window focus_window;
+
+  xdisplay = GDK_DISPLAY_XDISPLAY (display);
+  display_x11 = GDK_DISPLAY_X11 (display);
+
+  focus_window = XCreateSimpleWindow (xdisplay, parent,
+                                      -1, -1, 1, 1, 0,
+                                      0, 0);
+
   /* FIXME: probably better to actually track the requested event mask for the toplevel
    */
-  XSelectInput (xdisplay, focus_window,
-		KeyPressMask | KeyReleaseMask | FocusChangeMask);
-  
+  event_mask = (GDK_KEY_PRESS_MASK |
+                GDK_KEY_RELEASE_MASK |
+                GDK_FOCUS_CHANGE_MASK);
+
+  gdk_event_source_select_events ((GdkEventSource *) display_x11->event_source,
+                                  focus_window,
+                                  event_mask, 0);
+
   XMapWindow (xdisplay, focus_window);
 
   return focus_window;
@@ -571,6 +585,7 @@ setup_toplevel_window (GdkWindow *window,
 {
   GdkWindowObject *obj = (GdkWindowObject *)window;
   GdkToplevelX11 *toplevel = _gdk_x11_window_get_toplevel (window);
+  GdkDisplay *display = gdk_drawable_get_display (window);
   Display *xdisplay = GDK_WINDOW_XDISPLAY (window);
   XID xid = GDK_WINDOW_XID (window);
   XID xparent = GDK_WINDOW_XID (parent);
@@ -589,7 +604,7 @@ setup_toplevel_window (GdkWindow *window,
       /* The focus window is off the visible area, and serves to receive key
        * press events so they don't get sent to child windows.
        */
-      toplevel->focus_window = create_focus_window (xdisplay, xid);
+      toplevel->focus_window = create_focus_window (display, xid);
       _gdk_xid_table_insert (screen_x11->display, &toplevel->focus_window, window);
     }
   
@@ -650,7 +665,7 @@ _gdk_window_impl_new (GdkWindow     *window,
   GdkWindowImplX11 *impl;
   GdkDrawableImplX11 *draw_impl;
   GdkScreenX11 *screen_x11;
-  GdkDeviceManager *device_manager;
+  GdkDisplayX11 *display_x11;
   
   Window xparent;
   Visual *xvisual;
@@ -663,12 +678,12 @@ _gdk_window_impl_new (GdkWindow     *window,
   
   unsigned int class;
   const char *title;
-  int i;
   
   private = (GdkWindowObject *) window;
   
   screen_x11 = GDK_SCREEN_X11 (screen);
   xparent = GDK_WINDOW_XID (real_parent);
+  display_x11 = GDK_DISPLAY_X11 (GDK_SCREEN_DISPLAY (screen));
   
   impl = g_object_new (_gdk_window_impl_get_type (), NULL);
   private->impl = (GdkDrawable *)impl;
@@ -681,15 +696,6 @@ _gdk_window_impl_new (GdkWindow     *window,
   xattributes_mask = 0;
 
   xvisual = ((GdkVisualPrivate*) visual)->xvisual;
-  
-  xattributes.event_mask = StructureNotifyMask | PropertyChangeMask;
-  for (i = 0; i < _gdk_nenvent_masks; i++)
-    {
-      if (event_mask & (1 << (i + 1)))
-	xattributes.event_mask |= _gdk_event_mask_table[i];
-    }
-  if (xattributes.event_mask)
-    xattributes_mask |= CWEventMask;
   
   if (attributes_mask & GDK_WA_NOREDIR)
     {
@@ -837,8 +843,9 @@ _gdk_window_impl_new (GdkWindow     *window,
   if (attributes_mask & GDK_WA_TYPE_HINT)
     gdk_window_set_type_hint (window, attributes->type_hint);
 
-  device_manager = gdk_device_manager_get_for_display (GDK_WINDOW_DISPLAY (window));
-  gdk_device_manager_set_window_events (device_manager, window, event_mask);
+  gdk_event_source_select_events ((GdkEventSource *) display_x11->event_source,
+                                  GDK_WINDOW_XWINDOW (window), event_mask,
+                                  StructureNotifyMask | PropertyChangeMask);
 }
 
 static GdkEventMask
@@ -3352,17 +3359,15 @@ gdk_window_x11_set_events (GdkWindow    *window,
   
   if (!GDK_WINDOW_DESTROYED (window))
     {
+      GdkDisplayX11 *display_x11;
+
       if (GDK_WINDOW_XID (window) != GDK_WINDOW_XROOTWIN (window))
         xevent_mask = StructureNotifyMask | PropertyChangeMask;
-      for (i = 0; i < _gdk_nenvent_masks; i++)
-	{
-	  if (event_mask & (1 << (i + 1)))
-	    xevent_mask |= _gdk_event_mask_table[i];
-	}
-      
-      XSelectInput (GDK_WINDOW_XDISPLAY (window),
-		    GDK_WINDOW_XID (window),
-		    xevent_mask);
+
+      display_x11 = GDK_DISPLAY_X11 (gdk_drawable_get_display (window));
+      gdk_event_source_select_events ((GdkEventSource *) display_x11->event_source,
+                                      GDK_WINDOW_XWINDOW (window), event_mask,
+                                      xevent_mask);
     }
 }
 
