@@ -44,6 +44,10 @@ static gboolean gdk_device_manager_xi2_translate_event (GdkEventTranslator *tran
                                                         XEvent             *xevent);
 static Window   gdk_device_manager_xi2_get_event_window (GdkEventTranslator *translator,
                                                          XEvent             *xevent);
+static GdkEventMask gdk_device_manager_xi2_get_handled_events   (GdkEventTranslator *translator);
+static void         gdk_device_manager_xi2_select_window_events (GdkEventTranslator *translator,
+                                                                 Window              window,
+                                                                 GdkEventMask        event_mask);
 
 
 G_DEFINE_TYPE_WITH_CODE (GdkDeviceManagerXI2, gdk_device_manager_xi2, GDK_TYPE_DEVICE_MANAGER,
@@ -126,16 +130,14 @@ translate_event_mask (GdkEventMask   event_mask,
 
 static void
 _gdk_device_manager_xi2_select_events (GdkDeviceManager *device_manager,
-                                       GdkWindow        *window,
+                                       Window            xwindow,
                                        XIEventMask      *event_mask)
 {
   GdkDisplay *display;
   Display *xdisplay;
-  Window xwindow;
 
   display = gdk_device_manager_get_display (device_manager);
   xdisplay = GDK_DISPLAY_XDISPLAY (display);
-  xwindow = GDK_WINDOW_XWINDOW (window);
 
   XISelectEvents (xdisplay, xwindow, event_mask, 1);
 }
@@ -330,7 +332,7 @@ gdk_device_manager_xi2_constructed (GObject *object)
   event_mask.mask = mask;
 
   _gdk_device_manager_xi2_select_events (GDK_DEVICE_MANAGER (object),
-                                         gdk_screen_get_root_window (screen),
+                                         GDK_WINDOW_XWINDOW (gdk_screen_get_root_window (screen)),
                                          &event_mask);
 }
 
@@ -391,7 +393,9 @@ gdk_device_manager_xi2_set_window_events (GdkDeviceManager *device_manager,
   event_mask.mask_len = sizeof (mask);
   event_mask.mask = mask;
 
-  _gdk_device_manager_xi2_select_events (device_manager, window, &event_mask);
+  _gdk_device_manager_xi2_select_events (device_manager,
+                                         GDK_WINDOW_XWINDOW (window),
+                                         &event_mask);
 }
 
 static void
@@ -399,6 +403,8 @@ gdk_device_manager_xi2_event_translator_init (GdkEventTranslatorIface *iface)
 {
   iface->translate_event = gdk_device_manager_xi2_translate_event;
   iface->get_event_window = gdk_device_manager_xi2_get_event_window;
+  iface->get_handled_events = gdk_device_manager_xi2_get_handled_events;
+  iface->select_window_events = gdk_device_manager_xi2_select_window_events;
 }
 
 static void
@@ -1054,4 +1060,43 @@ gdk_device_manager_xi2_get_event_window (GdkEventTranslator *translator,
     }
 
   return None;
+}
+
+static GdkEventMask
+gdk_device_manager_xi2_get_handled_events (GdkEventTranslator *translator)
+{
+  return (GDK_KEY_PRESS_MASK |
+          GDK_KEY_RELEASE_MASK |
+          GDK_BUTTON_PRESS_MASK |
+          GDK_BUTTON_RELEASE_MASK |
+          GDK_SCROLL_MASK |
+          GDK_ENTER_NOTIFY_MASK |
+          GDK_LEAVE_NOTIFY_MASK |
+          GDK_POINTER_MOTION_MASK |
+          GDK_POINTER_MOTION_HINT_MASK |
+          GDK_BUTTON1_MOTION_MASK |
+          GDK_BUTTON2_MOTION_MASK |
+          GDK_BUTTON3_MOTION_MASK |
+          GDK_BUTTON_MOTION_MASK |
+          GDK_FOCUS_CHANGE_MASK);
+}
+
+static void
+gdk_device_manager_xi2_select_window_events (GdkEventTranslator *translator,
+                                             Window              window,
+                                             GdkEventMask        evmask)
+{
+  GdkDeviceManager *device_manager;
+  unsigned char mask[2] = { 0 };
+  XIEventMask event_mask;
+
+  device_manager = GDK_DEVICE_MANAGER (translator);
+
+  translate_event_mask (evmask, mask);
+
+  event_mask.deviceid = XIAllMasterDevices;
+  event_mask.mask_len = sizeof (mask);
+  event_mask.mask = mask;
+
+  _gdk_device_manager_xi2_select_events (device_manager, window, &event_mask);
 }

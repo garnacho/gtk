@@ -3355,7 +3355,6 @@ gdk_window_x11_set_events (GdkWindow    *window,
                            GdkEventMask  event_mask)
 {
   long xevent_mask = 0;
-  int i;
   
   if (!GDK_WINDOW_DESTROYED (window))
     {
