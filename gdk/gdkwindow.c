@@ -8287,6 +8287,38 @@ gdk_window_beep (GdkWindow *window)
     gdk_display_beep (display);
 }
 
+void
+gdk_window_set_support_multidevice (GdkWindow *window,
+                                    gboolean   support_multidevice)
+{
+  GdkWindowObject *private = (GdkWindowObject *) window;
+
+  g_return_if_fail (GDK_IS_WINDOW (window));
+
+  if (GDK_WINDOW_DESTROYED (window))
+    return;
+
+  if (private->support_multidevice == support_multidevice)
+    return;
+
+  private->support_multidevice = support_multidevice;
+
+  /* FIXME: What to do if called when some pointers are inside the window ? */
+}
+
+gboolean
+gdk_window_get_support_multidevice (GdkWindow *window)
+{
+  GdkWindowObject *private = (GdkWindowObject *) window;
+
+  g_return_val_if_fail (GDK_IS_WINDOW (window), FALSE);
+
+  if (GDK_WINDOW_DESTROYED (window))
+    return FALSE;
+
+  return private->support_multidevice;
+}
+
 static const guint type_masks[] = {
   GDK_SUBSTRUCTURE_MASK, /* GDK_DELETE                 = 0  */
   GDK_STRUCTURE_MASK, /* GDK_DESTROY                   = 1  */
@@ -8525,6 +8557,7 @@ send_crossing_event (GdkDisplay                 *display,
   GdkEvent *event;
   guint32 event_mask;
   GdkPointerGrabInfo *grab;
+  gboolean block_event = FALSE;
 
   grab = _gdk_display_has_pointer_grab (display, serial);
 
@@ -8534,9 +8567,32 @@ send_crossing_event (GdkDisplay                 *display,
     return;
 
   if (type == GDK_LEAVE_NOTIFY)
-    event_mask = GDK_LEAVE_NOTIFY_MASK;
+    {
+      event_mask = GDK_LEAVE_NOTIFY_MASK;
+      window->devices_inside = g_list_remove (window->devices_inside, device);
+
+      if (!window->support_multidevice && window->devices_inside)
+        {
+          /* Block leave events unless it's the last pointer */
+          block_event = TRUE;
+        }
+    }
   else
-    event_mask = GDK_ENTER_NOTIFY_MASK;
+    {
+      event_mask = GDK_ENTER_NOTIFY_MASK;
+
+      if (!window->support_multidevice && window->devices_inside)
+        {
+          /* Only emit enter events for the first device */
+          block_event = TRUE;
+        }
+
+      if (!g_list_find (window->devices_inside, device))
+        window->devices_inside = g_list_prepend (window->devices_inside, device);
+    }
+
+  if (block_event)
+    return;
 
   if (window->extension_events != 0)
     GDK_WINDOW_IMPL_GET_IFACE (window->impl)->input_window_crossing ((GdkWindow *)window,

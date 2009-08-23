@@ -241,6 +241,7 @@ struct _GdkWindowObject
   guint accept_focus : 1;
   guint focus_on_map : 1;
   guint shaped : 1;
+  guint support_multidevice : 1;
   
   GdkEventMask event_mask;
 
@@ -277,6 +278,8 @@ struct _GdkWindowObject
   GdkRegion *input_shape;
   
   cairo_surface_t *cairo_surface;
+
+  GList *devices_inside;
 };
 
 

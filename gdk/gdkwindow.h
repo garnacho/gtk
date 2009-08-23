@@ -308,6 +308,7 @@ struct _GdkWindowObject
   guint accept_focus : 1;
   guint focus_on_map : 1;
   guint shaped : 1;
+  guint support_multidevice : 1;
   
   GdkEventMask event_mask;
 
@@ -683,6 +684,11 @@ void       gdk_window_redirect_to_drawable   (GdkWindow     *window,
                                               gint           width,
                                               gint           height);
 void       gdk_window_remove_redirection     (GdkWindow     *window);
+
+/* Multidevice support */
+void       gdk_window_set_support_multidevice (GdkWindow *window,
+                                               gboolean   support_multidevice);
+gboolean   gdk_window_get_support_multidevice (GdkWindow *window);
 
 #ifndef GDK_DISABLE_DEPRECATED
 #define GDK_ROOT_PARENT()             (gdk_get_default_root_window ())
