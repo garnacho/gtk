@@ -42,8 +42,6 @@ static gboolean gdk_device_manager_xi2_translate_event (GdkEventTranslator *tran
                                                         GdkDisplay         *display,
                                                         GdkEvent           *event,
                                                         XEvent             *xevent);
-static Window   gdk_device_manager_xi2_get_event_window (GdkEventTranslator *translator,
-                                                         XEvent             *xevent);
 static GdkEventMask gdk_device_manager_xi2_get_handled_events   (GdkEventTranslator *translator);
 static void         gdk_device_manager_xi2_select_window_events (GdkEventTranslator *translator,
                                                                  Window              window,
@@ -402,7 +400,6 @@ static void
 gdk_device_manager_xi2_event_translator_init (GdkEventTranslatorIface *iface)
 {
   iface->translate_event = gdk_device_manager_xi2_translate_event;
-  iface->get_event_window = gdk_device_manager_xi2_get_event_window;
   iface->get_handled_events = gdk_device_manager_xi2_get_handled_events;
   iface->select_window_events = gdk_device_manager_xi2_select_window_events;
 }
@@ -757,6 +754,78 @@ translate_axes (GdkDevice       *device,
 }
 
 static gboolean
+is_parent_of (GdkWindow *parent,
+              GdkWindow *child)
+{
+  GdkWindow *w;
+
+  w = child;
+  while (w != NULL)
+    {
+      if (w == parent)
+	return TRUE;
+
+      w = gdk_window_get_parent (w);
+    }
+
+  return FALSE;
+}
+
+static GdkWindow *
+get_event_window (GdkEventTranslator *translator,
+                  XIEvent            *ev)
+{
+  GdkDisplay *display;
+  GdkWindow *window = NULL;
+
+  display = gdk_device_manager_get_display (GDK_DEVICE_MANAGER (translator));
+
+  switch (ev->evtype)
+    {
+    case XI_KeyPress:
+    case XI_KeyRelease:
+    case XI_ButtonPress:
+    case XI_ButtonRelease:
+    case XI_Motion:
+      {
+        XIDeviceEvent *xev = (XIDeviceEvent *) ev;
+
+        window = gdk_window_lookup_for_display (display, xev->event);
+
+        /* Apply keyboard grabs to non-native windows */
+        if (/* Is key event */
+            (ev->evtype == XI_KeyPress || ev->evtype == XI_KeyRelease) &&
+            /* And we have a grab */
+            display->keyboard_grab.window != NULL &&
+            (
+             /* The window is not a descendant of the grabbed window */
+             !is_parent_of ((GdkWindow *)display->keyboard_grab.window, window) ||
+             /* Or owner event is false */
+             !display->keyboard_grab.owner_events
+             )
+            )
+          {
+            /* Report key event against grab window */
+            window = display->keyboard_grab.window;
+          }
+      }
+      break;
+    case XI_Enter:
+    case XI_Leave:
+    case XI_FocusIn:
+    case XI_FocusOut:
+      {
+        XIEnterEvent *xev = (XIEnterEvent *) ev;
+
+        window = gdk_window_lookup_for_display (display, xev->event);
+      }
+      break;
+    }
+
+  return window;
+}
+
+static gboolean
 gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
                                         GdkDisplay         *display,
                                         GdkEvent           *event,
@@ -765,6 +834,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
   GdkDeviceManagerXI2 *device_manager;
   XGenericEventCookie *cookie;
   gboolean return_val = TRUE;
+  GdkWindow *window;
   XIEvent *ev;
   Display *dpy;
 
@@ -783,6 +853,14 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
     }
 
   ev = (XIEvent *) cookie->data;
+
+  window = get_event_window (translator, ev);
+
+  if (window && GDK_WINDOW_DESTROYED (window))
+    {
+      XFreeEventData (dpy, cookie);
+      return FALSE;
+    }
 
   if (ev->evtype == XI_Motion ||
       ev->evtype == XI_ButtonRelease)
@@ -814,7 +892,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
 
         event->key.type = xev->evtype == XI_KeyPress ? GDK_KEY_PRESS : GDK_KEY_RELEASE;
 
-        event->key.window = gdk_window_lookup_for_display (display, xev->event);
+        event->key.window = window;
 
         event->key.time = xev->time;
         event->key.state = translate_state (&xev->mods, &xev->buttons);
@@ -865,7 +943,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
             else
               event->scroll.direction = GDK_SCROLL_RIGHT;
 
-            event->scroll.window = gdk_window_lookup_for_display (display, xev->event);
+            event->scroll.window = window;
             event->scroll.time = xev->time;
             event->scroll.x = (gdouble) xev->event_x;
             event->scroll.y = (gdouble) xev->event_y;
@@ -880,7 +958,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
           default:
             event->button.type = (ev->evtype == XI_ButtonPress) ? GDK_BUTTON_PRESS : GDK_BUTTON_RELEASE;
 
-            event->button.window = gdk_window_lookup_for_display (display, xev->event);
+            event->button.window = window;
             event->button.time = xev->time;
             event->button.x = (gdouble) xev->event_x;
             event->button.y = (gdouble) xev->event_y;
@@ -916,7 +994,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
 
         event->motion.type = GDK_MOTION_NOTIFY;
 
-        event->motion.window = gdk_window_lookup_for_display (display, xev->event);
+        event->motion.window = window;
 
         event->motion.time = xev->time;
         event->motion.x = (gdouble) xev->event_x;
@@ -953,7 +1031,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
         event->crossing.time = xev->time;
         event->crossing.focus = xev->focus;
 
-        event->crossing.window = gdk_window_lookup_for_display (display, xev->event);
+        event->crossing.window = window;
         event->crossing.subwindow = gdk_window_lookup_for_display (display, xev->child);
         event->crossing.device = g_hash_table_lookup (device_manager->id_table,
                                                       GINT_TO_POINTER (xev->deviceid));
@@ -967,10 +1045,8 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
     case XI_FocusOut:
       {
         XIEnterEvent *xev = (XIEnterEvent *) ev;
-        GdkWindow *win;
 
-        win = gdk_window_lookup_for_display (display, xev->event);
-        handle_focus_change (win, xev->detail, xev->mode,
+        handle_focus_change (window, xev->detail, xev->mode,
                              (ev->evtype == XI_FocusIn) ? TRUE : FALSE);
 
         return_val = FALSE;
@@ -1002,64 +1078,6 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
   XFreeEventData (dpy, cookie);
 
   return return_val;
-}
-
-static gboolean
-is_parent_of (GdkWindow *parent,
-              GdkWindow *child)
-{
-  GdkWindow *w;
-
-  w = child;
-  while (w != NULL)
-    {
-      if (w == parent)
-	return TRUE;
-
-      w = gdk_window_get_parent (w);
-    }
-
-  return FALSE;
-}
-
-static Window
-gdk_device_manager_xi2_get_event_window (GdkEventTranslator *translator,
-                                         XEvent             *xevent)
-{
-  GdkDeviceManagerXI2 *device_manager;
-  GdkDisplay *display;
-  XIEvent *ev;
-
-  ev = (XIEvent *) xevent;
-  device_manager = GDK_DEVICE_MANAGER_XI2 (translator);
-
-  if (ev->type != GenericEvent || ev->extension != device_manager->opcode)
-    return None;
-
-  display = gdk_device_manager_get_display (GDK_DEVICE_MANAGER (translator));
-
-  /* Apply keyboard grabs to non-native windows */
-  if (/* Is key event */
-      (ev->evtype == XI_KeyPress || ev->evtype == XI_KeyRelease) &&
-      /* And we have a grab */
-      display->keyboard_grab.window != NULL)
-    {
-      GdkWindow *window;
-      XIDeviceEvent *xev = (XIDeviceEvent *) ev;
-
-      window = gdk_window_lookup_for_display (display, xev->event);
-
-      if (/* The window is not a descendant of the grabbed window */
-          !is_parent_of ((GdkWindow *)display->keyboard_grab.window, window) ||
-          /* Or owner event is false */
-          !display->keyboard_grab.owner_events)
-        {
-          /* Report key event against grab window */
-          return GDK_WINDOW_XID (display->keyboard_grab.window);
-        }
-    }
-
-  return None;
 }
 
 static GdkEventMask
