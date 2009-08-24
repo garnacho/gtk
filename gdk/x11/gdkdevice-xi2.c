@@ -271,7 +271,7 @@ gdk_device_xi2_window_at_position (GdkDevice *device,
   GdkScreen *screen;
   Display *xdisplay;
   GdkWindow *window;
-  Window xwindow, root, child, last;
+  Window xwindow, root, child, last = None;
   int xroot_x, xroot_y, xwin_x, xwin_y;
   unsigned int xmask;
 
