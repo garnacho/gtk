@@ -149,6 +149,7 @@ translate_valuator_class (GdkDisplay          *display,
   static gboolean initialized = FALSE;
   static Atom label_atoms [GDK_AXIS_LAST] = { 0 };
   GdkAxisUse use = GDK_AXIS_IGNORE;
+  GdkAtom label;
   gint i;
 
   if (!initialized)
@@ -171,8 +172,13 @@ translate_valuator_class (GdkDisplay          *display,
         }
     }
 
+  if (info->label != None)
+    label = gdk_x11_xatom_to_atom_for_display (display, info->label);
+  else
+    label = GDK_NONE;
+
   _gdk_device_add_axis (device,
-                        gdk_x11_xatom_to_atom_for_display (display, info->label),
+                        label,
                         use,
                         info->min,
                         info->max,
