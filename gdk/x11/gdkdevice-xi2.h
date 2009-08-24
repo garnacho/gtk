@@ -46,9 +46,7 @@ struct _GdkDeviceXI2Class
 
 GType gdk_device_xi2_get_type (void) G_GNUC_CONST;
 
-void  gdk_device_xi2_add_axis (GdkDeviceXI2 *device,
-                               GdkAxisUse    use);
 
 G_END_DECLS
 
-#endif /* __GDK_DEVICE_CORE_H__ */
+#endif /* __GDK_DEVICE_XI2_H__ */
