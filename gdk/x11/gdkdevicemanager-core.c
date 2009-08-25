@@ -69,10 +69,21 @@ gdk_device_manager_event_translator_init (GdkEventTranslatorIface *iface)
 static GdkDevice *
 create_core_pointer (GdkDisplay *display)
 {
-  /* FIXME: set mode */
   return g_object_new (GDK_TYPE_DEVICE_CORE,
                        "name", "Core Pointer",
                        "input-source", GDK_SOURCE_MOUSE,
+                       "input-mode", GDK_MODE_SCREEN,
+                       "has-cursor", TRUE,
+                       "display", display,
+                       NULL);
+}
+
+static GdkDevice *
+create_core_keyboard (GdkDisplay *display)
+{
+  return g_object_new (GDK_TYPE_DEVICE_CORE,
+                       "name", "Core Keyboard",
+                       "input-source", GDK_SOURCE_KEYBOARD,
                        "has-cursor", TRUE,
                        "display", display,
                        NULL);
@@ -86,16 +97,20 @@ gdk_device_manager_core_init (GdkDeviceManagerCore *device_manager)
 static void
 gdk_device_manager_core_constructed (GObject *object)
 {
+  GdkDeviceManagerCore *device_manager;
   GdkDisplay *display;
 
+  device_manager = GDK_DEVICE_MANAGER_CORE (object);
   display = gdk_device_manager_get_display (GDK_DEVICE_MANAGER (object));
-  GDK_DEVICE_MANAGER_CORE (object)->core_pointer = create_core_pointer (display);
+  device_manager->core_pointer = create_core_pointer (display);
+  device_manager->core_keyboard = create_core_keyboard (display);
 }
 
 static void
-translate_key_event (GdkDisplay *display,
-		     GdkEvent   *event,
-		     XEvent     *xevent)
+translate_key_event (GdkDisplay           *display,
+                     GdkDeviceManagerCore *device_manager,
+		     GdkEvent             *event,
+		     XEvent               *xevent)
 {
   GdkKeymap *keymap = gdk_keymap_get_for_display (display);
   gunichar c = 0;
@@ -103,6 +118,7 @@ translate_key_event (GdkDisplay *display,
 
   event->key.type = xevent->xany.type == KeyPress ? GDK_KEY_PRESS : GDK_KEY_RELEASE;
   event->key.time = xevent->xkey.time;
+  event->key.device = device_manager->core_keyboard;
 
   event->key.state = (GdkModifierType) xevent->xkey.state;
   event->key.group = _gdk_x11_get_group_for_state (display, xevent->xkey.state);
@@ -233,8 +249,9 @@ set_user_time (GdkWindow *window,
 }
 
 static void
-generate_focus_event (GdkWindow *window,
-		      gboolean   in)
+generate_focus_event (GdkDeviceManagerCore *device_manager,
+                      GdkWindow            *window,
+		      gboolean              in)
 {
   GdkEvent event;
 
@@ -242,6 +259,7 @@ generate_focus_event (GdkWindow *window,
   event.focus_change.window = window;
   event.focus_change.send_event = FALSE;
   event.focus_change.in = in;
+  event.focus_change.device = device_manager->core_keyboard;
 
   gdk_event_put (&event);
 }
@@ -419,7 +437,7 @@ gdk_device_manager_core_translate_event (GdkEventTranslator *translator,
           return_val = FALSE;
           break;
         }
-      translate_key_event (display, event, xevent);
+      translate_key_event (display, device_manager, event, xevent);
       set_user_time (window, event);
       break;
 
@@ -450,7 +468,7 @@ gdk_device_manager_core_translate_event (GdkEventTranslator *translator,
 	    }
 	}
 
-      translate_key_event (display, event, xevent);
+      translate_key_event (display, device_manager, event, xevent);
       break;
 
     case ButtonPress:
@@ -627,7 +645,7 @@ gdk_device_manager_core_translate_event (GdkEventTranslator *translator,
 	      toplevel->has_pointer_focus = TRUE;
 
 	      if (HAS_FOCUS (toplevel) != had_focus)
-		generate_focus_event (window, TRUE);
+		generate_focus_event (device_manager, window, TRUE);
 	    }
 	}
 
@@ -687,7 +705,7 @@ gdk_device_manager_core_translate_event (GdkEventTranslator *translator,
 	      toplevel->has_pointer_focus = FALSE;
 
 	      if (HAS_FOCUS (toplevel) != had_focus)
-		generate_focus_event (window, FALSE);
+		generate_focus_event (device_manager, window, FALSE);
 	    }
 	}
 
@@ -776,7 +794,7 @@ gdk_device_manager_core_translate_event (GdkEventTranslator *translator,
 	    }
 
 	  if (HAS_FOCUS (toplevel) != had_focus)
-	    generate_focus_event (window, TRUE);
+	    generate_focus_event (device_manager, window, TRUE);
 	}
       break;
     case FocusOut:
@@ -827,7 +845,7 @@ gdk_device_manager_core_translate_event (GdkEventTranslator *translator,
 	    }
 
 	  if (HAS_FOCUS (toplevel) != had_focus)
-	    generate_focus_event (window, FALSE);
+	    generate_focus_event (device_manager, window, FALSE);
 	}
       break;
 
@@ -890,6 +908,7 @@ gdk_device_manager_core_get_devices (GdkDeviceManager *device_manager,
   if (type == GDK_DEVICE_TYPE_MASTER)
     {
       device_manager_core = (GdkDeviceManagerCore *) device_manager;
+      devices = g_list_prepend (devices, device_manager_core->core_keyboard);
       devices = g_list_prepend (devices, device_manager_core->core_pointer);
     }
 
