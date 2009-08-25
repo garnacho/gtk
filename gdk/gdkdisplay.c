@@ -702,7 +702,7 @@ gdk_display_get_window_at_pointer (GdkDisplay *display,
 {
   g_return_val_if_fail (GDK_IS_DISPLAY (display), NULL);
 
-  gdk_display_get_window_at_device_position (display, display->core_pointer, win_x, win_y);
+  return gdk_display_get_window_at_device_position (display, display->core_pointer, win_x, win_y);
 }
 
 static void
