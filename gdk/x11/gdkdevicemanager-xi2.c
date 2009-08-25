@@ -17,6 +17,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include <gdk/gdkdeviceprivate.h>
 #include "gdkdevicemanager-xi2.h"
 #include "gdkeventtranslator.h"
 #include "gdkdevice-xi2.h"
@@ -292,9 +293,27 @@ remove_device (GdkDeviceManagerXI2 *device_manager,
 
       g_signal_emit_by_name (device_manager, "device-removed", device);
 
+      g_object_run_dispose (G_OBJECT (device));
+
       g_hash_table_remove (device_manager->id_table,
                            GINT_TO_POINTER (device_id));
     }
+}
+
+static void
+relate_devices (gpointer key,
+                gpointer value,
+                gpointer user_data)
+{
+  GdkDeviceManagerXI2 *device_manager;
+  GdkDevice *device, *relative;
+
+  device_manager = user_data;
+  device = g_hash_table_lookup (device_manager->id_table, key);
+  relative = g_hash_table_lookup (device_manager->id_table, value);
+
+  _gdk_device_set_relative (device, relative);
+  _gdk_device_set_relative (relative, device);
 }
 
 static void
@@ -303,6 +322,7 @@ gdk_device_manager_xi2_constructed (GObject *object)
   GdkDeviceManagerXI2 *device_manager_xi2;
   GdkDisplay *display;
   GdkScreen *screen;
+  GHashTable *relations;
   Display *xdisplay;
   XIDeviceInfo *info, *dev;
   int ndevices, i;
@@ -312,6 +332,7 @@ gdk_device_manager_xi2_constructed (GObject *object)
   device_manager_xi2 = GDK_DEVICE_MANAGER_XI2 (object);
   display = gdk_device_manager_get_display (GDK_DEVICE_MANAGER (object));
   xdisplay = GDK_DISPLAY_XDISPLAY (display);
+  relations = g_hash_table_new (NULL, NULL);
 
   info = XIQueryDevice(xdisplay, XIAllDevices, &ndevices);
 
@@ -322,9 +343,21 @@ gdk_device_manager_xi2_constructed (GObject *object)
 
       dev = &info[i];
       device = add_device (device_manager_xi2, dev, FALSE);
+
+      if (dev->use == XIMasterPointer ||
+          dev->use == XIMasterKeyboard)
+        {
+          g_hash_table_insert (relations,
+                               GINT_TO_POINTER (dev->deviceid),
+                               GINT_TO_POINTER (dev->attachment));
+        }
     }
 
   XIFreeDeviceInfo(info);
+
+  /* Stablish relationships between devices */
+  g_hash_table_foreach (relations, relate_devices, object);
+  g_hash_table_destroy (relations);
 
   /* Connect to hierarchy change events */
   screen = gdk_display_get_default_screen (display);
