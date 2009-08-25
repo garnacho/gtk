@@ -44,9 +44,11 @@ struct _GdkAxisInfo
 struct _GdkDevicePrivate
 {
   GdkDisplay *display;
+  GdkDisplay *relative;
   GArray *axes;
 };
 
+static void gdk_device_dispose      (GObject      *object);
 static void gdk_device_set_property (GObject      *object,
                                      guint         prop_id,
                                      const GValue *value,
@@ -63,6 +65,7 @@ enum {
   PROP_0,
   PROP_DISPLAY,
   PROP_NAME,
+  PROP_RELATIVE,
   PROP_INPUT_SOURCE,
   PROP_INPUT_MODE,
   PROP_HAS_CURSOR,
@@ -75,6 +78,7 @@ gdk_device_class_init (GdkDeviceClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
+  object_class->dispose = gdk_device_dispose;
   object_class->set_property = gdk_device_set_property;
   object_class->get_property = gdk_device_get_property;
 
@@ -92,6 +96,13 @@ gdk_device_class_init (GdkDeviceClass *klass)
                                                         P_("Device name"),
                                                         NULL,
                                                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+  g_object_class_install_property (object_class,
+				   PROP_RELATIVE,
+				   g_param_spec_object ("relative",
+                                                        P_("Relative device"),
+                                                        P_("Corresponding pointer or keyboard to this device"),
+                                                        GDK_TYPE_DEVICE,
+                                                        G_PARAM_READABLE));
   g_object_class_install_property (object_class,
 				   PROP_INPUT_SOURCE,
 				   g_param_spec_enum ("input-source",
@@ -133,6 +144,23 @@ gdk_device_init (GdkDevice *device)
 
   priv = GDK_DEVICE_GET_PRIVATE (device);
   priv->axes = g_array_new (FALSE, TRUE, sizeof (GdkAxisInfo));
+}
+
+static void
+gdk_device_dispose (GObject *object)
+{
+  GdkDevicePrivate *priv;
+
+  priv = GDK_DEVICE_GET_PRIVATE (object);
+
+  if (priv->relative)
+    {
+      _gdk_device_set_relative (priv->relative, NULL);
+      g_object_unref (priv->relative);
+      priv->relative = NULL;
+    }
+
+  G_OBJECT_CLASS (gdk_device_parent_class)->dispose (object);
 }
 
 static void
@@ -183,6 +211,9 @@ gdk_device_get_property (GObject    *object,
     {
     case PROP_DISPLAY:
       g_value_set_object (value, priv->display);
+      break;
+    case PROP_RELATIVE:
+      g_value_set_object (value, priv->relative);
       break;
     case PROP_NAME:
       g_value_set_string (value,
@@ -324,6 +355,42 @@ gdk_device_get_display (GdkDevice *device)
   priv = GDK_DEVICE_GET_PRIVATE (device);
 
   return priv->display;
+}
+
+GdkDevice *
+gdk_device_get_relative (GdkDevice *device)
+{
+  GdkDevicePrivate *priv;
+
+  g_return_val_if_fail (GDK_IS_DEVICE (device), NULL);
+
+  priv = GDK_DEVICE_GET_PRIVATE (device);
+
+  return priv->relative;
+}
+
+void
+_gdk_device_set_relative (GdkDevice *device,
+                          GdkDevice *relative)
+{
+  GdkDevicePrivate *priv;
+
+  g_return_if_fail (GDK_IS_DEVICE (device));
+  g_return_if_fail (GDK_IS_DEVICE (relative));
+
+  priv = GDK_DEVICE_GET_PRIVATE (device);
+
+  if (priv->relative == relative)
+    return;
+
+  if (priv->relative)
+    {
+      g_object_unref (priv->relative);
+      priv->relative = NULL;
+    }
+
+  if (relative)
+    priv->relative = g_object_ref (relative);
 }
 
 GList *

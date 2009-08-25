@@ -158,6 +158,8 @@ gboolean gdk_device_get_axis     (GdkDevice         *device,
 				  gdouble           *value);
 GdkDisplay * gdk_device_get_display (GdkDevice      *device);
 
+GdkDevice  * gdk_device_get_relative (GdkDevice     *device);
+
 G_END_DECLS
 
 #endif /* __GDK_DEVICE_H__ */
