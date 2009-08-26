@@ -1014,6 +1014,10 @@ synthesize_crossing_events (GdkDisplay *display,
   GdkWindow *src_toplevel, *dest_toplevel;
   GdkModifierType state;
   int x, y;
+
+  /* We use the native crossing events if all native */
+  if (_gdk_native_windows)
+    return;
   
   if (src_window)
     src_toplevel = gdk_window_get_toplevel (src_window);
@@ -1034,14 +1038,14 @@ synthesize_crossing_events (GdkDisplay *display,
       gdk_window_get_pointer (dest_toplevel,
 			      &x, &y, &state);
       _gdk_synthesize_crossing_events (display,
-                                       src_window,
-                                       dest_window,
+				       src_window,
+				       dest_window,
                                        display->core_pointer, /* FIXME */
-                                       crossing_mode,
-                                       x, y, state,
-                                       time,
-                                       NULL,
-                                       serial);
+				       crossing_mode,
+				       x, y, state,
+				       time,
+				       NULL,
+				       serial, FALSE);
     }
   else if (dest_toplevel == NULL)
     {
@@ -1055,7 +1059,7 @@ synthesize_crossing_events (GdkDisplay *display,
                                        x, y, state,
                                        time,
                                        NULL,
-                                       serial);
+                                       serial, FALSE);
     }
   else
     {
@@ -1063,26 +1067,65 @@ synthesize_crossing_events (GdkDisplay *display,
       gdk_window_get_pointer (src_toplevel,
 			      &x, &y, &state);
       _gdk_synthesize_crossing_events (display,
-                                       src_window,
-                                       NULL,
+				       src_window,
+				       NULL,
                                        display->core_pointer, /* FIXME */
-                                       crossing_mode,
-                                       x, y, state,
-                                       time,
-                                       NULL,
-                                       serial);
+				       crossing_mode,
+				       x, y, state,
+				       time,
+				       NULL,
+				       serial, FALSE);
       gdk_window_get_pointer (dest_toplevel,
 			      &x, &y, &state);
       _gdk_synthesize_crossing_events (display,
-                                       NULL,
-                                       dest_window,
+				       NULL,
+				       dest_window,
                                        display->core_pointer, /* FIXME */
-                                       crossing_mode,
-                                       x, y, state,
-                                       time,
-                                       NULL,
-                                       serial);
+				       crossing_mode,
+				       x, y, state,
+				       time,
+				       NULL,
+				       serial, FALSE);
     }
+}
+
+static GdkWindow *
+get_current_toplevel (GdkDisplay      *display,
+                      GdkDevice       *device,
+                      int             *x_out,
+                      int             *y_out,
+		      GdkModifierType *state_out)
+{
+  GdkWindow *pointer_window;
+  GdkWindowObject *w;
+  int x, y;
+  GdkModifierType state;
+
+  pointer_window = _gdk_windowing_window_at_device_position (display, device, &x, &y, &state);
+
+  if (pointer_window != NULL &&
+      (GDK_WINDOW_DESTROYED (pointer_window) ||
+       GDK_WINDOW_TYPE (pointer_window) == GDK_WINDOW_ROOT ||
+       GDK_WINDOW_TYPE (pointer_window) == GDK_WINDOW_FOREIGN))
+    pointer_window = NULL;
+
+  w = (GdkWindowObject *)pointer_window;
+  if (w)
+    {
+      /* Convert to toplevel */
+      while (w->parent != NULL &&
+	     w->parent->window_type != GDK_WINDOW_ROOT)
+	{
+	  x += w->x;
+	  y += w->y;
+	  w = w->parent;
+	}
+    }
+
+  *x_out = x;
+  *y_out = y;
+  *state_out = state;
+  return (GdkWindow *)w;
 }
 
 static void
@@ -1093,9 +1136,8 @@ switch_to_pointer_grab (GdkDisplay         *display,
 			guint32             time,
 			gulong              serial)
 {
-  GdkWindow *src_window, *pointer_window;
+  GdkWindow *src_window, *pointer_window, *new_toplevel;
   GdkPointerWindowInfo *info;
-  GdkWindowObject *w;
   GList *old_grabs;
   GdkModifierType state;
   int x, y;
@@ -1138,57 +1180,57 @@ switch_to_pointer_grab (GdkDisplay         *display,
 
       grab->activated = TRUE;
     }
-  else if (last_grab)
+
+  if (last_grab)
     {
-      pointer_window = _gdk_windowing_window_at_device_position (display, device, &x, &y, &state);
-      if (pointer_window != NULL &&
-	  (GDK_WINDOW_DESTROYED (pointer_window) ||
-	   GDK_WINDOW_TYPE (pointer_window) == GDK_WINDOW_ROOT ||
-	   GDK_WINDOW_TYPE (pointer_window) == GDK_WINDOW_FOREIGN))
-	pointer_window = NULL;
+      new_toplevel = NULL;
 
-      /* We force checked what window we're in, so we need to
-       * update the toplevel_under_pointer info, as that won't get told of
-       * this change.
-       */
-      if (info->toplevel_under_pointer)
-	g_object_unref (info->toplevel_under_pointer);
-      info->toplevel_under_pointer = NULL;
-
-      if (pointer_window)
+      if (grab == NULL /* ungrab */ ||
+	  (!last_grab->owner_events && grab->owner_events) /* switched to owner_events */ )
 	{
-	  /* Convert to toplevel */
-	  w = (GdkWindowObject *)pointer_window;
-	  while (/*w->parent != NULL && */
-		 w->parent->window_type != GDK_WINDOW_ROOT)
+	  /* We force check what window we're in, and update the toplevel_under_pointer info,
+	   * as that won't get told of this change with toplevel enter events.
+	   */
+	  if (info->toplevel_under_pointer)
+	    g_object_unref (info->toplevel_under_pointer);
+	  info->toplevel_under_pointer = NULL;
+
+	  new_toplevel = get_current_toplevel (display, device, &x, &y, &state);
+	  if (new_toplevel)
 	    {
-	      x += w->x;
-	      y += w->y;
-	      w = w->parent;
+	      /* w is now toplevel and x,y in toplevel coords */
+	      info->toplevel_under_pointer = g_object_ref (new_toplevel);
+	      info->toplevel_x = x;
+	      info->toplevel_y = y;
+	      info->state = state;
 	    }
-
-	  /* w is now toplevel and x,y in toplevel coords */
-	  info->toplevel_under_pointer = g_object_ref (w);
-
-	  /* Find (possibly virtual) child window */
-	  pointer_window =
-	    _gdk_window_find_descendant_at ((GdkWindow *)w,
-					    x, y,
-					    NULL, NULL);
 	}
 
-      if (pointer_window != last_grab->window)
-	synthesize_crossing_events (display,
-				    last_grab->window, pointer_window,
-				    GDK_CROSSING_UNGRAB, time, serial);
+      if (grab == NULL) /* Ungrabbed, send events */
+	{
+	  pointer_window = NULL;
+	  if (new_toplevel)
+	    {
+	      /* Find (possibly virtual) child window */
+	      pointer_window =
+		_gdk_window_find_descendant_at (new_toplevel,
+						x, y,
+						NULL, NULL);
+	    }
 
-      /* We're now ungrabbed, update the window_under_pointer */
-      _gdk_display_set_window_under_pointer (display, device, pointer_window);
+	  if (pointer_window != last_grab->window)
+	    synthesize_crossing_events (display,
+					last_grab->window, pointer_window,
+					GDK_CROSSING_UNGRAB, time, serial);
 
-      if (last_grab->implicit_ungrab)
-	generate_grab_broken_event (last_grab->window,
-				    FALSE, TRUE,
-				    NULL);
+	  /* We're now ungrabbed, update the window_under_pointer */
+	  _gdk_display_set_window_under_pointer (display, device, pointer_window);
+
+	  if (last_grab->implicit_ungrab)
+	    generate_grab_broken_event (last_grab->window,
+					FALSE, TRUE,
+					NULL);
+	}
     }
 
   display->pointer_grabs = old_grabs;
