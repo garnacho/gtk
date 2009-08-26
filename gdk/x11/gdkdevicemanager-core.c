@@ -104,6 +104,9 @@ gdk_device_manager_core_constructed (GObject *object)
   display = gdk_device_manager_get_display (GDK_DEVICE_MANAGER (object));
   device_manager->core_pointer = create_core_pointer (display);
   device_manager->core_keyboard = create_core_keyboard (display);
+
+  _gdk_device_set_relative (device_manager->core_pointer, device_manager->core_keyboard);
+  _gdk_device_set_relative (device_manager->core_keyboard, device_manager->core_pointer);
 }
 
 static void
