@@ -322,3 +322,60 @@ gdk_device_xi2_window_at_position (GdkDevice *device,
 
   return window;
 }
+
+guchar *
+gdk_device_xi2_translate_event_mask (GdkEventMask  event_mask,
+                                     int          *len)
+{
+  guchar *mask;
+  int mask_len;
+
+  *len = XIMaskLen (XI_LASTEVENT);
+  mask = g_new0 (guchar, *len);
+
+  if (event_mask & GDK_POINTER_MOTION_MASK ||
+      event_mask & GDK_POINTER_MOTION_HINT_MASK)
+    XISetMask (mask, XI_Motion);
+
+  if (event_mask & GDK_BUTTON_MOTION_MASK ||
+      event_mask & GDK_BUTTON1_MOTION_MASK ||
+      event_mask & GDK_BUTTON2_MOTION_MASK ||
+      event_mask & GDK_BUTTON3_MOTION_MASK)
+    {
+      XISetMask (mask, XI_ButtonPress);
+      XISetMask (mask, XI_ButtonRelease);
+      XISetMask (mask, XI_Motion);
+    }
+
+  if (event_mask & GDK_SCROLL_MASK)
+    {
+      XISetMask (mask, XI_ButtonPress);
+      XISetMask (mask, XI_ButtonRelease);
+    }
+
+  if (event_mask & GDK_BUTTON_PRESS_MASK)
+    XISetMask (mask, XI_ButtonPress);
+
+  if (event_mask & GDK_BUTTON_RELEASE_MASK)
+    XISetMask (mask, XI_ButtonRelease);
+
+  if (event_mask & GDK_KEY_PRESS_MASK)
+    XISetMask (mask, XI_KeyPress);
+
+  if (event_mask & GDK_KEY_RELEASE_MASK)
+    XISetMask (mask, XI_KeyRelease);
+
+  if (event_mask & GDK_ENTER_NOTIFY_MASK)
+    XISetMask (mask, XI_Enter);
+
+  if (event_mask & GDK_LEAVE_NOTIFY_MASK)
+    XISetMask (mask, XI_Leave);
+
+  if (event_mask & GDK_FOCUS_CHANGE_MASK)
+    {
+      XISetMask (mask, XI_FocusIn);
+      XISetMask (mask, XI_FocusOut);
+    }
+
+  return mask;
+}

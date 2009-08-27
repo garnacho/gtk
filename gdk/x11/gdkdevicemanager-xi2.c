@@ -77,57 +77,6 @@ gdk_device_manager_xi2_init (GdkDeviceManagerXI2 *device_manager)
 }
 
 static void
-translate_event_mask (GdkEventMask   event_mask,
-                      unsigned char *mask)
-{
-  if (event_mask & GDK_POINTER_MOTION_MASK ||
-      event_mask & GDK_POINTER_MOTION_HINT_MASK)
-    XISetMask (mask, XI_Motion);
-
-  if (event_mask & GDK_BUTTON_MOTION_MASK ||
-      event_mask & GDK_BUTTON1_MOTION_MASK ||
-      event_mask & GDK_BUTTON2_MOTION_MASK ||
-      event_mask & GDK_BUTTON3_MOTION_MASK)
-    {
-      XISetMask (mask, XI_ButtonPress);
-      XISetMask (mask, XI_ButtonRelease);
-      XISetMask (mask, XI_Motion);
-    }
-
-  if (event_mask & GDK_SCROLL_MASK)
-    {
-      XISetMask (mask, XI_ButtonPress);
-      XISetMask (mask, XI_ButtonRelease);
-    }
-
-  if (event_mask & GDK_BUTTON_PRESS_MASK)
-    XISetMask (mask, XI_ButtonPress);
-
-  if (event_mask & GDK_BUTTON_RELEASE_MASK)
-    XISetMask (mask, XI_ButtonRelease);
-
-  if (event_mask & GDK_KEY_PRESS_MASK)
-    XISetMask (mask, XI_KeyPress);
-
-  if (event_mask & GDK_KEY_RELEASE_MASK)
-    XISetMask (mask, XI_KeyRelease);
-
-  if (event_mask & GDK_ENTER_NOTIFY_MASK)
-    XISetMask (mask, XI_Enter);
-
-  if (event_mask & GDK_LEAVE_NOTIFY_MASK)
-    XISetMask (mask, XI_Leave);
-
-  if (event_mask & GDK_FOCUS_CHANGE_MASK)
-    {
-      XISetMask (mask, XI_FocusIn);
-      XISetMask (mask, XI_FocusOut);
-    }
-
-  /* FIXME: Proximity in/out mask */
-}
-
-static void
 _gdk_device_manager_xi2_select_events (GdkDeviceManager *device_manager,
                                        Window            xwindow,
                                        XIEventMask      *event_mask)
@@ -421,14 +370,10 @@ gdk_device_manager_xi2_set_window_events (GdkDeviceManager *device_manager,
                                           GdkWindow        *window,
                                           GdkEventMask      evmask)
 {
-  unsigned char mask[2] = { 0 };
   XIEventMask event_mask;
 
-  translate_event_mask (evmask, mask);
-
   event_mask.deviceid = XIAllMasterDevices;
-  event_mask.mask_len = sizeof (mask);
-  event_mask.mask = mask;
+  event_mask.mask = gdk_device_xi2_translate_event_mask (evmask, &event_mask.mask_len);
 
   _gdk_device_manager_xi2_select_events (device_manager,
                                          GDK_WINDOW_XWINDOW (window),
@@ -1144,16 +1089,12 @@ gdk_device_manager_xi2_select_window_events (GdkEventTranslator *translator,
                                              GdkEventMask        evmask)
 {
   GdkDeviceManager *device_manager;
-  unsigned char mask[2] = { 0 };
   XIEventMask event_mask;
 
   device_manager = GDK_DEVICE_MANAGER (translator);
 
-  translate_event_mask (evmask, mask);
-
   event_mask.deviceid = XIAllMasterDevices;
-  event_mask.mask_len = sizeof (mask);
-  event_mask.mask = mask;
+  event_mask.mask = gdk_device_xi2_translate_event_mask (evmask, &event_mask.mask_len);
 
   _gdk_device_manager_xi2_select_events (device_manager, window, &event_mask);
 }

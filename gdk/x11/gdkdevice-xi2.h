@@ -46,6 +46,9 @@ struct _GdkDeviceXI2Class
 
 GType gdk_device_xi2_get_type (void) G_GNUC_CONST;
 
+guchar * gdk_device_xi2_translate_event_mask (GdkEventMask  event_mask,
+                                              int          *len);
+
 
 G_END_DECLS
 
