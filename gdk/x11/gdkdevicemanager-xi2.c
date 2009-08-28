@@ -362,7 +362,7 @@ gdk_device_manager_xi2_get_devices (GdkDeviceManager *device_manager,
       g_assert_not_reached ();
     }
 
-  return g_list_copy (list);;
+  return g_list_copy (list);
 }
 
 static void
