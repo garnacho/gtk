@@ -193,6 +193,9 @@ gboolean _gdk_x11_get_xft_setting (GdkScreen   *screen,
 				   const gchar *name,
 				   GValue      *value);
 
+GdkGrabStatus gdk_x11_convert_grab_status (gint status);
+
+
 extern GdkDrawableClass  _gdk_x11_drawable_class;
 extern gboolean	         _gdk_use_xshm;
 extern const int         _gdk_nenvent_masks;

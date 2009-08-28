@@ -47,9 +47,12 @@
 #include "gdkasync.h"
 #include "gdkdisplay-x11.h"
 #include "gdkinternals.h"
+#include "gdkprivate-x11.h"
 #include "gdkintl.h"
 #include "gdkregion-generic.h"
 #include "gdkalias.h"
+
+#include <gdk/gdkdeviceprivate.h>
 
 typedef struct _GdkPredicate  GdkPredicate;
 typedef struct _GdkErrorTrap  GdkErrorTrap;
@@ -115,7 +118,7 @@ gdk_get_use_xshm (void)
   return GDK_DISPLAY_X11 (gdk_display_get_default ())->use_xshm;
 }
 
-static GdkGrabStatus
+GdkGrabStatus
 gdk_x11_convert_grab_status (gint status)
 {
   switch (status)
@@ -155,89 +158,58 @@ _gdk_windowing_pointer_grab (GdkWindow *window,
 			     GdkCursor *cursor,
 			     guint32 time)
 {
-  gint return_val;
-  GdkCursorPrivate *cursor_private;
-  GdkDisplayX11 *display_x11;
-  guint xevent_mask;
-  Window xwindow;
-  Window xconfine_to;
-  Cursor xcursor;
-  int i;
+  GdkDeviceManager *device_manager;
+  GdkDisplay *display;
+  GList *devices, *dev;
+  GdkGrabStatus status = GDK_GRAB_SUCCESS;
+  GdkDevice *device;
 
-  if (confine_to)
-    confine_to = _gdk_window_get_impl_window (confine_to);
+  if (!window || GDK_WINDOW_DESTROYED (window))
+    return GDK_GRAB_NOT_VIEWABLE;
 
-  display_x11 = GDK_DISPLAY_X11 (GDK_WINDOW_DISPLAY (native));
+  display = gdk_drawable_get_display (window);
+  device_manager = gdk_device_manager_get_for_display (display);
+  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
 
-  cursor_private = (GdkCursorPrivate*) cursor;
+  /* FIXME: What to do with floating devices the window is listening to? */
 
-  xwindow = GDK_WINDOW_XID (native);
-
-  if (!confine_to || GDK_WINDOW_DESTROYED (confine_to))
-    xconfine_to = None;
-  else
-    xconfine_to = GDK_WINDOW_XID (confine_to);
-
-  if (!cursor)
-    xcursor = None;
-  else
+  for (dev = devices; dev; dev = dev->next)
     {
-      _gdk_x11_cursor_update_theme (cursor);
-      xcursor = cursor_private->xcursor;
+      device = dev->data;
+
+      if (device->source != GDK_SOURCE_MOUSE)
+        continue;
+
+      status = GDK_DEVICE_GET_CLASS (device)->grab (device,
+                                                    native,
+                                                    owner_events,
+                                                    event_mask,
+                                                    confine_to,
+                                                    cursor,
+                                                    time);
+
+      if (status != GDK_GRAB_SUCCESS)
+        break;
     }
 
-  xevent_mask = 0;
-  for (i = 0; i < _gdk_nenvent_masks; i++)
+  if (status != GDK_GRAB_SUCCESS)
     {
-      if (event_mask & (1 << (i + 1)))
-	xevent_mask |= _gdk_event_mask_table[i];
+      /* Something went wrong, ungrab already grabbed devices */
+      while (dev)
+        {
+          device = dev->data;
+          dev = dev->prev;
+
+          if (device->source == GDK_SOURCE_MOUSE)
+            GDK_DEVICE_GET_CLASS (device)->ungrab (device, time);
+        }
     }
 
-  /* We don't want to set a native motion hint mask, as we're emulating motion
-   * hints. If we set a native one we just wouldn't get any events.
-   */
-  xevent_mask &= ~PointerMotionHintMask;
-
-#if 0
-  return_val = _gdk_input_grab_pointer (window,
-					native,
-					owner_events,
-					event_mask,
-					confine_to,
-					time);
-#else
-  return_val = GrabSuccess;
-#endif
-
-  if (return_val == GrabSuccess ||
-      G_UNLIKELY (!display_x11->trusted_client && return_val == AlreadyGrabbed))
-    {
-      if (!GDK_WINDOW_DESTROYED (native))
-	{
-#ifdef G_ENABLE_DEBUG
-	  if (_gdk_debug_flags & GDK_DEBUG_NOGRABS)
-	    return_val = GrabSuccess;
-	  else
-#endif
-	    return_val = XGrabPointer (GDK_WINDOW_XDISPLAY (native),
-				       xwindow,
-				       owner_events,
-				       xevent_mask,
-				       GrabModeAsync, GrabModeAsync,
-				       xconfine_to,
-				       xcursor,
-				       time);
-	}
-      else
-	return_val = AlreadyGrabbed;
-    }
-
-  if (return_val == GrabSuccess)
-    _gdk_x11_roundtrip_async (GDK_DISPLAY_OBJECT (display_x11),
+  if (status == GDK_GRAB_SUCCESS)
+    _gdk_x11_roundtrip_async (display,
 			      has_pointer_grab_callback,
 			      NULL);
-
-  return gdk_x11_convert_grab_status (return_val);
+  return status;
 }
 
 /*
