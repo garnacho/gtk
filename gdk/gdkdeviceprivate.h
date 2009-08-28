@@ -25,6 +25,7 @@
 #define __GDK_DEVICE_PRIVATE_H__
 
 #include <gdk/gdkdevice.h>
+#include <gdk/gdkevents.h>
 
 G_BEGIN_DECLS
 
@@ -67,6 +68,16 @@ struct _GdkDeviceClass
                               gint             *win_x,
                               gint             *win_y,
                               GdkModifierType  *mask);
+  GdkGrabStatus (* grab)     (GdkDevice        *device,
+                              GdkWindow        *window,
+                              gboolean          owner_events,
+                              GdkEventMask      event_mask,
+                              GdkWindow        *confine_to,
+                              GdkCursor        *cursor,
+                              guint32           time_);
+  void          (*ungrab)    (GdkDevice        *device,
+                              guint32           time_);
+
   GdkWindow * (* window_at_position) (GdkDevice *device,
                                       gint      *win_x,
                                       gint      *win_y);
