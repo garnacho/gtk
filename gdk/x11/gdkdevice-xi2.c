@@ -61,6 +61,17 @@ static gboolean gdk_device_xi2_query_state (GdkDevice        *device,
                                             gint             *win_x,
                                             gint             *win_y,
                                             GdkModifierType  *mask);
+
+static GdkGrabStatus gdk_device_xi2_grab   (GdkDevice     *device,
+                                            GdkWindow     *window,
+                                            gboolean       owner_events,
+                                            GdkEventMask   event_mask,
+                                            GdkWindow     *confine_to,
+                                            GdkCursor     *cursor,
+                                            guint32        time_);
+static void          gdk_device_xi2_ungrab (GdkDevice     *device,
+                                            guint32        time_);
+
 static GdkWindow * gdk_device_xi2_window_at_position (GdkDevice *device,
                                                       gint      *win_x,
                                                       gint      *win_y);
@@ -86,6 +97,8 @@ gdk_device_xi2_class_init (GdkDeviceXI2Class *klass)
   device_class->set_window_cursor = gdk_device_xi2_set_window_cursor;
   device_class->warp = gdk_device_xi2_warp;
   device_class->query_state = gdk_device_xi2_query_state;
+  device_class->grab = gdk_device_xi2_grab;
+  device_class->ungrab = gdk_device_xi2_ungrab;
   device_class->window_at_position = gdk_device_xi2_window_at_position;
 
   g_object_class_install_property (object_class,
@@ -262,6 +275,73 @@ gdk_device_xi2_query_state (GdkDevice        *device,
   return TRUE;
 }
 
+static GdkGrabStatus
+gdk_device_xi2_grab (GdkDevice    *device,
+                     GdkWindow    *window,
+                     gboolean      owner_events,
+                     GdkEventMask  event_mask,
+                     GdkWindow    *confine_to,
+                     GdkCursor    *cursor,
+                     guint32       time_)
+{
+  GdkDeviceXI2Private *priv;
+  GdkDisplay *display;
+  XIEventMask mask;
+  Window xwindow, xconfine_to;
+  Cursor xcursor;
+  int status;
+
+  priv = GDK_DEVICE_XI2_GET_PRIVATE (device);
+  display = gdk_device_get_display (device);
+
+  xwindow = GDK_WINDOW_XID (window);
+
+  if (confine_to)
+    confine_to = _gdk_window_get_impl_window (confine_to);
+
+  if (!confine_to || GDK_WINDOW_DESTROYED (confine_to))
+    xconfine_to = None;
+  else
+    xconfine_to = GDK_WINDOW_XID (confine_to);
+
+  if (!cursor)
+    xcursor = None;
+  else
+    {
+      _gdk_x11_cursor_update_theme (cursor);
+      xcursor = ((GdkCursorPrivate *) cursor)->xcursor;
+    }
+
+  mask.deviceid = priv->device_id;
+  mask.mask = gdk_device_xi2_translate_event_mask (event_mask, &mask.mask_len);
+
+  status = XIGrabDevice (GDK_DISPLAY_XDISPLAY (display),
+                         priv->device_id,
+                         xwindow,
+                         time_,
+                         xcursor,
+                         GrabModeAsync, GrabModeAsync,
+                         owner_events,
+                         &mask);
+
+  return gdk_x11_convert_grab_status (status);
+}
+
+static void
+gdk_device_xi2_ungrab (GdkDevice *device,
+                       guint32    time_)
+{
+  GdkDeviceXI2Private *priv;
+  GdkDisplay *display;
+
+  priv = GDK_DEVICE_XI2_GET_PRIVATE (device);
+  display = gdk_device_get_display (device);
+
+  XIUngrabDevice (GDK_DISPLAY_XDISPLAY (display),
+                  priv->device_id,
+                  time_);
+}
+
 static GdkWindow *
 gdk_device_xi2_window_at_position (GdkDevice *device,
                                    gint      *win_x,
@@ -328,7 +408,6 @@ gdk_device_xi2_translate_event_mask (GdkEventMask  event_mask,
                                      int          *len)
 {
   guchar *mask;
-  int mask_len;
 
   *len = XIMaskLen (XI_LASTEVENT);
   mask = g_new0 (guchar, *len);
