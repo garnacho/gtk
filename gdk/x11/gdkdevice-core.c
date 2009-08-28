@@ -42,6 +42,15 @@ static gboolean gdk_device_core_query_state (GdkDevice        *device,
                                              gint             *win_x,
                                              gint             *win_y,
                                              GdkModifierType  *mask);
+static GdkGrabStatus gdk_device_core_grab   (GdkDevice     *device,
+                                             GdkWindow     *window,
+                                             gboolean       owner_events,
+                                             GdkEventMask   event_mask,
+                                             GdkWindow     *confine_to,
+                                             GdkCursor     *cursor,
+                                             guint32        time_);
+static void          gdk_device_core_ungrab (GdkDevice     *device,
+                                             guint32        time_);
 static GdkWindow * gdk_device_core_window_at_position (GdkDevice *device,
                                                        gint      *win_x,
                                                        gint      *win_y);
@@ -63,6 +72,8 @@ gdk_device_core_class_init (GdkDeviceCoreClass *klass)
   device_class->set_window_cursor = gdk_device_core_set_window_cursor;
   device_class->warp = gdk_device_core_warp;
   device_class->query_state = gdk_device_core_query_state;
+  device_class->grab = gdk_device_core_grab;
+  device_class->ungrab = gdk_device_core_ungrab;
   device_class->window_at_position = gdk_device_core_window_at_position;
 }
 
@@ -187,6 +198,91 @@ gdk_device_core_query_state (GdkDevice        *device,
   return TRUE;
 }
 
+static GdkGrabStatus
+gdk_device_core_grab (GdkDevice    *device,
+                      GdkWindow    *window,
+                      gboolean      owner_events,
+                      GdkEventMask  event_mask,
+                      GdkWindow    *confine_to,
+                      GdkCursor    *cursor,
+                      guint32       time_)
+{
+  GdkDisplay *display;
+  Window xwindow, xconfine_to;
+  int status;
+
+  display = gdk_device_get_display (device);
+
+  xwindow = GDK_WINDOW_XID (window);
+
+  if (confine_to)
+    confine_to = _gdk_window_get_impl_window (confine_to);
+
+  if (!confine_to || GDK_WINDOW_DESTROYED (confine_to))
+    xconfine_to = None;
+  else
+    xconfine_to = GDK_WINDOW_XID (confine_to);
+
+  if (device->source == GDK_SOURCE_KEYBOARD)
+    {
+      /* Device is a keyboard */
+      status = XGrabKeyboard (GDK_DISPLAY_XDISPLAY (display),
+                              xwindow,
+                              owner_events,
+                              GrabModeAsync, GrabModeAsync,
+                              time_);
+    }
+  else
+    {
+      Cursor xcursor;
+      guint xevent_mask;
+      gint i;
+
+      /* Device is a pointer */
+      if (!cursor)
+        xcursor = None;
+      else
+        {
+          _gdk_x11_cursor_update_theme (cursor);
+          xcursor = ((GdkCursorPrivate *) cursor)->xcursor;
+        }
+
+      xevent_mask = 0;
+
+      for (i = 0; i < _gdk_nenvent_masks; i++)
+        {
+          if (event_mask & (1 << (i + 1)))
+            xevent_mask |= _gdk_event_mask_table[i];
+        }
+
+      /* We don't want to set a native motion hint mask, as we're emulating motion
+       * hints. If we set a native one we just wouldn't get any events.
+       */
+      xevent_mask &= ~PointerMotionHintMask;
+
+      status = XGrabPointer (GDK_DISPLAY_XDISPLAY (display),
+                             xwindow,
+                             owner_events,
+                             xevent_mask,
+                             GrabModeAsync, GrabModeAsync,
+                             xconfine_to,
+                             xcursor,
+                             time_);
+    }
+
+  return gdk_x11_convert_grab_status (status);
+}
+
+static void
+gdk_device_core_ungrab (GdkDevice *device,
+                        guint32    time_)
+{
+  GdkDisplay *display;
+
+  display = gdk_device_get_display (device);
+  XUngrabPointer (GDK_DISPLAY_XDISPLAY (display), time_);
+}
+
 static GdkWindow *
 gdk_device_core_window_at_position (GdkDevice *device,
                                     gint      *win_x,
@@ -200,6 +296,7 @@ gdk_device_core_window_at_position (GdkDevice *device,
   int xroot_x, xroot_y, xwin_x, xwin_y;
   unsigned int xmask;
 
+  last = None;
   display = gdk_device_get_display (device);
   screen = gdk_display_get_default_screen (display);
 
