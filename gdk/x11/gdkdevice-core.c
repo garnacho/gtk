@@ -51,9 +51,10 @@ static GdkGrabStatus gdk_device_core_grab   (GdkDevice     *device,
                                              guint32        time_);
 static void          gdk_device_core_ungrab (GdkDevice     *device,
                                              guint32        time_);
-static GdkWindow * gdk_device_core_window_at_position (GdkDevice *device,
-                                                       gint      *win_x,
-                                                       gint      *win_y);
+static GdkWindow * gdk_device_core_window_at_position (GdkDevice       *device,
+                                                       gint            *win_x,
+                                                       gint            *win_y,
+                                                       GdkModifierType *mask);
 
 
 G_DEFINE_TYPE (GdkDeviceCore, gdk_device_core, GDK_TYPE_DEVICE)
@@ -284,9 +285,10 @@ gdk_device_core_ungrab (GdkDevice *device,
 }
 
 static GdkWindow *
-gdk_device_core_window_at_position (GdkDevice *device,
-                                    gint      *win_x,
-                                    gint      *win_y)
+gdk_device_core_window_at_position (GdkDevice       *device,
+                                    gint            *win_x,
+                                    gint            *win_y,
+                                    GdkModifierType *mask)
 {
   GdkDisplay *display;
   GdkScreen *screen;
@@ -340,6 +342,9 @@ gdk_device_core_window_at_position (GdkDevice *device,
 
   if (win_y)
     *win_y = (window) ? xwin_y : -1;
+
+  if (mask)
+    *mask = xmask;
 
   return window;
 }

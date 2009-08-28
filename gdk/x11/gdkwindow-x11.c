@@ -3241,11 +3241,7 @@ _gdk_windowing_window_at_device_position (GdkDisplay      *display,
    */
   gdk_x11_display_grab (display);
   if (G_LIKELY (GDK_DISPLAY_X11 (display)->trusted_client))
-    {
-      window = GDK_DEVICE_GET_CLASS (device)->window_at_position (device, win_x, win_y);
-      GDK_DEVICE_GET_CLASS (device)->query_state (device, window, NULL, NULL,
-                                                  NULL, NULL, NULL, NULL, mask);
-    }
+    window = GDK_DEVICE_GET_CLASS (device)->window_at_position (device, win_x, win_y, mask);
   else
     {
       gint i, screens, width, height;
@@ -3328,7 +3324,6 @@ _gdk_windowing_window_at_device_position (GdkDisplay      *display,
     }
 
   gdk_x11_display_ungrab (display);
-
 
   return window;
 }

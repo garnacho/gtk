@@ -78,9 +78,10 @@ struct _GdkDeviceClass
   void          (*ungrab)    (GdkDevice        *device,
                               guint32           time_);
 
-  GdkWindow * (* window_at_position) (GdkDevice *device,
-                                      gint      *win_x,
-                                      gint      *win_y);
+  GdkWindow * (* window_at_position) (GdkDevice       *device,
+                                      gint            *win_x,
+                                      gint            *win_y,
+                                      GdkModifierType *mask);
 };
 
 void  _gdk_device_set_relative (GdkDevice *device,
