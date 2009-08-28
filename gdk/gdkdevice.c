@@ -44,7 +44,7 @@ struct _GdkAxisInfo
 struct _GdkDevicePrivate
 {
   GdkDisplay *display;
-  GdkDisplay *relative;
+  GdkDevice *relative;
   GArray *axes;
 };
 
