@@ -1098,4 +1098,5 @@ gdk_device_manager_xi2_select_window_events (GdkEventTranslator *translator,
   event_mask.mask = gdk_device_xi2_translate_event_mask (evmask, &event_mask.mask_len);
 
   _gdk_device_manager_xi2_select_events (device_manager, window, &event_mask);
+  g_free (event_mask.mask);
 }
