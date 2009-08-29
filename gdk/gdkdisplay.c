@@ -1033,6 +1033,7 @@ _gdk_display_add_pointer_grab (GdkDisplay    *display,
    coordinates to the right toplevel */
 static void
 synthesize_crossing_events (GdkDisplay      *display,
+                            GdkDevice       *device,
 			    GdkWindow       *src_window,
 			    GdkWindow       *dest_window,
 			    GdkCrossingMode  crossing_mode,
@@ -1068,7 +1069,7 @@ synthesize_crossing_events (GdkDisplay      *display,
       _gdk_synthesize_crossing_events (display,
 				       src_window,
 				       dest_window,
-                                       display->core_pointer, /* FIXME */
+                                       device,
 				       crossing_mode,
 				       x, y, state,
 				       time,
@@ -1082,7 +1083,7 @@ synthesize_crossing_events (GdkDisplay      *display,
       _gdk_synthesize_crossing_events (display,
                                        src_window,
                                        NULL,
-                                       display->core_pointer, /* FIXME */
+                                       device,
                                        crossing_mode,
                                        x, y, state,
                                        time,
@@ -1097,7 +1098,7 @@ synthesize_crossing_events (GdkDisplay      *display,
       _gdk_synthesize_crossing_events (display,
 				       src_window,
 				       NULL,
-                                       display->core_pointer, /* FIXME */
+                                       device,
 				       crossing_mode,
 				       x, y, state,
 				       time,
@@ -1108,7 +1109,7 @@ synthesize_crossing_events (GdkDisplay      *display,
       _gdk_synthesize_crossing_events (display,
 				       NULL,
 				       dest_window,
-                                       display->core_pointer, /* FIXME */
+                                       device,
 				       crossing_mode,
 				       x, y, state,
 				       time,
@@ -1194,7 +1195,7 @@ switch_to_pointer_grab (GdkDisplay         *display,
 	    src_window = info->window_under_pointer;
 
 	  if (src_window != grab->window)
-            synthesize_crossing_events (display,
+            synthesize_crossing_events (display, device,
                                         src_window, grab->window,
                                         GDK_CROSSING_GRAB, time, serial);
 
@@ -1245,7 +1246,7 @@ switch_to_pointer_grab (GdkDisplay         *display,
 	    }
 
 	  if (pointer_window != last_grab->window)
-            synthesize_crossing_events (display,
+            synthesize_crossing_events (display, device,
                                         last_grab->window, pointer_window,
                                         GDK_CROSSING_UNGRAB, time, serial);
 
