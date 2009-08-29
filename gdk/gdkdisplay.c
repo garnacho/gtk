@@ -1546,15 +1546,41 @@ gdk_pointer_grab_info_libgtk_only (GdkDisplay *display,
 gboolean
 gdk_display_pointer_is_grabbed (GdkDisplay *display)
 {
+  GdkDeviceManager *device_manager;
+  GdkPointerGrabInfo *info;
+  GList *devices, *dev;
+  GdkDevice *device;
+
+  g_return_val_if_fail (GDK_IS_DISPLAY (display), TRUE);
+
+  device_manager = gdk_device_manager_get_for_display (display);
+  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+
+  for (dev = devices; dev; dev = dev->next)
+    {
+      device = dev->data;
+
+      if (device->source = GDK_SOURCE_MOUSE &&
+          gdk_display_device_is_grabbed (display, device))
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
+gboolean
+gdk_display_device_is_grabbed (GdkDisplay *display,
+                               GdkDevice  *device)
+{
   GdkPointerGrabInfo *info;
 
   g_return_val_if_fail (GDK_IS_DISPLAY (display), TRUE);
+  g_return_val_if_fail (GDK_IS_DEVICE (device), TRUE);
 
   /* What we're interested in is the steady state (ie last grab),
      because we're interested e.g. if we grabbed so that we
      can ungrab, even if our grab is not active just yet. */
-  /* FIXME: which device? */
-  info = _gdk_display_get_last_pointer_grab (display, display->core_pointer);
+  info = _gdk_display_get_last_pointer_grab (display, device);
 
   return (info && !info->implicit);
 }

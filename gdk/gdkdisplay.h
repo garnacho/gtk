@@ -181,6 +181,8 @@ void        gdk_display_pointer_ungrab     (GdkDisplay  *display,
 void        gdk_display_keyboard_ungrab    (GdkDisplay  *display,
 					    guint32      time_);
 gboolean    gdk_display_pointer_is_grabbed (GdkDisplay  *display);
+gboolean    gdk_display_device_is_grabbed  (GdkDisplay  *display,
+                                            GdkDevice   *device);
 void        gdk_display_beep               (GdkDisplay  *display);
 void        gdk_display_sync               (GdkDisplay  *display);
 void        gdk_display_flush              (GdkDisplay  *display);
