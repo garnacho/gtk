@@ -771,7 +771,9 @@ multihead_default_get_pointer (GdkDisplay       *display,
                                gint             *y,
                                GdkModifierType  *mask)
 {
-  /* FIXME: Call equivalent to _gdk_windowing_get_pointer() */
+  return _gdk_windowing_get_device_state (display,
+                                          display->core_pointer,
+                                          screen, x, y, mask);
 }
 
 static GdkWindow *
@@ -782,8 +784,8 @@ multihead_default_window_get_pointer (GdkDisplay      *display,
                                       GdkModifierType *mask)
 {
   return gdk_window_real_window_get_device_position (display,
-                                                  display->core_pointer,
-                                                  window, x, y, mask);
+                                                     display->core_pointer,
+                                                     window, x, y, mask);
 }
 
 static GdkWindow *
