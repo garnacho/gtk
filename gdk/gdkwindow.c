@@ -9302,6 +9302,7 @@ gdk_pointer_grab (GdkWindow *	  window,
   devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
 
   /* FIXME: Should this be generic to all backends? */
+  /* FIXME: What happens with extended devices? */
   for (dev = devices; dev; dev = dev->next)
     {
       device = dev->data;
@@ -9331,6 +9332,8 @@ gdk_pointer_grab (GdkWindow *	  window,
     }
 
   /* FIXME: handle errors when grabbing */
+
+  g_list_free (devices);
 
   return res;
 }

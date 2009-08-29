@@ -39,6 +39,7 @@
 #include "gdkscreen.h"
 #include "gdkscreen-x11.h"
 #include "gdkinternals.h"
+#include "gdkdeviceprivate.h"
 #include "xsettings-client.h"
 #include "gdkalias.h"
 
@@ -1584,12 +1585,13 @@ struct XPointerUngrabInfo {
 };
 
 static void
-pointer_ungrab_callback (GdkDisplay *display,
-			 gpointer data,
-			 gulong serial)
+device_ungrab_callback (GdkDisplay *display,
+                        gpointer    data,
+                        gulong      serial)
 {
-  /* FIXME: which device? */
-  _gdk_display_pointer_grab_update (display, display->core_pointer, serial);
+  GdkDevice *device = data;
+
+  _gdk_display_pointer_grab_update (display, device, serial);
 }
 
 
@@ -1608,8 +1610,9 @@ pointer_ungrab_callback (GdkDisplay *display,
  * Since: 2.2
  */
 void
-gdk_display_pointer_ungrab (GdkDisplay *display,
-			    guint32     time_)
+gdk_display_device_ungrab (GdkDisplay *display,
+                           GdkDevice  *device,
+                           guint32     time_)
 {
   Display *xdisplay;
   GdkDisplayX11 *display_x11;
@@ -1617,30 +1620,26 @@ gdk_display_pointer_ungrab (GdkDisplay *display,
   unsigned long serial;
 
   g_return_if_fail (GDK_IS_DISPLAY (display));
+  g_return_if_fail (GDK_IS_DEVICE (device));
 
   display_x11 = GDK_DISPLAY_X11 (display);
   xdisplay = GDK_DISPLAY_XDISPLAY (display);
 
   serial = NextRequest (xdisplay);
-  
-#if 0
-  _gdk_input_ungrab_pointer (display, time_);
-#endif
-  /* FIXME: Use GdkDevice::ungrab */
-  XUngrabPointer (xdisplay, time_);
+
+  GDK_DEVICE_GET_CLASS (device)->ungrab (device, time_);
   XFlush (xdisplay);
 
-  /* FIXME: which device? */
-  grab = _gdk_display_get_last_pointer_grab (display, display->core_pointer);
+  grab = _gdk_display_get_last_pointer_grab (display, device);
   if (grab &&
       (time_ == GDK_CURRENT_TIME ||
        grab->time == GDK_CURRENT_TIME ||
        !XSERVER_TIME_IS_LATER (grab->time, time_)))
     {
       grab->serial_end = serial;
-      _gdk_x11_roundtrip_async (display, 
-				pointer_ungrab_callback,
-				NULL);
+      _gdk_x11_roundtrip_async (display,
+				device_ungrab_callback,
+				device);
     }
 }
 

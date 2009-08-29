@@ -359,6 +359,43 @@ gdk_display_put_event (GdkDisplay     *display,
 }
 
 /**
+ * gdk_display_pointer_ungrab:
+ * @display: a #GdkDisplay.
+ * @time_: a timestap (e.g. %GDK_CURRENT_TIME).
+ *
+ * Release any pointer grab.
+ *
+ * Since: 2.2
+ */
+void
+gdk_display_pointer_ungrab (GdkDisplay *display,
+			    guint32     time_)
+{
+  GdkDeviceManager *device_manager;
+  GList *devices, *dev;
+  GdkDevice *device;
+
+  g_return_if_fail (GDK_IS_DISPLAY (display));
+
+  device_manager = gdk_device_manager_get_for_display (display);
+  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+
+  /* FIXME: Should this be generic to all backends? */
+  /* FIXME: What happens with extended devices? */
+  for (dev = devices; dev; dev = dev->next)
+    {
+      device = dev->data;
+
+      if (device->source != GDK_SOURCE_MOUSE)
+        continue;
+
+      gdk_display_device_ungrab (display, device, time_);
+    }
+
+  g_list_free (devices);
+}
+
+/**
  * gdk_pointer_ungrab:
  * @time_: a timestamp from a #GdkEvent, or %GDK_CURRENT_TIME if no 
  *  timestamp is available.
