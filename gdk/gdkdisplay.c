@@ -933,6 +933,7 @@ gdk_set_pointer_hooks (const GdkPointerHooks *new_hooks)
 
 static void
 generate_grab_broken_event (GdkWindow *window,
+                            GdkDevice *device,
 			    gboolean   keyboard,
 			    gboolean   implicit,
 			    GdkWindow *grab_window)
@@ -948,6 +949,7 @@ generate_grab_broken_event (GdkWindow *window,
       event.grab_broken.keyboard = keyboard;
       event.grab_broken.implicit = implicit;
       event.grab_broken.grab_window = grab_window;
+      event.grab_broken.device = device;
       gdk_event_put (&event);
     }
 }
@@ -1257,6 +1259,7 @@ switch_to_pointer_grab (GdkDisplay         *display,
 
 	  if (last_grab->implicit_ungrab)
 	    generate_grab_broken_event (last_grab->window,
+                                        device,
 					FALSE, TRUE,
 					NULL);
 	}
@@ -1310,6 +1313,7 @@ _gdk_display_pointer_grab_update (GdkDisplay *display,
       if (next_grab == NULL ||
 	  current_grab->window != next_grab->window)
 	generate_grab_broken_event (GDK_WINDOW (current_grab->window),
+                                    device,
 				    FALSE, current_grab->implicit,
 				    next_grab? next_grab->window : NULL);
 
@@ -1402,13 +1406,14 @@ _gdk_display_set_has_keyboard_grab (GdkDisplay *display,
   if (display->keyboard_grab.window != NULL &&
       display->keyboard_grab.window != window)
     generate_grab_broken_event (display->keyboard_grab.window,
+                                display->core_pointer, /* FIXME: which event? core pointer not, clearly */
 				TRUE, FALSE, window);
-  
+
   display->keyboard_grab.window = window;
   display->keyboard_grab.native_window = native_window;
   display->keyboard_grab.owner_events = owner_events;
   display->keyboard_grab.serial = serial;
-  display->keyboard_grab.time = time;      
+  display->keyboard_grab.time = time;
 }
 
 void
@@ -1417,6 +1422,7 @@ _gdk_display_unset_has_keyboard_grab (GdkDisplay *display,
 {
   if (implicit)
     generate_grab_broken_event (display->keyboard_grab.window,
+                                display->core_pointer, /* FIXME: which device? core pointer not, clearly */
 				TRUE, FALSE, NULL);
   display->keyboard_grab.window = NULL;  
 }

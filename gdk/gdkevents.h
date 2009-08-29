@@ -477,6 +477,7 @@ struct _GdkEventGrabBroken {
   gboolean keyboard;
   gboolean implicit;
   GdkWindow *grab_window;
+  GdkDevice *device;
 };
 
 /* Event types for DND */
