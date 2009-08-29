@@ -1626,10 +1626,12 @@ gdk_display_pointer_ungrab (GdkDisplay *display,
 #if 0
   _gdk_input_ungrab_pointer (display, time_);
 #endif
+  /* FIXME: Use GdkDevice::ungrab */
   XUngrabPointer (xdisplay, time_);
   XFlush (xdisplay);
 
-  grab = _gdk_display_get_last_pointer_grab (display);
+  /* FIXME: which device? */
+  grab = _gdk_display_get_last_pointer_grab (display, display->core_pointer);
   if (grab &&
       (time_ == GDK_CURRENT_TIME ||
        grab->time == GDK_CURRENT_TIME ||

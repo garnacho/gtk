@@ -6437,7 +6437,9 @@ gdk_window_hide (GdkWindow *window)
       /* May need to break grabs on children */
       display = gdk_drawable_get_display (window);
 
+      /* FIXME: which device(s)? */
       if (_gdk_display_end_pointer_grab (display,
+                                         display->core_pointer,
 					 _gdk_windowing_window_get_next_serial (display),
 					 window,
 					 TRUE))
@@ -8404,7 +8406,7 @@ update_cursor (GdkDisplay *display,
 
   /* We ignore the serials here and just pick the last grab
      we've sent, as that would shortly be used anyway. */
-  grab = _gdk_display_get_last_pointer_grab (display);
+  grab = _gdk_display_get_last_pointer_grab (display, device);
   if (grab != NULL &&
       !_gdk_window_event_parent_of (grab->window, (GdkWindow *)cursor_window))
     cursor_window = (GdkWindowObject *)grab->window;
@@ -8943,7 +8945,7 @@ send_crossing_event (GdkDisplay                 *display,
   GdkPointerGrabInfo *grab;
   gboolean block_event = FALSE;
 
-  grab = _gdk_display_has_pointer_grab (display, serial);
+  grab = _gdk_display_has_pointer_grab (display, device, serial);
 
   if (grab != NULL &&
       !grab->owner_events &&
@@ -9181,7 +9183,7 @@ get_pointer_window (GdkDisplay *display,
   else
     pointer_window = NULL;
 
-  grab = _gdk_display_has_pointer_grab (display, serial);
+  grab = _gdk_display_has_pointer_grab (display, device, serial);
   if (grab != NULL &&
       !grab->owner_events &&
       pointer_window != grab->window)
@@ -9252,8 +9254,11 @@ gdk_pointer_grab (GdkWindow *	  window,
 {
   GdkWindow *native;
   GdkDisplay *display;
+  GdkDeviceManager *device_manager;
+  GdkDevice *device;
   GdkGrabStatus res;
   gulong serial;
+  GList *devices, *dev;
 
   g_return_val_if_fail (window != NULL, 0);
   g_return_val_if_fail (GDK_IS_WINDOW (window), 0);
@@ -9293,24 +9298,39 @@ gdk_pointer_grab (GdkWindow *	  window,
   display = gdk_drawable_get_display (window);
 
   serial = _gdk_windowing_window_get_next_serial (display);
+  device_manager = gdk_device_manager_get_for_display (display);
+  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
 
-  res = _gdk_windowing_pointer_grab (window,
-				     native,
-				     owner_events,
-				     event_mask,
-				     confine_to,
-				     cursor,
-				     time);
+  /* FIXME: Should this be generic to all backends? */
+  for (dev = devices; dev; dev = dev->next)
+    {
+      device = dev->data;
 
-  if (res == GDK_GRAB_SUCCESS)
-    _gdk_display_add_pointer_grab (display,
-				   window,
-				   native,
-				   owner_events,
-				   event_mask,
-				   serial,
-				   time,
-				   FALSE);
+      if (device->source != GDK_SOURCE_MOUSE)
+        continue;
+
+      res = _gdk_windowing_device_grab (device,
+                                        window,
+                                        native,
+                                        owner_events,
+                                        event_mask,
+                                        confine_to,
+                                        cursor,
+                                        time);
+
+      if (res == GDK_GRAB_SUCCESS)
+        _gdk_display_add_pointer_grab (display,
+                                       device,
+                                       window,
+                                       native,
+                                       owner_events,
+                                       event_mask,
+                                       serial,
+                                       time,
+                                       FALSE);
+    }
+
+  /* FIXME: handle errors when grabbing */
 
   return res;
 }
@@ -9414,6 +9434,7 @@ _gdk_synthesize_crossing_events_for_geometry_change (GdkWindow *changed_window)
 /* Don't use for crossing events */
 static GdkWindow *
 get_event_window (GdkDisplay                 *display,
+                  GdkDevice                  *device,
 		  GdkWindow                  *pointer_window,
 		  GdkEventType                type,
 		  GdkModifierType             mask,
@@ -9425,7 +9446,7 @@ get_event_window (GdkDisplay                 *display,
   GdkWindowObject *w;
   GdkPointerGrabInfo *grab;
 
-  grab = _gdk_display_has_pointer_grab (display, serial);
+  grab = _gdk_display_has_pointer_grab (display, device, serial);
 
   if (grab != NULL && !grab->owner_events)
     {
@@ -9622,6 +9643,7 @@ proxy_pointer_event (GdkDisplay                 *display,
       gboolean is_hint;
 
       event_win = get_event_window (display,
+                                    device,
 				    pointer_window,
 				    source_event->type,
 				    state,
@@ -9700,7 +9722,7 @@ proxy_button_event (GdkEvent *source_event,
 						       &toplevel_x, &toplevel_y);
 
   if (type == GDK_BUTTON_PRESS &&
-      _gdk_display_has_pointer_grab (display, serial) == NULL)
+      _gdk_display_has_pointer_grab (display, device, serial) == NULL)
     {
       pointer_window =
 	_gdk_window_find_descendant_at (toplevel_window,
@@ -9720,6 +9742,7 @@ proxy_button_event (GdkEvent *source_event,
       pointer_window = (GdkWindow *)w;
 
       _gdk_display_add_pointer_grab  (display,
+                                      device,
 				      pointer_window,
 				      toplevel_window,
 				      FALSE,
@@ -9735,6 +9758,7 @@ proxy_button_event (GdkEvent *source_event,
 				       serial);
 
   event_win = get_event_window (display,
+                                device,
 				pointer_window,
 				type, state,
 				NULL, serial);
@@ -9888,9 +9912,10 @@ _gdk_windowing_got_event (GdkDisplay *display,
   if (_gdk_native_windows)
     {
       if (event->type == GDK_BUTTON_PRESS &&
-	  _gdk_display_has_pointer_grab (display, serial) == NULL)
+	  _gdk_display_has_pointer_grab (display, device, serial) == NULL)
 	{
 	  _gdk_display_add_pointer_grab  (display,
+                                          device,
 					  event_window,
 					  event_window,
 					  FALSE,
@@ -9903,7 +9928,7 @@ _gdk_windowing_got_event (GdkDisplay *display,
       if (event->type == GDK_BUTTON_RELEASE)
 	{
 	  button_release_grab =
-	    _gdk_display_has_pointer_grab (display, serial);
+            _gdk_display_has_pointer_grab (display, device, serial);
 	  if (button_release_grab &&
 	      button_release_grab->implicit &&
 	      (event->button.state & GDK_ANY_BUTTON_MASK & ~(GDK_BUTTON1_MASK << (event->button.button - 1))) == 0)
@@ -9959,7 +9984,7 @@ _gdk_windowing_got_event (GdkDisplay *display,
        event->type == GDK_LEAVE_NOTIFY) &&
       (event->crossing.mode == GDK_CROSSING_GRAB ||
        event->crossing.mode == GDK_CROSSING_UNGRAB) &&
-      (_gdk_display_has_pointer_grab (display, serial) ||
+      (_gdk_display_has_pointer_grab (display, device, serial) ||
        event->crossing.detail == GDK_NOTIFY_INFERIOR))
     {
       /* We synthesize all crossing events due to grabs ourselves,
@@ -10043,7 +10068,7 @@ _gdk_windowing_got_event (GdkDisplay *display,
   if (event->type == GDK_BUTTON_RELEASE)
     {
       button_release_grab =
-	_gdk_display_has_pointer_grab (display, serial);
+	_gdk_display_has_pointer_grab (display, device, serial);
       if (button_release_grab &&
 	  button_release_grab->implicit &&
 	  (event->button.state & GDK_ANY_BUTTON_MASK & ~(GDK_BUTTON1_MASK << (event->button.button - 1))) == 0)
@@ -10075,7 +10100,8 @@ get_extension_event_window (GdkDisplay                 *display,
   GdkWindowObject *w;
   GdkPointerGrabInfo *grab;
 
-  grab = _gdk_display_has_pointer_grab (display, serial);
+  /* FIXME: which device? */
+  grab = _gdk_display_has_pointer_grab (display, display->core_pointer, serial);
 
   if (grab != NULL && !grab->owner_events)
     {

@@ -180,6 +180,27 @@ free_pointer_info (GdkPointerWindowInfo *info)
 }
 
 static void
+free_pointer_grab (GdkPointerGrabInfo *info)
+{
+  g_object_unref (info->window);
+  g_object_unref (info->native_window);
+  g_free (info);
+}
+
+static gboolean
+free_pointer_grabs_foreach (gpointer key,
+                            gpointer value,
+                            gpointer user_data)
+{
+  GList *list = value;
+
+  g_list_foreach (list, (GFunc) free_pointer_grab, NULL);
+  g_list_free (list);
+
+  return TRUE;
+}
+
+static void
 gdk_display_init (GdkDisplay *display)
 {
   _gdk_displays = g_slist_prepend (_gdk_displays, display);
@@ -188,6 +209,8 @@ gdk_display_init (GdkDisplay *display)
   display->double_click_distance = 5;
 
   display->device_hooks = &default_device_hooks;
+
+  display->device_grabs = g_hash_table_new (NULL, NULL);
 
   display->pointers_info = g_hash_table_new_full (NULL, NULL, NULL,
                                                   (GDestroyNotify) free_pointer_info);
@@ -225,6 +248,11 @@ static void
 gdk_display_finalize (GObject *object)
 {
   GdkDisplay *display = GDK_DISPLAY_OBJECT (object);
+
+  g_hash_table_foreach_remove (display->device_grabs,
+                               free_pointer_grabs_foreach,
+                               NULL);
+  g_hash_table_destroy (display->device_grabs);
 
   g_hash_table_destroy (display->pointers_info);
   g_hash_table_destroy (display->multiple_click_info);
@@ -923,31 +951,35 @@ generate_grab_broken_event (GdkWindow *window,
 }
 
 GdkPointerGrabInfo *
-_gdk_display_get_last_pointer_grab (GdkDisplay *display)
+_gdk_display_get_last_pointer_grab (GdkDisplay *display,
+                                    GdkDevice  *device)
 {
   GList *l;
 
-  l = g_list_last (display->pointer_grabs);
+  l = g_hash_table_lookup (display->device_grabs, device);
 
-  if (l == NULL)
-    return NULL;
-  else
-    return (GdkPointerGrabInfo *)l->data;
+  if (l)
+    {
+      l = g_list_last (l);
+      return l->data;
+    }
+
+  return NULL;
 }
 
-
 GdkPointerGrabInfo *
-_gdk_display_add_pointer_grab (GdkDisplay *display,
-			       GdkWindow *window,
-			       GdkWindow *native_window,
-			       gboolean owner_events,
-			       GdkEventMask event_mask,
-			       unsigned long serial_start,
-			       guint32 time,
-			       gboolean implicit)
+_gdk_display_add_pointer_grab (GdkDisplay    *display,
+                               GdkDevice     *device,
+			       GdkWindow     *window,
+			       GdkWindow     *native_window,
+			       gboolean       owner_events,
+			       GdkEventMask   event_mask,
+			       unsigned long  serial_start,
+			       guint32        time,
+			       gboolean       implicit)
 {
   GdkPointerGrabInfo *info, *other_info;
-  GList *l;
+  GList *grabs, *l;
 
   info = g_new0 (GdkPointerGrabInfo, 1);
 
@@ -960,18 +992,20 @@ _gdk_display_add_pointer_grab (GdkDisplay *display,
   info->time = time;
   info->implicit = implicit;
 
+  grabs = g_hash_table_lookup (display->device_grabs, device);
+
   /* Find the first grab that has a larger start time (if any) and insert
    * before that. I.E we insert after already existing grabs with same
    * start time */
-  for (l = display->pointer_grabs; l != NULL; l = l->next)
+  for (l = grabs; l != NULL; l = l->next)
     {
       other_info = l->data;
-      
+
       if (info->serial_start < other_info->serial_start)
 	break;
     }
-  display->pointer_grabs =
-    g_list_insert_before (display->pointer_grabs, l, info);
+
+  grabs = g_list_insert_before (grabs, l, info);
 
   /* Make sure the new grab end before next grab */
   if (l)
@@ -979,9 +1013,9 @@ _gdk_display_add_pointer_grab (GdkDisplay *display,
       other_info = l->data;
       info->serial_end = other_info->serial_start;
     }
-  
+
   /* Find any previous grab and update its end time */
-  l = g_list_find  (display->pointer_grabs, info);
+  l = g_list_find (grabs, info);
   l = l->prev;
   if (l)
     {
@@ -989,27 +1023,21 @@ _gdk_display_add_pointer_grab (GdkDisplay *display,
       other_info->serial_end = serial_start;
     }
 
-  return info;
-}
+  g_hash_table_insert (display->device_grabs, device, grabs);
 
-static void
-free_pointer_grab (GdkPointerGrabInfo *info)
-{
-  g_object_unref (info->window);
-  g_object_unref (info->native_window);
-  g_free (info);
+  return info;
 }
 
 /* _gdk_synthesize_crossing_events only works inside one toplevel.
    This function splits things into two calls if needed, converting the
    coordinates to the right toplevel */
 static void
-synthesize_crossing_events (GdkDisplay *display,
-			    GdkWindow *src_window,
-			    GdkWindow *dest_window,
-			    GdkCrossingMode crossing_mode,
-			    guint32 time,
-			    gulong serial)
+synthesize_crossing_events (GdkDisplay      *display,
+			    GdkWindow       *src_window,
+			    GdkWindow       *dest_window,
+			    GdkCrossingMode  crossing_mode,
+			    guint32          time,
+			    gulong           serial)
 {
   GdkWindow *src_toplevel, *dest_toplevel;
   GdkModifierType state;
@@ -1143,8 +1171,8 @@ switch_to_pointer_grab (GdkDisplay         *display,
   int x, y;
 
   /* Temporarily unset pointer to make sure we send the crossing events below */
-  old_grabs = display->pointer_grabs;
-  display->pointer_grabs = NULL;
+  old_grabs = g_hash_table_lookup (display->device_grabs, device);
+  g_hash_table_steal (display->device_grabs, device);
   info = _gdk_display_get_pointer_info (display, device);
 
   if (grab)
@@ -1166,11 +1194,9 @@ switch_to_pointer_grab (GdkDisplay         *display,
 	    src_window = info->window_under_pointer;
 
 	  if (src_window != grab->window)
-	    {
-	      synthesize_crossing_events (display,
-					  src_window, grab->window,
-					  GDK_CROSSING_GRAB, time, serial);
-	    }
+            synthesize_crossing_events (display,
+                                        src_window, grab->window,
+                                        GDK_CROSSING_GRAB, time, serial);
 
 	  /* !owner_event Grabbing a window that we're not inside, current status is
 	     now NULL (i.e. outside grabbed window) */
@@ -1219,9 +1245,9 @@ switch_to_pointer_grab (GdkDisplay         *display,
 	    }
 
 	  if (pointer_window != last_grab->window)
-	    synthesize_crossing_events (display,
-					last_grab->window, pointer_window,
-					GDK_CROSSING_UNGRAB, time, serial);
+            synthesize_crossing_events (display,
+                                        last_grab->window, pointer_window,
+                                        GDK_CROSSING_UNGRAB, time, serial);
 
 	  /* We're now ungrabbed, update the window_under_pointer */
 	  _gdk_display_set_window_under_pointer (display, device, pointer_window);
@@ -1233,7 +1259,7 @@ switch_to_pointer_grab (GdkDisplay         *display,
 	}
     }
 
-  display->pointer_grabs = old_grabs;
+  g_hash_table_insert (display->device_grabs, device, old_grabs);
 }
 
 void
@@ -1242,16 +1268,18 @@ _gdk_display_pointer_grab_update (GdkDisplay *display,
                                   gulong      current_serial)
 {
   GdkPointerGrabInfo *current_grab, *next_grab;
+  GList *grabs;
   guint32 time;
 
   time = display->last_event_time;
+  grabs = g_hash_table_lookup (display->device_grabs, device);
 
-  while (display->pointer_grabs != NULL)
+  while (grabs != NULL)
     {
-      current_grab = display->pointer_grabs->data;
+      current_grab = grabs->data;
 
       if (current_grab->serial_start > current_serial)
-	return; /* Hasn't started yet */
+        return; /* Hasn't started yet */
 
       if (current_grab->serial_end > current_serial ||
 	  (current_grab->serial_end == current_serial &&
@@ -1266,12 +1294,11 @@ _gdk_display_pointer_grab_update (GdkDisplay *display,
 	  break;
 	}
 
-
       next_grab = NULL;
-      if (display->pointer_grabs->next)
+      if (grabs->next)
 	{
 	  /* This is the next active grab */
-	  next_grab = display->pointer_grabs->next->data;
+	  next_grab = grabs->next->data;
 
 	  if (next_grab->serial_start > current_serial)
 	    next_grab = NULL; /* Actually its not yet active */
@@ -1283,11 +1310,9 @@ _gdk_display_pointer_grab_update (GdkDisplay *display,
 				    FALSE, current_grab->implicit,
 				    next_grab? next_grab->window : NULL);
 
-
       /* Remove old grab */
-      display->pointer_grabs =
-	g_list_delete_link (display->pointer_grabs,
-			    display->pointer_grabs);
+      grabs = g_list_delete_link (grabs, grabs);
+      g_hash_table_insert (display->device_grabs, device, grabs);
 
       switch_to_pointer_grab (display, device,
 			      next_grab, current_grab,
@@ -1299,49 +1324,54 @@ _gdk_display_pointer_grab_update (GdkDisplay *display,
 
 static GList *
 find_pointer_grab (GdkDisplay *display,
-		   gulong serial)
+                   GdkDevice  *device,
+                   gulong      serial)
 {
   GdkPointerGrabInfo *grab;
   GList *l;
 
-  for (l = display->pointer_grabs; l != NULL; l = l->next)
+  l = g_hash_table_lookup (display->device_grabs, device);
+
+  while (l)
     {
       grab = l->data;
 
       if (serial >= grab->serial_start && serial < grab->serial_end)
 	return l;
+
+      l = l->next;
     }
-  
+
   return NULL;
 }
 
-
-
 GdkPointerGrabInfo *
 _gdk_display_has_pointer_grab (GdkDisplay *display,
-			       gulong serial)
+                               GdkDevice  *device,
+			       gulong      serial)
 {
   GList *l;
 
-  l = find_pointer_grab (display, serial);
+  l = find_pointer_grab (display, device, serial);
   if (l)
     return l->data;
-  
+
   return NULL;
 }
 
 /* Returns true if last grab was ended */
 gboolean
 _gdk_display_end_pointer_grab (GdkDisplay *display,
-			       gulong serial,
-			       GdkWindow *if_child,
-			       gboolean implicit)
+                               GdkDevice  *device,
+			       gulong      serial,
+			       GdkWindow  *if_child,
+			       gboolean    implicit)
 {
   GdkPointerGrabInfo *grab;
   GList *l;
 
-  l = find_pointer_grab (display, serial);
-  
+  l = find_pointer_grab (display, device, serial);
+
   if (l == NULL)
     return FALSE;
 
@@ -1485,7 +1515,8 @@ gdk_pointer_grab_info_libgtk_only (GdkDisplay *display,
   /* What we're interested in is the steady state (ie last grab),
      because we're interested e.g. if we grabbed so that we
      can ungrab, even if our grab is not active just yet. */
-  info = _gdk_display_get_last_pointer_grab (display);
+  /* FIXME: which device? */
+  info = _gdk_display_get_last_pointer_grab (display, display->core_pointer);
   
   if (info)
     {
@@ -1515,14 +1546,15 @@ gboolean
 gdk_display_pointer_is_grabbed (GdkDisplay *display)
 {
   GdkPointerGrabInfo *info;
-  
+
   g_return_val_if_fail (GDK_IS_DISPLAY (display), TRUE);
 
   /* What we're interested in is the steady state (ie last grab),
      because we're interested e.g. if we grabbed so that we
      can ungrab, even if our grab is not active just yet. */
-  info = _gdk_display_get_last_pointer_grab (display);
-  
+  /* FIXME: which device? */
+  info = _gdk_display_get_last_pointer_grab (display, display->core_pointer);
+
   return (info && !info->implicit);
 }
 

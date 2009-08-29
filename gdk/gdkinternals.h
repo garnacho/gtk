@@ -473,7 +473,8 @@ GdkWindow* _gdk_windowing_window_at_device_position  (GdkDisplay       *display,
                                                       gint             *win_x,
                                                       gint             *win_y,
                                                       GdkModifierType  *mask);
-GdkGrabStatus _gdk_windowing_pointer_grab    (GdkWindow        *window,
+GdkGrabStatus _gdk_windowing_device_grab     (GdkDevice        *device,
+                                              GdkWindow        *window,
 					      GdkWindow        *native,
 					      gboolean          owner_events,
 					      GdkEventMask      event_mask,
@@ -594,21 +595,25 @@ GdkPointerGrabInfo *_gdk_display_get_active_pointer_grab (GdkDisplay *display);
 void _gdk_display_pointer_grab_update                    (GdkDisplay *display,
                                                           GdkDevice  *device,
                                                           gulong      current_serial);
-GdkPointerGrabInfo *_gdk_display_get_last_pointer_grab (GdkDisplay *display);
-GdkPointerGrabInfo *_gdk_display_add_pointer_grab  (GdkDisplay *display,
-						    GdkWindow *window,
-						    GdkWindow *native_window,
-						    gboolean owner_events,
-						    GdkEventMask event_mask,
-						    unsigned long serial_start,
-						    guint32 time,
-						    gboolean implicit);
+GdkPointerGrabInfo *_gdk_display_get_last_pointer_grab (GdkDisplay *display,
+                                                        GdkDevice  *device);
+GdkPointerGrabInfo *_gdk_display_add_pointer_grab  (GdkDisplay    *display,
+                                                    GdkDevice     *device,
+						    GdkWindow     *window,
+						    GdkWindow     *native_window,
+						    gboolean       owner_events,
+						    GdkEventMask   event_mask,
+						    unsigned long  serial_start,
+						    guint32        time,
+						    gboolean       implicit);
 GdkPointerGrabInfo * _gdk_display_has_pointer_grab (GdkDisplay *display,
-						    gulong serial);
+                                                    GdkDevice  *device,
+						    gulong      serial);
 gboolean _gdk_display_end_pointer_grab (GdkDisplay *display,
-					gulong serial,
-					GdkWindow *if_child,
-					gboolean implicit);
+                                        GdkDevice  *device,
+					gulong      serial,
+					GdkWindow  *if_child,
+					gboolean    implicit);
 void _gdk_display_set_has_keyboard_grab (GdkDisplay *display,
 					 GdkWindow *window,
 					 GdkWindow *native_window,

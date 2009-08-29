@@ -145,70 +145,39 @@ has_pointer_grab_callback (GdkDisplay *display,
 			   gpointer data,
 			   gulong serial)
 {
-  /* FIXME: which device? */
-  _gdk_display_pointer_grab_update (display, display->core_pointer, serial);
+  GdkDevice *device = data;
+
+  _gdk_display_pointer_grab_update (display, device, serial);
 }
 
 GdkGrabStatus
-_gdk_windowing_pointer_grab (GdkWindow *window,
-			     GdkWindow *native,
-			     gboolean owner_events,
-			     GdkEventMask event_mask,
-			     GdkWindow *confine_to,
-			     GdkCursor *cursor,
-			     guint32 time)
+_gdk_windowing_device_grab (GdkDevice    *device,
+                            GdkWindow    *window,
+                            GdkWindow    *native,
+                            gboolean      owner_events,
+                            GdkEventMask  event_mask,
+                            GdkWindow    *confine_to,
+                            GdkCursor    *cursor,
+                            guint32       time)
 {
-  GdkDeviceManager *device_manager;
   GdkDisplay *display;
-  GList *devices, *dev;
   GdkGrabStatus status = GDK_GRAB_SUCCESS;
-  GdkDevice *device;
 
   if (!window || GDK_WINDOW_DESTROYED (window))
     return GDK_GRAB_NOT_VIEWABLE;
 
-  display = gdk_drawable_get_display (window);
-  device_manager = gdk_device_manager_get_for_display (display);
-  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
-
-  /* FIXME: What to do with floating devices the window is listening to? */
-
-  for (dev = devices; dev; dev = dev->next)
-    {
-      device = dev->data;
-
-      if (device->source != GDK_SOURCE_MOUSE)
-        continue;
-
-      status = GDK_DEVICE_GET_CLASS (device)->grab (device,
-                                                    native,
-                                                    owner_events,
-                                                    event_mask,
-                                                    confine_to,
-                                                    cursor,
-                                                    time);
-
-      if (status != GDK_GRAB_SUCCESS)
-        break;
-    }
-
-  if (status != GDK_GRAB_SUCCESS)
-    {
-      /* Something went wrong, ungrab already grabbed devices */
-      while (dev)
-        {
-          device = dev->data;
-          dev = dev->prev;
-
-          if (device->source == GDK_SOURCE_MOUSE)
-            GDK_DEVICE_GET_CLASS (device)->ungrab (device, time);
-        }
-    }
-
+  display = gdk_device_get_display (device);
+  status = GDK_DEVICE_GET_CLASS (device)->grab (device,
+                                                native,
+                                                owner_events,
+                                                event_mask,
+                                                confine_to,
+                                                cursor,
+                                                time);
   if (status == GDK_GRAB_SUCCESS)
     _gdk_x11_roundtrip_async (display,
 			      has_pointer_grab_callback,
-			      NULL);
+                              device);
   return status;
 }
 
@@ -302,7 +271,8 @@ _gdk_xgrab_check_unmap (GdkWindow *window,
 {
   GdkDisplay *display = gdk_drawable_get_display (window);
 
-  _gdk_display_end_pointer_grab (display, serial, window, TRUE);
+  /* FIXME: which device? */
+  _gdk_display_end_pointer_grab (display, display->core_pointer, serial, window, TRUE);
 
   if (display->keyboard_grab.window &&
       serial >= display->keyboard_grab.serial)
@@ -333,7 +303,8 @@ _gdk_xgrab_check_destroy (GdkWindow *window)
 
   /* Make sure there is no lasting grab in this native
      window */
-  grab = _gdk_display_get_last_pointer_grab (display);
+  /* FIXME: which device? */
+  grab = _gdk_display_get_last_pointer_grab (display, display->core_pointer);
   if (grab && grab->native_window == window)
     {
       /* We don't know the actual serial to end, but it
