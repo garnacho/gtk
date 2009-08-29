@@ -1040,7 +1040,8 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
       break;
     }
 
-  event->any.send_event = ev->send_event;
+  /* FIXME: should use ev->send_event? looks uninitialized sometimes */
+  event->any.send_event = cookie->send_event;
 
   if (return_val)
     {
