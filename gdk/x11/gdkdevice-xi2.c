@@ -288,22 +288,16 @@ gdk_device_xi2_grab (GdkDevice    *device,
   GdkDeviceXI2Private *priv;
   GdkDisplay *display;
   XIEventMask mask;
-  Window xwindow, xconfine_to;
+  Window xwindow;
   Cursor xcursor;
   int status;
 
   priv = GDK_DEVICE_XI2_GET_PRIVATE (device);
   display = gdk_device_get_display (device);
 
+  /* FIXME: confine_to is actually unused */
+
   xwindow = GDK_WINDOW_XID (window);
-
-  if (confine_to)
-    confine_to = _gdk_window_get_impl_window (confine_to);
-
-  if (!confine_to || GDK_WINDOW_DESTROYED (confine_to))
-    xconfine_to = None;
-  else
-    xconfine_to = GDK_WINDOW_XID (confine_to);
 
   if (!cursor)
     xcursor = None;
