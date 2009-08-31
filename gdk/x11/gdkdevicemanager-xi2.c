@@ -24,7 +24,6 @@
 #include "gdkkeysyms.h"
 #include "gdkx.h"
 
-#define BIT_IS_ON(ptr, bit) (((unsigned char *) (ptr))[(bit)>>3] & (1 << ((bit) & 7)))
 #define HAS_FOCUS(toplevel) ((toplevel)->has_focus || (toplevel)->has_pointer_focus)
 
 
@@ -472,53 +471,6 @@ translate_notify_type (int detail)
     }
 }
 
-static guint
-translate_state (XIModifierState *mods_state,
-                 XIButtonState   *buttons_state)
-{
-  guint state = 0;
-
-  if (mods_state)
-    state = (guint) mods_state->effective;
-
-  if (buttons_state)
-    {
-      gint len, i;
-
-      /* We're only interested in the first 5 buttons */
-      len = MIN (5, buttons_state->mask_len * 8);
-
-      for (i = 0; i < len; i++)
-        {
-          if (!BIT_IS_ON (buttons_state->mask, i))
-            continue;
-
-          switch (i)
-            {
-            case 1:
-              state |= GDK_BUTTON1_MASK;
-              break;
-            case 2:
-              state |= GDK_BUTTON2_MASK;
-              break;
-            case 3:
-              state |= GDK_BUTTON3_MASK;
-              break;
-            case 4:
-              state |= GDK_BUTTON4_MASK;
-              break;
-            case 5:
-              state |= GDK_BUTTON5_MASK;
-              break;
-            default:
-              break;
-            }
-        }
-    }
-
-  return state;
-}
-
 static gboolean
 set_screen_from_root (GdkDisplay *display,
 		      GdkEvent   *event,
@@ -879,7 +831,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
         event->key.window = window;
 
         event->key.time = xev->time;
-        event->key.state = translate_state (&xev->mods, &xev->buttons);
+        event->key.state = gdk_device_xi2_translate_state (&xev->mods, &xev->buttons);
         event->key.group = _gdk_x11_get_group_for_state (display, event->key.state);
 
         event->key.hardware_keycode = xev->detail;
@@ -937,7 +889,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
             event->scroll.device = g_hash_table_lookup (device_manager->id_table,
                                                         GUINT_TO_POINTER (xev->deviceid));
 
-            event->scroll.state = translate_state (&xev->mods, &xev->buttons);
+            event->scroll.state = gdk_device_xi2_translate_state (&xev->mods, &xev->buttons);
             break;
           default:
             event->button.type = (ev->evtype == XI_ButtonPress) ? GDK_BUTTON_PRESS : GDK_BUTTON_RELEASE;
@@ -958,7 +910,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
                                                  event->button.window,
                                                  &xev->valuators);
 
-            event->button.state = translate_state (&xev->mods, &xev->buttons);
+            event->button.state = gdk_device_xi2_translate_state (&xev->mods, &xev->buttons);
             event->button.button = xev->detail;
           }
 
@@ -989,7 +941,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
         event->motion.device = g_hash_table_lookup (device_manager->id_table,
                                                     GINT_TO_POINTER (xev->deviceid));
 
-        event->motion.state = translate_state (&xev->mods, &xev->buttons);
+        event->motion.state = gdk_device_xi2_translate_state (&xev->mods, &xev->buttons);
 
         /* FIXME: There doesn't seem to be motion hints in XI */
         event->motion.is_hint = FALSE;
@@ -1022,7 +974,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
 
         event->crossing.mode = translate_crossing_mode (xev->mode);
         event->crossing.detail = translate_notify_type (xev->detail);
-        event->crossing.state = translate_state (&xev->mods, &xev->buttons);
+        event->crossing.state = gdk_device_xi2_translate_state (&xev->mods, &xev->buttons);
       }
       break;
     case XI_FocusIn:

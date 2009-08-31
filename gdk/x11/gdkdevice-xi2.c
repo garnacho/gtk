@@ -22,7 +22,7 @@
 #include "gdkintl.h"
 #include "gdkx.h"
 
-
+#define BIT_IS_ON(ptr, bit) (((unsigned char *) (ptr))[(bit)>>3] & (1 << ((bit) & 7)))
 #define GDK_DEVICE_XI2_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), GDK_TYPE_DEVICE_XI2, GdkDeviceXI2Private))
 
 typedef struct GdkDeviceXI2Private GdkDeviceXI2Private;
@@ -226,11 +226,10 @@ gdk_device_xi2_query_state (GdkDevice        *device,
   GdkDisplay *display;
   GdkDeviceXI2Private *priv;
   Window xroot_window, xchild_window;
-  int xroot_x, xroot_y, xwin_x, xwin_y;
+  gdouble xroot_x, xroot_y, xwin_x, xwin_y;
   XIButtonState button_state;
   XIModifierState mod_state;
   XIGroupState group_state;
-  unsigned int xmask;
 
   if (!window || GDK_WINDOW_DESTROYED (window))
     return FALSE;
@@ -238,16 +237,18 @@ gdk_device_xi2_query_state (GdkDevice        *device,
   priv = GDK_DEVICE_XI2_GET_PRIVATE (device);
   display = gdk_drawable_get_display (window);
 
-  /* FIXME: XIQueryPointer crashes ATM, use when Xorg is fixed */
-  if (!XQueryPointer (GDK_WINDOW_XDISPLAY (window),
-                      GDK_WINDOW_XID (window),
-                      &xroot_window,
-                      &xchild_window,
-                      &xroot_x,
-                      &xroot_y,
-                      &xwin_x,
-                      &xwin_y,
-                      &xmask))
+  if (!XIQueryPointer (GDK_WINDOW_XDISPLAY (window),
+                       priv->device_id,
+                       GDK_WINDOW_XID (window),
+                       &xroot_window,
+                       &xchild_window,
+                       &xroot_x,
+                       &xroot_y,
+                       &xwin_x,
+                       &xwin_y,
+                       &button_state,
+                       &mod_state,
+                       &group_state))
     {
       return FALSE;
     }
@@ -259,19 +260,19 @@ gdk_device_xi2_query_state (GdkDevice        *device,
     *child_window = gdk_window_lookup_for_display (display, xchild_window);
 
   if (root_x)
-    *root_x = xroot_x;
+    *root_x = (gint) xroot_x;
 
   if (root_y)
-    *root_y = xroot_y;
+    *root_y = (gint) xroot_y;
 
   if (win_x)
-    *win_x = xwin_x;
+    *win_x = (gint) xwin_x;
 
   if (win_y)
-    *win_y = xwin_y;
+    *win_y = (gint) xwin_y;
 
   if (mask)
-    *mask = xmask;
+    *mask = gdk_device_xi2_translate_state (&mod_state, &button_state);
 
   return TRUE;
 }
@@ -343,14 +344,18 @@ gdk_device_xi2_window_at_position (GdkDevice       *device,
                                    gint            *win_y,
                                    GdkModifierType *mask)
 {
+  GdkDeviceXI2Private *priv;
   GdkDisplay *display;
   GdkScreen *screen;
   Display *xdisplay;
   GdkWindow *window;
   Window xwindow, root, child, last = None;
-  int xroot_x, xroot_y, xwin_x, xwin_y;
-  unsigned int xmask;
+  gdouble xroot_x, xroot_y, xwin_x, xwin_y;
+  XIButtonState button_state;
+  XIModifierState mod_state;
+  XIGroupState group_state;
 
+  priv = GDK_DEVICE_XI2_GET_PRIVATE (device);
   display = gdk_device_get_display (device);
   screen = gdk_display_get_default_screen (display);
 
@@ -364,12 +369,15 @@ gdk_device_xi2_window_at_position (GdkDevice       *device,
   xdisplay = GDK_SCREEN_XDISPLAY (screen);
   xwindow = GDK_SCREEN_XROOTWIN (screen);
 
-  /* FIXME: XIQueryPointer crashes ATM, use when Xorg is fixed */
-  XQueryPointer (xdisplay, xwindow,
-                 &root, &child,
-                 &xroot_x, &xroot_y,
-                 &xwin_x, &xwin_y,
-                 &xmask);
+  XIQueryPointer (xdisplay,
+                  priv->device_id,
+                  xwindow,
+                  &root, &child,
+                  &xroot_x, &xroot_y,
+                  &xwin_x, &xwin_y,
+                  &button_state,
+                  &mod_state,
+                  &group_state);
 
   if (root == xwindow)
     xwindow = child;
@@ -379,11 +387,15 @@ gdk_device_xi2_window_at_position (GdkDevice       *device,
   while (xwindow)
     {
       last = xwindow;
-      XQueryPointer (xdisplay, xwindow,
-                     &root, &xwindow,
-                     &xroot_x, &xroot_y,
-                     &xwin_x, &xwin_y,
-                     &xmask);
+      XIQueryPointer (xdisplay,
+                      priv->device_id,
+                      xwindow,
+                      &root, &xwindow,
+                      &xroot_x, &xroot_y,
+                      &xwin_x, &xwin_y,
+                      &button_state,
+                      &mod_state,
+                      &group_state);
     }
 
   gdk_x11_display_ungrab (display);
@@ -391,13 +403,13 @@ gdk_device_xi2_window_at_position (GdkDevice       *device,
   window = gdk_window_lookup_for_display (display, last);
 
   if (win_x)
-    *win_x = (window) ? xwin_x : -1;
+    *win_x = (window) ? (gint) xwin_x : -1;
 
   if (win_y)
-    *win_y = (window) ? xwin_y : -1;
+    *win_y = (window) ? (gint) xwin_y : -1;
 
   if (mask)
-    *mask = xmask;
+    *mask = gdk_device_xi2_translate_state (&mod_state, &button_state);
 
   return window;
 }
@@ -456,4 +468,51 @@ gdk_device_xi2_translate_event_mask (GdkEventMask  event_mask,
     }
 
   return mask;
+}
+
+guint
+gdk_device_xi2_translate_state (XIModifierState *mods_state,
+                                XIButtonState   *buttons_state)
+{
+  guint state = 0;
+
+  if (mods_state)
+    state = (guint) mods_state->effective;
+
+  if (buttons_state)
+    {
+      gint len, i;
+
+      /* We're only interested in the first 5 buttons */
+      len = MIN (5, buttons_state->mask_len * 8);
+
+      for (i = 0; i < len; i++)
+        {
+          if (!BIT_IS_ON (buttons_state->mask, i))
+            continue;
+
+          switch (i)
+            {
+            case 1:
+              state |= GDK_BUTTON1_MASK;
+              break;
+            case 2:
+              state |= GDK_BUTTON2_MASK;
+              break;
+            case 3:
+              state |= GDK_BUTTON3_MASK;
+              break;
+            case 4:
+              state |= GDK_BUTTON4_MASK;
+              break;
+            case 5:
+              state |= GDK_BUTTON5_MASK;
+              break;
+            default:
+              break;
+            }
+        }
+    }
+
+  return state;
 }
