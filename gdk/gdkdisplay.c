@@ -1592,7 +1592,6 @@ gboolean
 gdk_display_pointer_is_grabbed (GdkDisplay *display)
 {
   GdkDeviceManager *device_manager;
-  GdkPointerGrabInfo *info;
   GList *devices, *dev;
   GdkDevice *device;
 
@@ -1605,7 +1604,7 @@ gdk_display_pointer_is_grabbed (GdkDisplay *display)
     {
       device = dev->data;
 
-      if (device->source = GDK_SOURCE_MOUSE &&
+      if (device->source == GDK_SOURCE_MOUSE &&
           gdk_display_device_is_grabbed (display, device))
         return TRUE;
     }

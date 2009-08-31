@@ -9256,7 +9256,7 @@ gdk_pointer_grab (GdkWindow *	  window,
   GdkDisplay *display;
   GdkDeviceManager *device_manager;
   GdkDevice *device;
-  GdkGrabStatus res;
+  GdkGrabStatus res = 0;
   gulong serial;
   GList *devices, *dev;
 
