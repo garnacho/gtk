@@ -32,9 +32,6 @@ static void    gdk_device_manager_xi2_finalize    (GObject *object);
 
 static GList * gdk_device_manager_xi2_get_devices (GdkDeviceManager *device_manager,
                                                    GdkDeviceType     type);
-static void    gdk_device_manager_xi2_set_window_events (GdkDeviceManager *device_manager,
-                                                         GdkWindow        *window,
-                                                         GdkEventMask      event_mask);
 
 static void     gdk_device_manager_xi2_event_translator_init (GdkEventTranslatorIface *iface);
 
@@ -63,7 +60,6 @@ gdk_device_manager_xi2_class_init (GdkDeviceManagerXI2Class *klass)
   object_class->finalize = gdk_device_manager_xi2_finalize;
 
   device_manager_class->get_devices = gdk_device_manager_xi2_get_devices;
-  device_manager_class->set_window_events = gdk_device_manager_xi2_set_window_events;
 }
 
 static void
@@ -362,21 +358,6 @@ gdk_device_manager_xi2_get_devices (GdkDeviceManager *device_manager,
     }
 
   return g_list_copy (list);
-}
-
-static void
-gdk_device_manager_xi2_set_window_events (GdkDeviceManager *device_manager,
-                                          GdkWindow        *window,
-                                          GdkEventMask      evmask)
-{
-  XIEventMask event_mask;
-
-  event_mask.deviceid = XIAllMasterDevices;
-  event_mask.mask = gdk_device_xi2_translate_event_mask (evmask, &event_mask.mask_len);
-
-  _gdk_device_manager_xi2_select_events (device_manager,
-                                         GDK_WINDOW_XWINDOW (window),
-                                         &event_mask);
 }
 
 static void
