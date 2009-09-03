@@ -182,6 +182,7 @@ typedef struct
   guint event_mask;
   gboolean implicit;
   guint32 time;
+  GdkGrabOwnership ownership;
 
   gboolean activated;
   gboolean implicit_ungrab;
@@ -597,15 +598,16 @@ void _gdk_display_pointer_grab_update                    (GdkDisplay *display,
                                                           gulong      current_serial);
 GdkPointerGrabInfo *_gdk_display_get_last_pointer_grab (GdkDisplay *display,
                                                         GdkDevice  *device);
-GdkPointerGrabInfo *_gdk_display_add_pointer_grab  (GdkDisplay    *display,
-                                                    GdkDevice     *device,
-						    GdkWindow     *window,
-						    GdkWindow     *native_window,
-						    gboolean       owner_events,
-						    GdkEventMask   event_mask,
-						    unsigned long  serial_start,
-						    guint32        time,
-						    gboolean       implicit);
+GdkPointerGrabInfo *_gdk_display_add_pointer_grab  (GdkDisplay       *display,
+                                                    GdkDevice        *device,
+						    GdkWindow        *window,
+						    GdkWindow        *native_window,
+                                                    GdkGrabOwnership  grab_ownership,
+						    gboolean          owner_events,
+						    GdkEventMask      event_mask,
+						    unsigned long     serial_start,
+						    guint32           time,
+						    gboolean          implicit);
 GdkPointerGrabInfo * _gdk_display_has_pointer_grab (GdkDisplay *display,
                                                     GdkDevice  *device,
 						    gulong      serial);
@@ -614,6 +616,9 @@ gboolean _gdk_display_end_pointer_grab (GdkDisplay *display,
 					gulong      serial,
 					GdkWindow  *if_child,
 					gboolean    implicit);
+gboolean _gdk_display_check_grab_ownership (GdkDisplay *display,
+                                            GdkDevice  *device,
+                                            gulong      serial);
 void _gdk_display_set_has_keyboard_grab (GdkDisplay *display,
 					 GdkWindow *window,
 					 GdkWindow *native_window,

@@ -1009,15 +1009,16 @@ _gdk_display_get_last_pointer_grab (GdkDisplay *display,
 }
 
 GdkPointerGrabInfo *
-_gdk_display_add_pointer_grab (GdkDisplay    *display,
-                               GdkDevice     *device,
-			       GdkWindow     *window,
-			       GdkWindow     *native_window,
-			       gboolean       owner_events,
-			       GdkEventMask   event_mask,
-			       unsigned long  serial_start,
-			       guint32        time,
-			       gboolean       implicit)
+_gdk_display_add_pointer_grab (GdkDisplay       *display,
+                               GdkDevice        *device,
+                               GdkWindow        *window,
+                               GdkWindow        *native_window,
+                               GdkGrabOwnership  grab_ownership,
+                               gboolean          owner_events,
+                               GdkEventMask      event_mask,
+                               unsigned long     serial_start,
+                               guint32           time,
+                               gboolean          implicit)
 {
   GdkPointerGrabInfo *info, *other_info;
   GList *grabs, *l;
@@ -1032,6 +1033,7 @@ _gdk_display_add_pointer_grab (GdkDisplay    *display,
   info->event_mask = event_mask;
   info->time = time;
   info->implicit = implicit;
+  info->ownership = grab_ownership;
 
   grabs = g_hash_table_lookup (display->device_grabs, device);
 
@@ -1367,26 +1369,33 @@ _gdk_display_pointer_grab_update (GdkDisplay *display,
 }
 
 static GList *
+grab_list_find (GList  *grabs,
+                gulong  serial)
+{
+  GdkPointerGrabInfo *grab;
+
+  while (grabs)
+    {
+      grab = grabs->data;
+
+      if (serial >= grab->serial_start && serial < grab->serial_end)
+	return grabs;
+
+      grabs = grabs->next;
+    }
+
+  return NULL;
+}
+
+static GList *
 find_pointer_grab (GdkDisplay *display,
                    GdkDevice  *device,
                    gulong      serial)
 {
-  GdkPointerGrabInfo *grab;
   GList *l;
 
   l = g_hash_table_lookup (display->device_grabs, device);
-
-  while (l)
-    {
-      grab = l->data;
-
-      if (serial >= grab->serial_start && serial < grab->serial_end)
-	return l;
-
-      l = l->next;
-    }
-
-  return NULL;
+  return grab_list_find (l, serial);
 }
 
 GdkPointerGrabInfo *
@@ -1430,6 +1439,54 @@ _gdk_display_end_pointer_grab (GdkDisplay *display,
     }
   
   return FALSE;
+}
+
+/* Returns TRUE if device events are not blocked by any grab */
+gboolean
+_gdk_display_check_grab_ownership (GdkDisplay *display,
+                                   GdkDevice  *device,
+                                   gulong      serial)
+{
+  GHashTableIter iter;
+  gpointer key, value;
+  GdkGrabOwnership higher_ownership, device_ownership;
+
+  g_hash_table_iter_init (&iter, display->device_grabs);
+  higher_ownership = device_ownership = GDK_OWNERSHIP_NONE;
+
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      GdkPointerGrabInfo *grab;
+      GdkDevice *dev;
+      GList *grabs;
+
+      dev = key;
+      grabs = value;
+      grabs = grab_list_find (grabs, serial);
+
+      if (!grabs)
+        continue;
+
+      grab = grabs->data;
+
+      if (dev == device)
+        device_ownership = grab->ownership;
+      else
+        {
+          if (grab->ownership > higher_ownership)
+            higher_ownership = grab->ownership;
+        }
+    }
+
+  if (higher_ownership > device_ownership)
+    {
+      /* There's a higher priority ownership
+       * going on for other device(s)
+       */
+      return FALSE;
+    }
+
+  return TRUE;
 }
 
 void

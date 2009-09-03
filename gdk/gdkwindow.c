@@ -9324,6 +9324,7 @@ gdk_pointer_grab (GdkWindow *	  window,
                                        device,
                                        window,
                                        native,
+                                       GDK_OWNERSHIP_NONE,
                                        owner_events,
                                        event_mask,
                                        serial,
@@ -9748,6 +9749,7 @@ proxy_button_event (GdkEvent *source_event,
                                       device,
 				      pointer_window,
 				      toplevel_window,
+                                      GDK_OWNERSHIP_NONE,
 				      FALSE,
 				      gdk_window_get_events (pointer_window),
 				      serial,
@@ -9906,7 +9908,16 @@ _gdk_windowing_got_event (GdkDisplay *display,
   device = gdk_event_get_device (event);
 
   if (device)
-    _gdk_display_pointer_grab_update (display, device, serial);
+    {
+      _gdk_display_pointer_grab_update (display, device, serial);
+
+      if (!_gdk_display_check_grab_ownership (display, device, serial))
+        {
+          /* Device events are blocked by another device grab */
+          unlink_event = TRUE;
+          goto out;
+        }
+    }
 
   event_window = event->any.window;
   if (!event_window)
@@ -9921,6 +9932,7 @@ _gdk_windowing_got_event (GdkDisplay *display,
                                           device,
 					  event_window,
 					  event_window,
+                                          GDK_OWNERSHIP_NONE,
 					  FALSE,
 					  gdk_window_get_events (event_window),
 					  serial,

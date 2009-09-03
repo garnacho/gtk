@@ -175,6 +175,13 @@ typedef enum
   GDK_GRAB_FROZEN          = 4
 } GdkGrabStatus;
 
+typedef enum
+{
+  GDK_OWNERSHIP_NONE,
+  GDK_OWNERSHIP_WINDOW,
+  GDK_OWNERSHIP_APPLICATION
+} GdkGrabOwnership;
+
 typedef void (*GdkInputFunction) (gpointer	    data,
 				  gint		    source,
 				  GdkInputCondition condition);
