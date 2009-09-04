@@ -930,11 +930,18 @@ gdk_event_get_device (const GdkEvent *event)
     case GDK_3BUTTON_PRESS:
     case GDK_BUTTON_RELEASE:
       return ((GdkEventButton *) event)->device;
+    case GDK_KEY_PRESS:
+    case GDK_KEY_RELEASE:
+      return ((GdkEventKey *) event)->device;
+    case GDK_FOCUS_CHANGE:
+      return ((GdkEventFocus *) event)->device;
     case GDK_ENTER_NOTIFY:
     case GDK_LEAVE_NOTIFY:
       return ((GdkEventCrossing *) event)->device;
     case GDK_SCROLL:
       return ((GdkEventScroll *) event)->device;
+    case GDK_GRAB_BROKEN:
+      return ((GdkEventGrabBroken *) event)->device;
     default:
       return NULL;
     }
