@@ -167,13 +167,19 @@ _gdk_windowing_device_grab (GdkDevice    *device,
     return GDK_GRAB_NOT_VIEWABLE;
 
   display = gdk_device_get_display (device);
-  status = GDK_DEVICE_GET_CLASS (device)->grab (device,
-                                                native,
-                                                owner_events,
-                                                event_mask,
-                                                confine_to,
-                                                cursor,
-                                                time);
+
+#ifdef G_ENABLE_DEBUG
+  if (_gdk_debug_flags & GDK_DEBUG_NOGRABS)
+    status = GrabSuccess;
+  else
+#endif
+    status = GDK_DEVICE_GET_CLASS (device)->grab (device,
+                                                  native,
+                                                  owner_events,
+                                                  event_mask,
+                                                  confine_to,
+                                                  cursor,
+                                                  time);
   if (status == GDK_GRAB_SUCCESS)
     _gdk_x11_roundtrip_async (display,
 			      has_pointer_grab_callback,
