@@ -124,6 +124,14 @@ GdkGrabStatus gdk_keyboard_grab      (GdkWindow    *window,
 				      gboolean      owner_events,
 				      guint32       time_);
 
+GdkGrabStatus gdk_device_grab        (GdkDevice        *device,
+                                      GdkWindow        *window,
+                                      GdkGrabOwnership  grab_ownership,
+                                      gboolean          owner_events,
+                                      GdkEventMask      event_mask,
+				      GdkCursor        *cursor,
+				      guint32           time_);
+
 gboolean gdk_pointer_grab_info_libgtk_only (GdkDisplay *display,
 					    GdkWindow **grab_window,
 					    gboolean   *owner_events);

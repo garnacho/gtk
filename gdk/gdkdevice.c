@@ -483,6 +483,70 @@ gdk_device_get_axis (GdkDevice  *device,
   return FALSE;
 }
 
+GdkGrabStatus
+gdk_device_grab (GdkDevice        *device,
+                 GdkWindow        *window,
+                 GdkGrabOwnership  grab_ownership,
+                 gboolean          owner_events,
+                 GdkEventMask      event_mask,
+                 GdkCursor        *cursor,
+                 guint32           time_)
+{
+  GdkGrabStatus res;
+  GdkWindow *native;
+
+  g_return_val_if_fail (GDK_IS_DEVICE (device), 0);
+  g_return_val_if_fail (GDK_IS_WINDOW (window), 0);
+
+  if (_gdk_native_windows)
+    native = window;
+  else
+    native = gdk_window_get_toplevel (window);
+
+  while (((GdkWindowObject *) native)->window_type == GDK_WINDOW_OFFSCREEN)
+    {
+      native = gdk_offscreen_window_get_embedder (native);
+
+      if (native == NULL ||
+	  (!_gdk_window_has_impl (native) &&
+	   !gdk_window_is_viewable (native)))
+	return GDK_GRAB_NOT_VIEWABLE;
+
+      native = gdk_window_get_toplevel (native);
+    }
+
+  res = _gdk_windowing_device_grab (device,
+                                    window,
+                                    native,
+                                    owner_events,
+                                    event_mask,
+                                    NULL,
+                                    cursor,
+                                    time_);
+
+  if (res == GDK_GRAB_SUCCESS)
+    {
+      GdkDisplay *display;
+      gulong serial;
+
+      display = gdk_drawable_get_display (window);
+      serial = _gdk_windowing_window_get_next_serial (display);
+
+      _gdk_display_add_pointer_grab (display,
+                                     device,
+                                     window,
+                                     native,
+                                     GDK_OWNERSHIP_NONE,
+                                     owner_events,
+                                     event_mask,
+                                     serial,
+                                     time_,
+                                     FALSE);
+    }
+
+  return res;
+}
+
 /* Private API */
 void
 _gdk_device_reset_axes (GdkDevice *device)
