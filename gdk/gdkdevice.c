@@ -532,16 +532,16 @@ gdk_device_grab (GdkDevice        *device,
       display = gdk_drawable_get_display (window);
       serial = _gdk_windowing_window_get_next_serial (display);
 
-      _gdk_display_add_pointer_grab (display,
-                                     device,
-                                     window,
-                                     native,
-                                     GDK_OWNERSHIP_NONE,
-                                     owner_events,
-                                     event_mask,
-                                     serial,
-                                     time_,
-                                     FALSE);
+      _gdk_display_add_device_grab (display,
+                                    device,
+                                    window,
+                                    native,
+                                    GDK_OWNERSHIP_NONE,
+                                    owner_events,
+                                    event_mask,
+                                    serial,
+                                    time_,
+                                    FALSE);
     }
 
   return res;

@@ -147,7 +147,7 @@ has_pointer_grab_callback (GdkDisplay *display,
 {
   GdkDevice *device = data;
 
-  _gdk_display_pointer_grab_update (display, device, serial);
+  _gdk_display_device_grab_update (display, device, serial);
 }
 
 GdkGrabStatus
@@ -278,7 +278,7 @@ _gdk_xgrab_check_unmap (GdkWindow *window,
   GdkDisplay *display = gdk_drawable_get_display (window);
 
   /* FIXME: which device? */
-  _gdk_display_end_pointer_grab (display, display->core_pointer, serial, window, TRUE);
+  _gdk_display_end_device_grab (display, display->core_pointer, serial, window, TRUE);
 
   if (display->keyboard_grab.window &&
       serial >= display->keyboard_grab.serial)
@@ -305,12 +305,12 @@ void
 _gdk_xgrab_check_destroy (GdkWindow *window)
 {
   GdkDisplay *display = gdk_drawable_get_display (window);
-  GdkPointerGrabInfo *grab;
+  GdkDeviceGrabInfo *grab;
 
   /* Make sure there is no lasting grab in this native
      window */
   /* FIXME: which device? */
-  grab = _gdk_display_get_last_pointer_grab (display, display->core_pointer);
+  grab = _gdk_display_get_last_device_grab (display, display->core_pointer);
   if (grab && grab->native_window == window)
     {
       /* We don't know the actual serial to end, but it

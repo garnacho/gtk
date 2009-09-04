@@ -1591,7 +1591,7 @@ device_ungrab_callback (GdkDisplay *display,
 {
   GdkDevice *device = data;
 
-  _gdk_display_pointer_grab_update (display, device, serial);
+  _gdk_display_device_grab_update (display, device, serial);
 }
 
 
@@ -1616,7 +1616,7 @@ gdk_display_device_ungrab (GdkDisplay *display,
 {
   Display *xdisplay;
   GdkDisplayX11 *display_x11;
-  GdkPointerGrabInfo *grab;
+  GdkDeviceGrabInfo *grab;
   unsigned long serial;
 
   g_return_if_fail (GDK_IS_DISPLAY (display));
@@ -1630,7 +1630,7 @@ gdk_display_device_ungrab (GdkDisplay *display,
   GDK_DEVICE_GET_CLASS (device)->ungrab (device, time_);
   XFlush (xdisplay);
 
-  grab = _gdk_display_get_last_pointer_grab (display, device);
+  grab = _gdk_display_get_last_device_grab (display, device);
   if (grab &&
       (time_ == GDK_CURRENT_TIME ||
        grab->time == GDK_CURRENT_TIME ||

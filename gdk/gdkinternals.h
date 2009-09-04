@@ -184,10 +184,10 @@ typedef struct
   guint32 time;
   GdkGrabOwnership ownership;
 
-  gboolean activated;
-  gboolean implicit_ungrab;
-  gboolean grab_one_pointer_release_event;
-} GdkPointerGrabInfo;
+  guint activated : 1;
+  guint implicit_ungrab : 1;
+  guint grab_one_pointer_release_event : 1;
+} GdkDeviceGrabInfo;
 
 typedef struct _GdkInputWindow GdkInputWindow;
 
@@ -592,13 +592,12 @@ char *_gdk_windowing_get_startup_notify_id (GAppLaunchContext *context,
 void  _gdk_windowing_launch_failed         (GAppLaunchContext *context, 
 				            const char        *startup_notify_id);
 
-GdkPointerGrabInfo *_gdk_display_get_active_pointer_grab (GdkDisplay *display);
-void _gdk_display_pointer_grab_update                    (GdkDisplay *display,
+void _gdk_display_device_grab_update                     (GdkDisplay *display,
                                                           GdkDevice  *device,
                                                           gulong      current_serial);
-GdkPointerGrabInfo *_gdk_display_get_last_pointer_grab (GdkDisplay *display,
+GdkDeviceGrabInfo  *_gdk_display_get_last_device_grab  (GdkDisplay *display,
                                                         GdkDevice  *device);
-GdkPointerGrabInfo *_gdk_display_add_pointer_grab  (GdkDisplay       *display,
+GdkDeviceGrabInfo  *_gdk_display_add_device_grab   (GdkDisplay       *display,
                                                     GdkDevice        *device,
 						    GdkWindow        *window,
 						    GdkWindow        *native_window,
@@ -608,10 +607,10 @@ GdkPointerGrabInfo *_gdk_display_add_pointer_grab  (GdkDisplay       *display,
 						    unsigned long     serial_start,
 						    guint32           time,
 						    gboolean          implicit);
-GdkPointerGrabInfo * _gdk_display_has_pointer_grab (GdkDisplay *display,
+GdkDeviceGrabInfo  * _gdk_display_has_device_grab  (GdkDisplay *display,
                                                     GdkDevice  *device,
 						    gulong      serial);
-gboolean _gdk_display_end_pointer_grab (GdkDisplay *display,
+gboolean _gdk_display_end_device_grab  (GdkDisplay *display,
                                         GdkDevice  *device,
 					gulong      serial,
 					GdkWindow  *if_child,
