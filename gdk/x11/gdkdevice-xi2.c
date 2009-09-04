@@ -320,6 +320,8 @@ gdk_device_xi2_grab (GdkDevice    *device,
                          owner_events,
                          &mask);
 
+  g_free (mask.mask);
+
   return gdk_x11_convert_grab_status (status);
 }
 
