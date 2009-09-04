@@ -7346,6 +7346,20 @@ gdk_window_set_cursor (GdkWindow *window,
     }
 }
 
+GdkCursor *
+gdk_window_get_device_cursor (GdkWindow *window,
+                              GdkDevice *device)
+{
+  GdkWindowObject *private;
+
+  g_return_val_if_fail (GDK_IS_WINDOW (window), NULL);
+  g_return_val_if_fail (GDK_IS_DEVICE (device), NULL);
+
+  private = (GdkWindowObject *) window;
+
+  return g_hash_table_lookup (private->device_cursor, device);
+}
+
 void
 gdk_window_set_device_cursor (GdkWindow *window,
                               GdkDevice *device,

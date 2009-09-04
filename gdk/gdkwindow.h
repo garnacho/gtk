@@ -522,6 +522,8 @@ GdkCursor    *gdk_window_get_cursor      (GdkWindow       *window);
 void	      gdk_window_set_device_cursor (GdkWindow	  *window,
                                             GdkDevice     *device,
                                             GdkCursor	  *cursor);
+GdkCursor    *gdk_window_get_device_cursor (GdkWindow     *window,
+                                            GdkDevice     *device);
 void	      gdk_window_get_user_data	 (GdkWindow	  *window,
 					  gpointer	  *data);
 void	      gdk_window_get_geometry	 (GdkWindow	  *window,
