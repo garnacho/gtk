@@ -281,7 +281,11 @@ gdk_device_core_ungrab (GdkDevice *device,
   GdkDisplay *display;
 
   display = gdk_device_get_display (device);
-  XUngrabPointer (GDK_DISPLAY_XDISPLAY (display), time_);
+
+  if (device->source == GDK_SOURCE_KEYBOARD)
+    XUngrabKeyboard (GDK_DISPLAY_XDISPLAY (display), time_);
+  else
+    XUngrabPointer (GDK_DISPLAY_XDISPLAY (display), time_);
 }
 
 static GdkWindow *
