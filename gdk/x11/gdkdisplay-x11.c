@@ -1644,36 +1644,6 @@ gdk_display_device_ungrab (GdkDisplay *display,
 }
 
 /**
- * gdk_display_keyboard_ungrab:
- * @display: a #GdkDisplay.
- * @time_: a timestap (e.g #GDK_CURRENT_TIME).
- *
- * Release any keyboard grab
- *
- * Since: 2.2
- */
-void
-gdk_display_keyboard_ungrab (GdkDisplay *display,
-			     guint32     time)
-{
-  Display *xdisplay;
-  GdkDisplayX11 *display_x11;
-  
-  g_return_if_fail (GDK_IS_DISPLAY (display));
-
-  display_x11 = GDK_DISPLAY_X11 (display);
-  xdisplay = GDK_DISPLAY_XDISPLAY (display);
-  
-  XUngrabKeyboard (xdisplay, time);
-  XFlush (xdisplay);
-  
-  if (time == GDK_CURRENT_TIME || 
-      display->keyboard_grab.time == GDK_CURRENT_TIME ||
-      !XSERVER_TIME_IS_LATER (display->keyboard_grab.time, time))
-    _gdk_display_unset_has_keyboard_grab (display, FALSE);
-}
-
-/**
  * gdk_display_beep:
  * @display: a #GdkDisplay
  *

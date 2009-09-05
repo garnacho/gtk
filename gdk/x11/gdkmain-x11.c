@@ -187,80 +187,6 @@ _gdk_windowing_device_grab (GdkDevice    *device,
   return status;
 }
 
-/*
- *--------------------------------------------------------------
- * gdk_keyboard_grab
- *
- *   Grabs the keyboard to a specific window
- *
- * Arguments:
- *   "window" is the window which will receive the grab
- *   "owner_events" specifies whether events will be reported as is,
- *     or relative to "window"
- *   "time" specifies the time
- *
- * Results:
- *
- * Side effects:
- *   requires a corresponding call to gdk_keyboard_ungrab
- *
- *--------------------------------------------------------------
- */
-
-GdkGrabStatus
-gdk_keyboard_grab (GdkWindow *	   window,
-		   gboolean	   owner_events,
-		   guint32	   time)
-{
-  gint return_val;
-  unsigned long serial;
-  GdkDisplay *display;
-  GdkDisplayX11 *display_x11;
-  GdkWindow *native;
-
-  g_return_val_if_fail (window != NULL, 0);
-  g_return_val_if_fail (GDK_IS_WINDOW (window), 0);
-
-  native = gdk_window_get_toplevel (window);
-
-  /* TODO: What do we do for offscreens and  children? We need to proxy the grab somehow */
-  if (!GDK_IS_WINDOW_IMPL_X11 (GDK_WINDOW_OBJECT (native)->impl))
-    return GDK_GRAB_SUCCESS;
-
-  display = GDK_WINDOW_DISPLAY (native);
-  display_x11 = GDK_DISPLAY_X11 (display);
-
-  serial = NextRequest (GDK_WINDOW_XDISPLAY (native));
-
-  if (!GDK_WINDOW_DESTROYED (native))
-    {
-#ifdef G_ENABLE_DEBUG
-      if (_gdk_debug_flags & GDK_DEBUG_NOGRABS)
-	return_val = GrabSuccess;
-      else
-#endif
-	return_val = XGrabKeyboard (GDK_WINDOW_XDISPLAY (native),
-				    GDK_WINDOW_XID (native),
-				    owner_events,
-				    GrabModeAsync, GrabModeAsync,
-				    time);
-	if (G_UNLIKELY (!display_x11->trusted_client && 
-			return_val == AlreadyGrabbed))
-	  /* we can't grab the keyboard, but we can do a GTK-local grab */
-	  return_val = GrabSuccess;
-    }
-  else
-    return_val = AlreadyGrabbed;
-
-  if (return_val == GrabSuccess)
-    _gdk_display_set_has_keyboard_grab (display,
-					window,	native,
-					owner_events,
-					serial, time);
-
-  return gdk_x11_convert_grab_status (return_val);
-}
-
 /**
  * _gdk_xgrab_check_unmap:
  * @window: a #GdkWindow
@@ -280,18 +206,10 @@ _gdk_xgrab_check_unmap (GdkWindow *window,
   /* FIXME: which device? */
   _gdk_display_end_device_grab (display, display->core_pointer, serial, window, TRUE);
 
-  if (display->keyboard_grab.window &&
-      serial >= display->keyboard_grab.serial)
-    {
-      GdkWindowObject *private = GDK_WINDOW_OBJECT (window);
-      GdkWindowObject *tmp = GDK_WINDOW_OBJECT (display->keyboard_grab.window);
-
-      while (tmp && tmp != private)
-	tmp = tmp->parent;
-
-      if (tmp)
-	_gdk_display_unset_has_keyboard_grab (display, TRUE);
-    }
+  /* FIXME: which keyb? */
+  _gdk_display_end_device_grab (display,
+                                gdk_device_get_relative (display->core_pointer),
+                                serial, window, TRUE);
 }
 
 /**
@@ -321,10 +239,16 @@ _gdk_xgrab_check_destroy (GdkWindow *window)
       grab->serial_end = grab->serial_start;
       grab->implicit_ungrab = TRUE;
     }
-  
-  if (window == display->keyboard_grab.native_window &&
-      display->keyboard_grab.window != NULL)
-    _gdk_display_unset_has_keyboard_grab (display, TRUE);
+
+  /* FIXME: which keyboard? */
+  grab = _gdk_display_get_last_device_grab (display,
+                                            gdk_device_get_relative (display->core_pointer));
+
+  if (grab && grab->native_window == window)
+    {
+      grab->serial_end = grab->serial_start;
+      grab->implicit_ungrab = TRUE;
+    }
 }
 
 void

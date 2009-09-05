@@ -618,14 +618,6 @@ gboolean _gdk_display_end_device_grab  (GdkDisplay *display,
 gboolean _gdk_display_check_grab_ownership (GdkDisplay *display,
                                             GdkDevice  *device,
                                             gulong      serial);
-void _gdk_display_set_has_keyboard_grab (GdkDisplay *display,
-					 GdkWindow *window,
-					 GdkWindow *native_window,
-					 gboolean owner_events,
-					 unsigned long serial,
-					 guint32 time);
-void _gdk_display_unset_has_keyboard_grab (GdkDisplay *display,
-					   gboolean implicit);
 void _gdk_display_enable_motion_hints     (GdkDisplay *display);
 
 GdkPointerWindowInfo * _gdk_display_get_pointer_info (GdkDisplay *display,

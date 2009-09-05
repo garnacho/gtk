@@ -344,27 +344,31 @@ static GdkWindow *
 get_event_window (GdkEventTranslator *translator,
                   XEvent             *xevent)
 {
+  GdkDeviceManager *device_manager;
   GdkDisplay *display;
   GdkWindow *window;
 
-  display = gdk_device_manager_get_display (GDK_DEVICE_MANAGER (translator));
+  device_manager = GDK_DEVICE_MANAGER (translator);
+  display = gdk_device_manager_get_display (device_manager);
   window = gdk_window_lookup_for_display (display, xevent->xany.window);
 
   /* Apply keyboard grabs to non-native windows */
-  if (/* Is key event */
-      (xevent->type == KeyPress || xevent->type == KeyRelease) &&
-      /* And we have a grab */
-      display->keyboard_grab.window != NULL &&
-      (
-       /* The window is not a descendant of the grabbed window */
-       !is_parent_of ((GdkWindow *)display->keyboard_grab.window, window) ||
-       /* Or owner event is false */
-       !display->keyboard_grab.owner_events
-       )
-      )
+  if (xevent->type == KeyPress || xevent->type == KeyRelease)
     {
-      /* Report key event against grab window */
-      return display->keyboard_grab.window;
+      GdkDeviceGrabInfo *info;
+      gulong serial;
+
+      serial = _gdk_windowing_window_get_next_serial (display);
+      info = _gdk_display_has_device_grab (display,
+                                           GDK_DEVICE_MANAGER_CORE (device_manager)->core_keyboard,
+                                           serial);
+      if (info &&
+          (!is_parent_of (info->window, window) ||
+           !info->owner_events))
+        {
+          /* Report key event against grab window */
+          window = info->window;
+        }
     }
 
   return window;

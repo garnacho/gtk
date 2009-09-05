@@ -68,7 +68,6 @@ gdk_get_display
 gdk_get_use_xshm
 gdk_set_use_xshm
 #endif
-gdk_keyboard_grab
 #endif
 #endif
 
@@ -171,6 +170,12 @@ gdk_screen_width G_GNUC_CONST
 gdk_screen_width_mm G_GNUC_CONST
 gdk_screen_height G_GNUC_CONST
 gdk_screen_height_mm G_GNUC_CONST
+#endif
+#endif
+
+#if IN_HEADER(__GDK_H__)
+#if IN_FILE(__GDK_WINDOW_C__)
+gdk_keyboard_grab
 #endif
 #endif
 
@@ -416,6 +421,7 @@ gdk_display_get_event
 gdk_display_get_pointer
 gdk_display_get_type G_GNUC_CONST
 gdk_display_get_window_at_pointer
+gdk_display_keyboard_ungrab
 gdk_display_peek_event
 gdk_display_pointer_ungrab
 gdk_display_put_event
@@ -455,7 +461,6 @@ gdk_display_get_name
 gdk_display_get_n_screens
 gdk_display_get_screen
 gdk_display_device_ungrab
-gdk_display_keyboard_ungrab
 gdk_display_open
 gdk_display_request_selection_notification
 gdk_display_store_clipboard

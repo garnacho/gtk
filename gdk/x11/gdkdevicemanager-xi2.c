@@ -710,20 +710,25 @@ get_event_window (GdkEventTranslator *translator,
         window = gdk_window_lookup_for_display (display, xev->event);
 
         /* Apply keyboard grabs to non-native windows */
-        if (/* Is key event */
-            (ev->evtype == XI_KeyPress || ev->evtype == XI_KeyRelease) &&
-            /* And we have a grab */
-            display->keyboard_grab.window != NULL &&
-            (
-             /* The window is not a descendant of the grabbed window */
-             !is_parent_of ((GdkWindow *)display->keyboard_grab.window, window) ||
-             /* Or owner event is false */
-             !display->keyboard_grab.owner_events
-             )
-            )
+        if (ev->evtype == XI_KeyPress || ev->evtype == XI_KeyRelease)
           {
-            /* Report key event against grab window */
-            window = display->keyboard_grab.window;
+            GdkDeviceGrabInfo *info;
+            GdkDevice *device;
+            gulong serial;
+
+            device = g_hash_table_lookup (GDK_DEVICE_MANAGER_XI2 (translator)->id_table,
+                                          GUINT_TO_POINTER (((XIDeviceEvent *) ev)->deviceid));
+
+            serial = _gdk_windowing_window_get_next_serial (display);
+            info = _gdk_display_has_device_grab (display, device, serial);
+
+            if (info &&
+                (!is_parent_of (info->window, window) ||
+                 !info->owner_events))
+              {
+                /* Report key event against grab window */
+                window = info->window;
+              }
           }
       }
       break;

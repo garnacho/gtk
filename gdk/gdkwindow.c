@@ -6445,18 +6445,12 @@ gdk_window_hide (GdkWindow *window)
                                         TRUE))
 	gdk_display_pointer_ungrab (display, GDK_CURRENT_TIME);
 
-      if (display->keyboard_grab.window != NULL)
-	{
-	  if (is_parent_of (window, display->keyboard_grab.window))
-	    {
-	      /* Call this ourselves, even though gdk_display_keyboard_ungrab
-		 does so too, since we want to pass implicit == TRUE so the
-		 broken grab event is generated */
-	      _gdk_display_unset_has_keyboard_grab (display,
-						    TRUE);
-	      gdk_display_keyboard_ungrab (display, GDK_CURRENT_TIME);
-	    }
-	}
+      if (_gdk_display_end_device_grab (display,
+                                        gdk_device_get_relative (display->core_pointer),
+                                        _gdk_windowing_window_get_next_serial (display),
+                                        window,
+                                        TRUE))
+        gdk_display_keyboard_ungrab (display, GDK_CURRENT_TIME);
 
       private->state = GDK_WINDOW_STATE_WITHDRAWN;
     }
@@ -9341,6 +9335,85 @@ gdk_pointer_grab (GdkWindow *	  window,
                                       GDK_OWNERSHIP_NONE,
                                       owner_events,
                                       event_mask,
+                                      serial,
+                                      time,
+                                      FALSE);
+    }
+
+  /* FIXME: handle errors when grabbing */
+
+  g_list_free (devices);
+
+  return res;
+}
+
+GdkGrabStatus
+gdk_keyboard_grab (GdkWindow *window,
+		   gboolean   owner_events,
+		   guint32    time)
+{
+  GdkWindow *native;
+  GdkDisplay *display;
+  GdkDeviceManager *device_manager;
+  GdkDevice *device;
+  GdkGrabStatus res = 0;
+  gulong serial;
+  GList *devices, *dev;
+
+  g_return_val_if_fail (GDK_IS_WINDOW (window), 0);
+
+  /* Non-viewable client side window => fail */
+  if (!_gdk_window_has_impl (window) &&
+      !gdk_window_is_viewable (window))
+    return GDK_GRAB_NOT_VIEWABLE;
+
+  if (_gdk_native_windows)
+    native = window;
+  else
+    native = gdk_window_get_toplevel (window);
+
+  while (gdk_window_is_offscreen ((GdkWindowObject *)native))
+    {
+      native = gdk_offscreen_window_get_embedder (native);
+
+      if (native == NULL ||
+	  (!_gdk_window_has_impl (native) &&
+	   !gdk_window_is_viewable (native)))
+	return GDK_GRAB_NOT_VIEWABLE;
+
+      native = gdk_window_get_toplevel (native);
+    }
+
+  display = gdk_drawable_get_display (window);
+
+  serial = _gdk_windowing_window_get_next_serial (display);
+  device_manager = gdk_device_manager_get_for_display (display);
+  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+
+  /* FIXME: Should this be generic to all backends? */
+  /* FIXME: What happens with extended devices? */
+  for (dev = devices; dev; dev = dev->next)
+    {
+      device = dev->data;
+
+      if (device->source != GDK_SOURCE_KEYBOARD)
+        continue;
+
+      res = _gdk_windowing_device_grab (device,
+                                        window,
+                                        native,
+                                        owner_events, 0,
+                                        NULL,
+                                        NULL,
+                                        time);
+
+      if (res == GDK_GRAB_SUCCESS)
+        _gdk_display_add_device_grab (display,
+                                      device,
+                                      window,
+                                      native,
+                                      GDK_OWNERSHIP_NONE,
+                                      owner_events, 0,
                                       serial,
                                       time,
                                       FALSE);

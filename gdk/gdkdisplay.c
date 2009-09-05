@@ -427,6 +427,43 @@ gdk_pointer_is_grabbed (void)
 }
 
 /**
+ * gdk_display_keyboard_ungrab:
+ * @display: a #GdkDisplay.
+ * @time_: a timestap (e.g #GDK_CURRENT_TIME).
+ *
+ * Release any keyboard grab
+ *
+ * Since: 2.2
+ */
+void
+gdk_display_keyboard_ungrab (GdkDisplay *display,
+			     guint32     time)
+{
+  GdkDeviceManager *device_manager;
+  GList *devices, *dev;
+  GdkDevice *device;
+
+  g_return_if_fail (GDK_IS_DISPLAY (display));
+
+  device_manager = gdk_device_manager_get_for_display (display);
+  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+
+  /* FIXME: Should this be generic to all backends? */
+  /* FIXME: What happens with extended devices? */
+  for (dev = devices; dev; dev = dev->next)
+    {
+      device = dev->data;
+
+      if (device->source != GDK_SOURCE_KEYBOARD)
+        continue;
+
+      gdk_display_device_ungrab (display, device, time);
+    }
+
+  g_list_free (devices);
+}
+
+/**
  * gdk_keyboard_ungrab:
  * @time_: a timestamp from a #GdkEvent, or %GDK_CURRENT_TIME if no
  *        timestamp is available.
@@ -971,7 +1008,6 @@ gdk_set_pointer_hooks (const GdkPointerHooks *new_hooks)
 static void
 generate_grab_broken_event (GdkWindow *window,
                             GdkDevice *device,
-			    gboolean   keyboard,
 			    gboolean   implicit,
 			    GdkWindow *grab_window)
 {
@@ -983,7 +1019,7 @@ generate_grab_broken_event (GdkWindow *window,
       event.type = GDK_GRAB_BROKEN;
       event.grab_broken.window = window;
       event.grab_broken.send_event = 0;
-      event.grab_broken.keyboard = keyboard;
+      event.grab_broken.keyboard = (device->source == GDK_SOURCE_KEYBOARD) ? TRUE : FALSE;
       event.grab_broken.implicit = implicit;
       event.grab_broken.grab_window = grab_window;
       event.grab_broken.device = device;
@@ -1299,7 +1335,7 @@ switch_to_pointer_grab (GdkDisplay        *display,
 	  if (last_grab->implicit_ungrab)
 	    generate_grab_broken_event (last_grab->window,
                                         device,
-					FALSE, TRUE,
+					TRUE,
 					NULL);
 	}
     }
@@ -1334,7 +1370,10 @@ _gdk_display_device_grab_update (GdkDisplay *display,
 	     its the currently active one or scheduled to be active */
 
 	  if (!current_grab->activated)
-	    switch_to_pointer_grab (display, device, current_grab, NULL, time, current_serial);
+            {
+              if (device->source != GDK_SOURCE_KEYBOARD)
+                switch_to_pointer_grab (display, device, current_grab, NULL, time, current_serial);
+            }
 
 	  break;
 	}
@@ -1353,16 +1392,17 @@ _gdk_display_device_grab_update (GdkDisplay *display,
 	  current_grab->window != next_grab->window)
 	generate_grab_broken_event (GDK_WINDOW (current_grab->window),
                                     device,
-				    FALSE, current_grab->implicit,
+				    current_grab->implicit,
 				    next_grab? next_grab->window : NULL);
 
       /* Remove old grab */
       grabs = g_list_delete_link (grabs, grabs);
       g_hash_table_insert (display->device_grabs, device, grabs);
 
-      switch_to_pointer_grab (display, device,
-			      next_grab, current_grab,
-			      time, current_serial);
+      if (device->source != GDK_SOURCE_KEYBOARD)
+        switch_to_pointer_grab (display, device,
+                                next_grab, current_grab,
+                                time, current_serial);
 
       free_device_grab (current_grab);
     }
@@ -1489,38 +1529,6 @@ _gdk_display_check_grab_ownership (GdkDisplay *display,
   return TRUE;
 }
 
-void
-_gdk_display_set_has_keyboard_grab (GdkDisplay *display,
-				    GdkWindow *window,
-				    GdkWindow *native_window,
-				    gboolean owner_events,
-				    unsigned long serial,
-				    guint32 time)
-{
-  if (display->keyboard_grab.window != NULL &&
-      display->keyboard_grab.window != window)
-    generate_grab_broken_event (display->keyboard_grab.window,
-                                display->core_pointer, /* FIXME: which event? core pointer not, clearly */
-				TRUE, FALSE, window);
-
-  display->keyboard_grab.window = window;
-  display->keyboard_grab.native_window = native_window;
-  display->keyboard_grab.owner_events = owner_events;
-  display->keyboard_grab.serial = serial;
-  display->keyboard_grab.time = time;
-}
-
-void
-_gdk_display_unset_has_keyboard_grab (GdkDisplay *display,
-				      gboolean implicit)
-{
-  if (implicit)
-    generate_grab_broken_event (display->keyboard_grab.window,
-                                display->core_pointer, /* FIXME: which device? core pointer not, clearly */
-				TRUE, FALSE, NULL);
-  display->keyboard_grab.window = NULL;  
-}
-
 GdkPointerWindowInfo *
 _gdk_display_get_pointer_info (GdkDisplay *display,
                                GdkDevice  *device)
@@ -1578,14 +1586,21 @@ gdk_keyboard_grab_info_libgtk_only (GdkDisplay *display,
 				    GdkWindow **grab_window,
 				    gboolean   *owner_events)
 {
+  GdkDeviceGrabInfo *info;
+
+  /* FIXME: merge this and the pointer function */
   g_return_val_if_fail (GDK_IS_DISPLAY (display), FALSE);
 
-  if (display->keyboard_grab.window)
+  /* FIXME: which device? */
+  info = _gdk_display_get_last_device_grab (display,
+                                            gdk_device_get_relative (display->core_pointer));
+
+  if (info)
     {
       if (grab_window)
-        *grab_window = display->keyboard_grab.window;
+        *grab_window = info->window;
       if (owner_events)
-        *owner_events = display->keyboard_grab.owner_events;
+        *owner_events = info->owner_events;
 
       return TRUE;
     }

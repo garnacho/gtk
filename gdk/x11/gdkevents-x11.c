@@ -961,6 +961,7 @@ gdk_event_translate (GdkDisplay *display,
     
   if (window != NULL)
     {
+#if 0
       /* Apply keyboard grabs to non-native windows */
       if (/* Is key event */
 	  (xevent->type == KeyPress || xevent->type == KeyRelease) &&
@@ -978,6 +979,7 @@ gdk_event_translate (GdkDisplay *display,
           window = display->keyboard_grab.window;;
           window_private = (GdkWindowObject *) window;
         }
+#endif
 
       window_impl = GDK_WINDOW_IMPL_X11 (window_private->impl);
       

@@ -103,7 +103,6 @@ struct _GdkDisplay
   guint double_click_distance;	/* Maximum distance between clicks in pixels */
 
   GHashTable *device_grabs;
-  GdkKeyboardGrabInfo keyboard_grab;
 
   gulong motion_hint_serial; /* 0 == didn't deliver hinted motion event */
 
