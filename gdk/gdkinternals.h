@@ -283,6 +283,7 @@ struct _GdkWindowObject
   cairo_surface_t *cairo_surface;
 
   GList *devices_inside;
+  GHashTable *device_events;
 };
 
 

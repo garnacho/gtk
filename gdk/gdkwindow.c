@@ -34,6 +34,7 @@
 #include "gdkdrawable.h"
 #include "gdkintl.h"
 #include "gdkscreen.h"
+#include "gdkdeviceprivate.h"
 #include "gdkmarshalers.h"
 #include "gdkalias.h"
 
@@ -1100,12 +1101,20 @@ find_native_sibling_above (GdkWindowObject *parent,
 }
 
 static GdkEventMask
-get_native_event_mask (GdkWindowObject *private)
+get_native_device_event_mask (GdkWindowObject *private,
+                              GdkDevice       *device)
 {
+  GdkEventMask event_mask;
+
+  if (device)
+    event_mask = GPOINTER_TO_INT (g_hash_table_lookup (private->device_events, device));
+  else
+    event_mask = private->event_mask;
+
   if (_gdk_native_windows ||
       private->window_type == GDK_WINDOW_ROOT ||
       private->window_type == GDK_WINDOW_FOREIGN)
-    return private->event_mask;
+    return event_mask;
   else
     {
       return
@@ -1121,13 +1130,19 @@ get_native_event_mask (GdkWindowObject *private)
 	 * may be asking for weird things for native windows,
 	 * but filter out things that override the above
 	 * requests somehow. */
-	(private->event_mask &
+	(event_mask &
 	 ~(GDK_POINTER_MOTION_HINT_MASK |
 	   GDK_BUTTON_MOTION_MASK |
 	   GDK_BUTTON1_MOTION_MASK |
 	   GDK_BUTTON2_MOTION_MASK |
 	   GDK_BUTTON3_MOTION_MASK));
     }
+}
+
+static GdkEventMask
+get_native_event_mask (GdkWindowObject *private)
+{
+  return get_native_device_event_mask (private, NULL);
 }
 
 /* Puts the native window in the right order wrt the other native windows
@@ -6580,6 +6595,69 @@ gdk_window_get_events (GdkWindow *window)
     return 0;
 
   return private->event_mask;
+}
+
+void
+gdk_window_set_device_events (GdkWindow    *window,
+                              GdkDevice    *device,
+                              GdkEventMask  event_mask)
+{
+  GdkWindowObject *private;
+  GdkDisplay *display;
+
+  g_return_if_fail (GDK_IS_WINDOW (window));
+  g_return_if_fail (GDK_IS_DEVICE (device));
+
+  if (GDK_WINDOW_DESTROYED (window))
+    return;
+
+  private = (GdkWindowObject *) window;
+
+  /* If motion hint is disabled, enable motion events again */
+  display = gdk_drawable_get_display (window);
+  if ((private->event_mask & GDK_POINTER_MOTION_HINT_MASK) &&
+      !(event_mask & GDK_POINTER_MOTION_HINT_MASK))
+    _gdk_display_enable_motion_hints (display);
+
+  if (event_mask == 0)
+    {
+      /* FIXME: unsetting events on a master device
+       * would restore private->event_mask
+       */
+      g_hash_table_remove (private->device_events, device);
+    }
+  else
+    g_hash_table_insert (private->device_events, device,
+                         GINT_TO_POINTER (event_mask));
+
+  if (gdk_window_has_impl (private))
+    {
+      GdkEventMask device_mask;
+
+      device_mask = get_native_device_event_mask (private, device);
+      GDK_DEVICE_GET_CLASS (device)->select_window_events (device, window, device_mask);
+    }
+}
+
+GdkEventMask
+gdk_window_get_device_events (GdkWindow *window,
+                              GdkDevice *device)
+{
+  GdkWindowObject *private;
+  GdkEventMask mask;
+
+  g_return_val_if_fail (GDK_IS_WINDOW (window), 0);
+  g_return_val_if_fail (GDK_IS_DEVICE (device), 0);
+
+  if (GDK_WINDOW_DESTROYED (window))
+    return 0;
+
+  private = (GdkWindowObject *) window;
+  mask = GPOINTER_TO_INT (g_hash_table_lookup (private->device_events, device));
+
+  /* FIXME: device could be controlled by private->event_mask */
+
+  return mask;
 }
 
 static void
