@@ -76,6 +76,9 @@ static GdkWindow * gdk_device_xi2_window_at_position (GdkDevice       *device,
                                                       gint            *win_x,
                                                       gint            *win_y,
                                                       GdkModifierType *mask);
+static void  gdk_device_xi2_select_window_events (GdkDevice    *device,
+                                                  GdkWindow    *window,
+                                                  GdkEventMask  event_mask);
 
 
 G_DEFINE_TYPE (GdkDeviceXI2, gdk_device_xi2, GDK_TYPE_DEVICE)
@@ -101,6 +104,7 @@ gdk_device_xi2_class_init (GdkDeviceXI2Class *klass)
   device_class->grab = gdk_device_xi2_grab;
   device_class->ungrab = gdk_device_xi2_ungrab;
   device_class->window_at_position = gdk_device_xi2_window_at_position;
+  device_class->select_window_events = gdk_device_xi2_select_window_events;
 
   g_object_class_install_property (object_class,
 				   PROP_DEVICE_ID,
@@ -414,6 +418,26 @@ gdk_device_xi2_window_at_position (GdkDevice       *device,
     *mask = gdk_device_xi2_translate_state (&mod_state, &button_state);
 
   return window;
+}
+
+static void
+gdk_device_xi2_select_window_events (GdkDevice    *device,
+                                     GdkWindow    *window,
+                                     GdkEventMask  event_mask)
+{
+  GdkDeviceXI2Private *priv;
+  XIEventMask evmask;
+
+  priv = GDK_DEVICE_XI2_GET_PRIVATE (device);
+
+  evmask.deviceid = priv->device_id;
+  evmask.mask = gdk_device_xi2_translate_event_mask (event_mask, &evmask.mask_len);
+
+  XISelectEvents (GDK_WINDOW_XDISPLAY (window),
+                  GDK_WINDOW_XWINDOW (window),
+                  &evmask, 1);
+
+  g_free (evmask.mask);
 }
 
 guchar *

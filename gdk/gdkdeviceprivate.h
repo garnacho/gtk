@@ -82,6 +82,9 @@ struct _GdkDeviceClass
                                       gint            *win_x,
                                       gint            *win_y,
                                       GdkModifierType *mask);
+  void (* select_window_events)      (GdkDevice       *device,
+                                      GdkWindow       *window,
+                                      GdkEventMask     event_mask);
 };
 
 void  _gdk_device_set_relative (GdkDevice *device,

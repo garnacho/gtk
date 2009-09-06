@@ -55,6 +55,9 @@ static GdkWindow * gdk_device_core_window_at_position (GdkDevice       *device,
                                                        gint            *win_x,
                                                        gint            *win_y,
                                                        GdkModifierType *mask);
+static void      gdk_device_core_select_window_events (GdkDevice       *device,
+                                                       GdkWindow       *window,
+                                                       GdkEventMask     event_mask);
 
 
 G_DEFINE_TYPE (GdkDeviceCore, gdk_device_core, GDK_TYPE_DEVICE)
@@ -76,6 +79,7 @@ gdk_device_core_class_init (GdkDeviceCoreClass *klass)
   device_class->grab = gdk_device_core_grab;
   device_class->ungrab = gdk_device_core_ungrab;
   device_class->window_at_position = gdk_device_core_window_at_position;
+  device_class->select_window_events = gdk_device_core_select_window_events;
 }
 
 static void
@@ -351,4 +355,54 @@ gdk_device_core_window_at_position (GdkDevice       *device,
     *mask = xmask;
 
   return window;
+}
+
+static void
+gdk_device_core_select_window_events (GdkDevice    *device,
+                                      GdkWindow    *window,
+                                      GdkEventMask  event_mask)
+{
+  GdkEventMask filter_mask, window_mask;
+  guint xmask = 0;
+  gint i;
+
+  window_mask = gdk_window_get_events (window);
+  filter_mask = (GDK_POINTER_MOTION_MASK &
+                 GDK_POINTER_MOTION_HINT_MASK &
+                 GDK_BUTTON_MOTION_MASK &
+                 GDK_BUTTON1_MOTION_MASK &
+                 GDK_BUTTON2_MOTION_MASK &
+                 GDK_BUTTON3_MOTION_MASK &
+                 GDK_BUTTON_PRESS_MASK &
+                 GDK_BUTTON_RELEASE_MASK &
+                 GDK_KEY_PRESS_MASK &
+                 GDK_KEY_RELEASE_MASK &
+                 GDK_ENTER_NOTIFY_MASK &
+                 GDK_LEAVE_NOTIFY_MASK &
+                 GDK_FOCUS_CHANGE_MASK &
+                 GDK_PROXIMITY_IN_MASK &
+                 GDK_PROXIMITY_OUT_MASK &
+                 GDK_SCROLL_MASK);
+
+  /* Filter out non-device events */
+  event_mask &= filter_mask;
+
+  /* Unset device events on window mask */
+  window_mask &= ~(filter_mask);
+
+  /* Combine masks */
+  event_mask |= window_mask;
+
+  for (i = 0; i < _gdk_nenvent_masks; i++)
+    {
+      if (event_mask & (1 << (i + 1)))
+        xmask |= _gdk_event_mask_table[i];
+    }
+
+  if (GDK_WINDOW_XID (window) != GDK_WINDOW_XROOTWIN (window))
+    xmask |= StructureNotifyMask | PropertyChangeMask;
+
+  XSelectInput (GDK_WINDOW_XDISPLAY (window),
+                GDK_WINDOW_XWINDOW (window),
+                xmask);
 }
