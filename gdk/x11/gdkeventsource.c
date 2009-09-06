@@ -90,7 +90,7 @@ static GdkEvent *
 gdk_event_source_translate_event (GdkEventSource *event_source,
                                   XEvent         *xevent)
 {
-  GdkEvent *event = NULL;
+  GdkEvent *event = gdk_event_new (GDK_NOTHING);
   GList *list = event_source->translators;
   GdkFilterReturn result;
   GdkWindow *filter_window;
@@ -104,7 +104,10 @@ gdk_event_source_translate_event (GdkEventSource *event_source,
                                         _gdk_default_filters);
 
       if (result == GDK_FILTER_REMOVE)
-        return NULL;
+        {
+          gdk_event_free (event);
+          return NULL;
+        }
       else if (result == GDK_FILTER_TRANSLATE)
         return event;
     }
@@ -127,11 +130,17 @@ gdk_event_source_translate_event (GdkEventSource *event_source,
 	  g_object_unref (filter_window);
 
           if (result == GDK_FILTER_REMOVE)
-            return NULL;
+            {
+              gdk_event_free (event);
+              return NULL;
+            }
           else if (result == GDK_FILTER_TRANSLATE)
             return event;
 	}
     }
+
+  gdk_event_free (event);
+  event = NULL;
 
   while (list && !event)
     {
