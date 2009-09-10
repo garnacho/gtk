@@ -1097,27 +1097,37 @@ _gdk_input_init (GdkDisplay *display)
 {
   GdkDisplayX11 *display_x11;
   GdkDeviceManager *device_manager;
-  GList *list;
+  GdkDevice *device;
+  GList *list, *l;
 
   display_x11 = GDK_DISPLAY_X11 (display);
   device_manager = gdk_device_manager_get_for_display (display);
 
-  /* Add all devices */
-  display_x11->input_devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
-
-  list = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_SLAVE);
-  display_x11->input_devices = g_list_concat (display_x11->input_devices, list);
-
+  /* For backwards compatibility, just add
+   * floating devices that are not keyboards.
+   */
   list = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_FLOATING);
-  display_x11->input_devices = g_list_concat (display_x11->input_devices, list);
 
-  /* Now set "core" pointer to the first master device that is a pointer */
-  list = display_x11->input_devices;
-
-  while (list)
+  for (l = list; l; l = l->next)
     {
-      GdkDevice *device = list->data;
-      list = list->next;
+      device = l->data;
+
+      if (device->source == GDK_SOURCE_KEYBOARD)
+        continue;
+
+      display_x11->input_devices = g_list_prepend (display_x11->input_devices, l->data);
+    }
+
+  g_list_free (list);
+
+  /* Now set "core" pointer to the first
+   * master device that is a pointer.
+   */
+  list = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+
+  for (l = list; l; l = l->next)
+    {
+      device = list->data;
 
       if (device->source != GDK_SOURCE_MOUSE)
         continue;
@@ -1125,6 +1135,8 @@ _gdk_input_init (GdkDisplay *display)
       display->core_pointer = device;
       break;
     }
+
+  g_list_free (list);
 }
 
 /**
