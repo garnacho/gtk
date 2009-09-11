@@ -558,6 +558,11 @@ _gdk_device_reset_axes (GdkDevice *device)
 
   for (i = priv->axes->len - 1; i >= 0; i--)
     g_array_remove_index (priv->axes, i);
+
+  g_object_notify (G_OBJECT (device), "n-axes");
+
+  /* This is done for backwards compatibility */
+  g_free (device->axes);
 }
 
 guint
@@ -570,6 +575,7 @@ _gdk_device_add_axis (GdkDevice   *device,
 {
   GdkDevicePrivate *priv;
   GdkAxisInfo axis_info;
+  guint pos;
 
   priv = GDK_DEVICE_GET_PRIVATE (device);
 
@@ -599,10 +605,19 @@ _gdk_device_add_axis (GdkDevice   *device,
 
   priv->axes = g_array_append_val (priv->axes, axis_info);
   device->num_axes = priv->axes->len;
+  pos = device->num_axes - 1;
+
+  /* This is done for backwards compatibility, since the public
+   * struct doesn't actually store the device data.
+   */
+  device->axes = g_realloc (device->axes, sizeof (GdkDeviceAxis) * priv->axes->len);
+  device->axes[pos].use = axis_info.use;
+  device->axes[pos].min = axis_info.min_axis;
+  device->axes[pos].max = axis_info.max_axis;
 
   g_object_notify (G_OBJECT (device), "n-axes");
 
-  return priv->axes->len - 1;
+  return pos;
 }
 
 GdkAxisInfo *
