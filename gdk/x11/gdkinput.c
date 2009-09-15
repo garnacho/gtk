@@ -38,6 +38,8 @@
 #include "gdkdisplay-x11.h"
 #include "gdkalias.h"
 
+#if 0
+
 static GdkDeviceAxis gdk_input_core_axes[] = {
   { GDK_AXIS_X, 0, 0 },
   { GDK_AXIS_Y, 0, 0 }
@@ -135,6 +137,8 @@ gdk_device_dispose (GObject *object)
   G_OBJECT_CLASS (gdk_device_parent_class)->dispose (object);
 }
 
+#endif
+
 /**
  * gdk_devices_list:
  *
@@ -148,6 +152,8 @@ gdk_devices_list (void)
 {
   return gdk_display_list_devices (gdk_display_get_default ());
 }
+
+#if 0
 
 /**
  * gdk_display_list_devices:
@@ -343,6 +349,8 @@ gdk_device_free_history (GdkTimeCoord **events,
   g_free (events);
 }
 
+#endif
+
 static void
 unset_extension_events (GdkWindow *window)
 {
@@ -415,11 +423,13 @@ gdk_input_set_extension_events (GdkWindow *window, gint mask,
 
 	  display_x11->input_windows = g_list_append (display_x11->input_windows, iw);
 
+#if 0
 #ifndef XINPUT_NONE
 	  /* we might not receive ConfigureNotify so get the root_relative_geometry
 	   * now, just in case */
 	  _gdk_input_get_root_relative_geometry (window, &iw->root_x, &iw->root_y);
 #endif /* !XINPUT_NONE */
+#endif
 	  impl_window->input_window = iw;
 	}
 
@@ -434,10 +444,8 @@ gdk_input_set_extension_events (GdkWindow *window, gint mask,
 
   for (tmp_list = display_x11->input_devices; tmp_list; tmp_list = tmp_list->next)
     {
-      GdkDevicePrivate *gdkdev = tmp_list->data;
-
-      if (!GDK_IS_CORE (gdkdev))
-	_gdk_input_select_events ((GdkWindow *)impl_window, gdkdev);
+      GdkDevice *dev = tmp_list->data;
+      gdk_window_set_device_events (window, dev, mask);
     }
 }
 
@@ -447,6 +455,7 @@ _gdk_input_window_destroy (GdkWindow *window)
   unset_extension_events (window);
 }
 
+#if 0
 /**
  * gdk_device_get_axis:
  * @device: a #GdkDevice
@@ -482,6 +491,8 @@ gdk_device_get_axis (GdkDevice  *device,
 
   return FALSE;
 }
+
+#endif
 
 #define __GDK_INPUT_C__
 #include "gdkaliasdef.c"

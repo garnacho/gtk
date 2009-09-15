@@ -121,7 +121,6 @@ gdk_c_sources =                 \
 	gdkgc.c			\
 	gdkglobals.c		\
 	gdkimage.c		\
-	gdkinput.c		\
 	gdkinternals.h  	\
 	gdkintl.h		\
 	gdkkeys.c		\

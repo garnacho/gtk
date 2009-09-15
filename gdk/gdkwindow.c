@@ -9083,9 +9083,11 @@ send_crossing_event (GdkDisplay                 *display,
   if (block_event)
     return;
 
+#if 0
   if (window->extension_events != 0)
     GDK_WINDOW_IMPL_GET_IFACE (window->impl)->input_window_crossing ((GdkWindow *)window,
 								     type == GDK_ENTER_NOTIFY);
+#endif
 
   if (window->event_mask & event_mask)
     {
