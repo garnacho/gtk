@@ -183,6 +183,10 @@ gdk_device_xi2_set_window_cursor (GdkDevice *device,
 
   priv = GDK_DEVICE_XI2_GET_PRIVATE (device);
 
+  /* Non-master devices don't have a cursor */
+  if (gdk_device_get_device_type (device) != GDK_DEVICE_TYPE_MASTER)
+    return;
+
   if (cursor)
     {
       cursor_private = (GdkCursorPrivate*) cursor;
