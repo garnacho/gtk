@@ -6602,8 +6602,10 @@ gdk_window_set_device_events (GdkWindow    *window,
                               GdkDevice    *device,
                               GdkEventMask  event_mask)
 {
+  GdkEventMask device_mask;
   GdkWindowObject *private;
   GdkDisplay *display;
+  GdkWindow *native;
 
   g_return_if_fail (GDK_IS_WINDOW (window));
   g_return_if_fail (GDK_IS_DEVICE (device));
@@ -6619,6 +6621,9 @@ gdk_window_set_device_events (GdkWindow    *window,
       !(event_mask & GDK_POINTER_MOTION_HINT_MASK))
     _gdk_display_enable_motion_hints (display);
 
+  if (G_UNLIKELY (!private->device_events))
+    private->device_events = g_hash_table_new (NULL, NULL);
+
   if (event_mask == 0)
     {
       /* FIXME: unsetting events on a master device
@@ -6630,13 +6635,25 @@ gdk_window_set_device_events (GdkWindow    *window,
     g_hash_table_insert (private->device_events, device,
                          GINT_TO_POINTER (event_mask));
 
-  if (gdk_window_has_impl (private))
-    {
-      GdkEventMask device_mask;
+  if (_gdk_native_windows)
+    native = window;
+  else
+    native = gdk_window_get_toplevel (window);
 
-      device_mask = get_native_device_event_mask (private, device);
-      GDK_DEVICE_GET_CLASS (device)->select_window_events (device, window, device_mask);
+  while (gdk_window_is_offscreen ((GdkWindowObject *)native))
+    {
+      native = gdk_offscreen_window_get_embedder (native);
+
+      if (native == NULL ||
+	  (!_gdk_window_has_impl (native) &&
+	   !gdk_window_is_viewable (native)))
+	return;
+
+      native = gdk_window_get_toplevel (native);
     }
+
+  device_mask = get_native_device_event_mask (private, device);
+  GDK_DEVICE_GET_CLASS (device)->select_window_events (device, window, device_mask);
 }
 
 GdkEventMask
