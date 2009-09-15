@@ -170,7 +170,14 @@ gdk_device_xi2_get_state (GdkDevice       *device,
                           gdouble         *axes,
                           GdkModifierType *mask)
 {
-  /* FIXME: Implement */
+  /* FIXME: Axes are not being translated, there doesn't
+   * seem to be any function to get valuators state in XI2.
+   */
+  gdk_device_xi2_query_state (device, window,
+                              NULL, NULL,
+                              NULL, NULL,
+                              NULL, NULL,
+                              mask);
 }
 
 static void
