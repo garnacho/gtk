@@ -591,6 +591,7 @@ _gdk_device_reset_axes (GdkDevice *device)
 
   /* This is done for backwards compatibility */
   g_free (device->axes);
+  device->axes = NULL;
 }
 
 guint
