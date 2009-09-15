@@ -71,6 +71,7 @@ create_core_pointer (GdkDisplay *display)
 {
   return g_object_new (GDK_TYPE_DEVICE_CORE,
                        "name", "Core Pointer",
+                       "type", GDK_DEVICE_TYPE_MASTER,
                        "input-source", GDK_SOURCE_MOUSE,
                        "input-mode", GDK_MODE_SCREEN,
                        "has-cursor", TRUE,
@@ -83,6 +84,7 @@ create_core_keyboard (GdkDisplay *display)
 {
   return g_object_new (GDK_TYPE_DEVICE_CORE,
                        "name", "Core Keyboard",
+                       "type", GDK_DEVICE_TYPE_MASTER,
                        "input-source", GDK_SOURCE_KEYBOARD,
                        "has-cursor", TRUE,
                        "display", display,

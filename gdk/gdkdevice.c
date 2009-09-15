@@ -45,6 +45,7 @@ struct _GdkDevicePrivate
 {
   GdkDisplay *display;
   GdkDevice *relative;
+  GdkDeviceType type;
   GArray *axes;
 };
 
@@ -66,6 +67,7 @@ enum {
   PROP_DISPLAY,
   PROP_NAME,
   PROP_RELATIVE,
+  PROP_TYPE,
   PROP_INPUT_SOURCE,
   PROP_INPUT_MODE,
   PROP_HAS_CURSOR,
@@ -96,6 +98,14 @@ gdk_device_class_init (GdkDeviceClass *klass)
                                                         P_("Device name"),
                                                         NULL,
                                                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+  g_object_class_install_property (object_class,
+                                   PROP_TYPE,
+                                   g_param_spec_enum ("type",
+                                                      P_("Device type"),
+                                                      P_("Device role in the device manager"),
+                                                      GDK_TYPE_DEVICE_TYPE,
+                                                      GDK_DEVICE_TYPE_MASTER,
+                                                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
   g_object_class_install_property (object_class,
 				   PROP_RELATIVE,
 				   g_param_spec_object ("relative",
@@ -183,6 +193,9 @@ gdk_device_set_property (GObject      *object,
 
       device->name = g_value_dup_string (value);
       break;
+    case PROP_TYPE:
+      priv->type = g_value_get_enum (value);
+      break;
     case PROP_INPUT_SOURCE:
       device->source = g_value_get_enum (value);
       break;
@@ -218,6 +231,9 @@ gdk_device_get_property (GObject    *object,
     case PROP_NAME:
       g_value_set_string (value,
                           device->name);
+      break;
+    case PROP_TYPE:
+      g_value_set_enum (value, priv->type);
       break;
     case PROP_INPUT_SOURCE:
       g_value_set_enum (value, device->source);
@@ -391,6 +407,18 @@ _gdk_device_set_relative (GdkDevice *device,
 
   if (relative)
     priv->relative = g_object_ref (relative);
+}
+
+GdkDeviceType
+gdk_device_get_device_type (GdkDevice *device)
+{
+  GdkDevicePrivate *priv;
+
+  g_return_val_if_fail (GDK_IS_DEVICE (device), GDK_DEVICE_TYPE_MASTER);
+
+  priv = GDK_DEVICE_GET_PRIVATE (device);
+
+  return priv->type;
 }
 
 GList *

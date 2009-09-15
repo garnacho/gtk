@@ -73,6 +73,12 @@ typedef enum
   GDK_AXIS_LAST
 } GdkAxisUse;
 
+typedef enum {
+  GDK_DEVICE_TYPE_MASTER,
+  GDK_DEVICE_TYPE_SLAVE,
+  GDK_DEVICE_TYPE_FLOATING
+} GdkDeviceType;
+
 struct _GdkDeviceKey
 {
   guint keyval;
@@ -159,6 +165,9 @@ gboolean gdk_device_get_axis     (GdkDevice         *device,
 GdkDisplay * gdk_device_get_display (GdkDevice      *device);
 
 GdkDevice  * gdk_device_get_relative (GdkDevice     *device);
+
+GdkDeviceType gdk_device_get_device_type (GdkDevice *device);
+
 
 G_END_DECLS
 
