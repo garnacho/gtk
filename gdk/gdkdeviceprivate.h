@@ -107,6 +107,9 @@ gboolean _gdk_device_translate_axis (GdkDevice *device,
                                      gdouble    value,
                                      gdouble   *axis_value);
 
+void _gdk_input_check_extension_events (GdkDevice *device);
+
+
 G_END_DECLS
 
 #endif /* __GDK_DEVICE_PRIVATE_H__ */

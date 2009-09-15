@@ -27,8 +27,6 @@
 #include "config.h"
 
 #include <stdlib.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
 
 #include "gdkx.h"
 #include "gdkinput.h"
@@ -36,6 +34,7 @@
 #include "gdkinputprivate.h"
 #include "gdkscreen-x11.h"
 #include "gdkdisplay-x11.h"
+#include "gdkwindow.h"
 #include "gdkalias.h"
 
 #if 0
@@ -352,6 +351,42 @@ gdk_device_free_history (GdkTimeCoord **events,
 #endif
 
 static void
+_gdk_input_select_device_events (GdkWindow *impl_window,
+                                 GdkDevice *dev)
+{
+  guint event_mask;
+  GdkWindowObject *w;
+  GdkInputWindow *iw;
+  GdkInputMode *mode;
+  gboolean has_cursor;
+  GList *l;
+
+  event_mask = 0;
+  iw = ((GdkWindowObject *)impl_window)->input_window;
+
+  g_object_get (dev,
+                "input-mode", &mode,
+                "has-cursor", &has_cursor,
+                NULL);
+
+  if (iw != NULL && mode != GDK_MODE_DISABLED)
+    {
+      for (l = iw->windows; l != NULL; l = l->next)
+	{
+	  w = l->data;
+	  if (has_cursor || (w->extension_events & GDK_ALL_DEVICES_MASK))
+	    event_mask |= w->extension_events;
+	}
+    }
+  event_mask &= ~GDK_ALL_DEVICES_MASK;
+
+  if (event_mask)
+    event_mask |= GDK_PROXIMITY_OUT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK;
+
+  gdk_window_set_device_events (impl_window, dev, event_mask);
+}
+
+static void
 unset_extension_events (GdkWindow *window)
 {
   GdkWindowObject *window_private;
@@ -445,7 +480,7 @@ gdk_input_set_extension_events (GdkWindow *window, gint mask,
   for (tmp_list = display_x11->input_devices; tmp_list; tmp_list = tmp_list->next)
     {
       GdkDevice *dev = tmp_list->data;
-      gdk_window_set_device_events (window, dev, mask);
+      _gdk_input_select_device_events (window, dev);
     }
 }
 
@@ -453,6 +488,22 @@ void
 _gdk_input_window_destroy (GdkWindow *window)
 {
   unset_extension_events (window);
+}
+
+void
+_gdk_input_check_extension_events (GdkDevice *device)
+{
+  GdkDisplayX11 *display_impl;
+  GdkInputWindow *input_window;
+  GList *tmp_list;
+
+  display_impl = GDK_DISPLAY_X11 (gdk_device_get_display (device));
+
+  for (tmp_list = display_impl->input_windows; tmp_list; tmp_list = tmp_list->next)
+    {
+      input_window = tmp_list->data;
+      _gdk_input_select_device_events (input_window->impl_window, device);
+    }
 }
 
 #if 0
