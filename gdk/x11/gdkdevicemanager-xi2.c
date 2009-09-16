@@ -856,6 +856,9 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
         event->key.hardware_keycode = xev->detail;
         event->key.is_modifier = _gdk_keymap_key_is_modifier (keymap, event->key.hardware_keycode);
 
+        event->key.device = g_hash_table_lookup (device_manager->id_table,
+                                                 GUINT_TO_POINTER (xev->deviceid));
+
         _gdk_keymap_add_virtual_modifiers (keymap, &event->key.state);
 
         event->key.keyval = GDK_VoidSymbol;
