@@ -6448,26 +6448,31 @@ gdk_window_hide (GdkWindow *window)
   else if (was_mapped)
     {
       GdkDisplay *display;
+      GdkDeviceManager *device_manager;
+      GList *devices, *d;
 
       /* May need to break grabs on children */
       display = gdk_drawable_get_display (window);
+      device_manager = gdk_device_manager_get_for_display (display);
 
-      /* FIXME: which device(s)? */
-      if (_gdk_display_end_device_grab (display,
-                                        display->core_pointer,
-                                        _gdk_windowing_window_get_next_serial (display),
-                                        window,
-                                        TRUE))
-	gdk_display_pointer_ungrab (display, GDK_CURRENT_TIME);
+      /* Get all devices */
+      devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+      devices = g_list_concat (devices, gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_SLAVE));
+      devices = g_list_concat (devices, gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_FLOATING));
 
-      if (_gdk_display_end_device_grab (display,
-                                        gdk_device_get_relative (display->core_pointer),
-                                        _gdk_windowing_window_get_next_serial (display),
-                                        window,
-                                        TRUE))
-        gdk_display_keyboard_ungrab (display, GDK_CURRENT_TIME);
+      for (d = devices; d; d = d->next)
+        {
+          GdkDevice *device = d->data;
+
+          if (_gdk_display_end_device_grab (display, device,
+                                            _gdk_windowing_window_get_next_serial (display),
+                                            window,
+                                            TRUE))
+            gdk_display_device_ungrab (display, device, GDK_CURRENT_TIME);
+        }
 
       private->state = GDK_WINDOW_STATE_WITHDRAWN;
+      g_list_free (devices);
     }
 
   did_hide = _gdk_window_update_viewable (window);

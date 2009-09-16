@@ -400,7 +400,6 @@ gdk_display_x11_translate_event (GdkEventTranslator *translator,
 	}
     }
 
-  /* FIXME: if window is NULL, xwindow should still have something meaningful here? */
   if (xwindow != None &&
       screen_x11 && screen_x11->wmspec_check_window != None &&
       xwindow == screen_x11->wmspec_check_window)
