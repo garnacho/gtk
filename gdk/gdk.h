@@ -132,12 +132,10 @@ GdkGrabStatus gdk_device_grab        (GdkDevice        *device,
 				      GdkCursor        *cursor,
 				      guint32           time_);
 
-gboolean gdk_pointer_grab_info_libgtk_only (GdkDisplay *display,
-					    GdkWindow **grab_window,
-					    gboolean   *owner_events);
-gboolean gdk_keyboard_grab_info_libgtk_only (GdkDisplay *display,
-					     GdkWindow **grab_window,
-					     gboolean   *owner_events);
+gboolean gdk_device_grab_info_libgtk_only (GdkDisplay  *display,
+                                           GdkDevice   *device,
+                                           GdkWindow  **grab_window,
+                                           gboolean    *owner_events);
 
 #ifndef GDK_MULTIHEAD_SAFE
 void          gdk_pointer_ungrab     (guint32       time_);

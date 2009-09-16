@@ -1314,12 +1314,10 @@ gtk_main_iteration_do (gboolean blocking)
 
 /* private libgtk to libgdk interfaces
  */
-gboolean gdk_pointer_grab_info_libgtk_only  (GdkDisplay *display,
-					     GdkWindow **grab_window,
-					     gboolean   *owner_events);
-gboolean gdk_keyboard_grab_info_libgtk_only (GdkDisplay *display,
-					     GdkWindow **grab_window,
-					     gboolean   *owner_events);
+gboolean gdk_device_grab_info_libgtk_only (GdkDisplay  *display,
+                                           GdkDevice   *device,
+                                           GdkWindow  **grab_window,
+                                           gboolean    *owner_events);
 
 static void
 rewrite_events_translate (GdkWindow *old_window,
@@ -1394,6 +1392,7 @@ rewrite_event_for_grabs (GdkEvent *event)
   gpointer grab_widget_ptr;
   gboolean owner_events;
   GdkDisplay *display;
+  GdkDevice *device;
 
   switch (event->type)
     {
@@ -1405,20 +1404,15 @@ rewrite_event_for_grabs (GdkEvent *event)
     case GDK_MOTION_NOTIFY:
     case GDK_PROXIMITY_IN:
     case GDK_PROXIMITY_OUT:
-      display = gdk_drawable_get_display (event->proximity.window);
-      if (!gdk_pointer_grab_info_libgtk_only (display, &grab_window, &owner_events) ||
-	  !owner_events)
-	return NULL;
-      break;
-
     case GDK_KEY_PRESS:
     case GDK_KEY_RELEASE:
-      display = gdk_drawable_get_display (event->key.window);
-      if (!gdk_keyboard_grab_info_libgtk_only (display, &grab_window, &owner_events) ||
-	  !owner_events)
-	return NULL;
-      break;
+      display = gdk_drawable_get_display (event->any.window);
+      device = gdk_event_get_device (event);
 
+      if (!gdk_device_grab_info_libgtk_only (display, device, &grab_window, &owner_events) ||
+	  !owner_events)
+        return NULL;
+      break;
     default:
       return NULL;
     }

@@ -1569,31 +1569,32 @@ _gdk_display_pointer_info_foreach (GdkDisplay                   *display,
 }
 
 /**
- * gdk_keyboard_grab_info_libgtk_only:
+ * gdk_device_grab_info_libgtk_only:
  * @display: the display for which to get the grab information
+ * @device: device to get the grab information from
  * @grab_window: location to store current grab window
  * @owner_events: location to store boolean indicating whether
- *   the @owner_events flag to gdk_keyboard_grab() was %TRUE.
- * 
+ *   the @owner_events flag to gdk_keyboard_grab() or
+ *   gdk_pointer_grab() was %TRUE.
+ *
  * Determines information about the current keyboard grab.
  * This is not public API and must not be used by applications.
- * 
+ *
  * Return value: %TRUE if this application currently has the
  *  keyboard grabbed.
  **/
 gboolean
-gdk_keyboard_grab_info_libgtk_only (GdkDisplay *display,
-				    GdkWindow **grab_window,
-				    gboolean   *owner_events)
+gdk_device_grab_info_libgtk_only (GdkDisplay  *display,
+                                  GdkDevice   *device,
+                                  GdkWindow  **grab_window,
+                                  gboolean    *owner_events)
 {
   GdkDeviceGrabInfo *info;
 
-  /* FIXME: merge this and the pointer function */
   g_return_val_if_fail (GDK_IS_DISPLAY (display), FALSE);
+  g_return_val_if_fail (GDK_IS_DEVICE (device), FALSE);
 
-  /* FIXME: which device? */
-  info = _gdk_display_get_last_device_grab (display,
-                                            gdk_device_get_relative (display->core_pointer));
+  info = _gdk_display_get_last_device_grab (display, device);
 
   if (info)
     {
@@ -1607,48 +1608,6 @@ gdk_keyboard_grab_info_libgtk_only (GdkDisplay *display,
   else
     return FALSE;
 }
-
-/**
- * gdk_pointer_grab_info_libgtk_only:
- * @display: the #GdkDisplay for which to get the grab information
- * @grab_window: location to store current grab window
- * @owner_events: location to store boolean indicating whether
- *   the @owner_events flag to gdk_pointer_grab() was %TRUE.
- * 
- * Determines information about the current pointer grab.
- * This is not public API and must not be used by applications.
- * 
- * Return value: %TRUE if this application currently has the
- *  pointer grabbed.
- **/
-gboolean
-gdk_pointer_grab_info_libgtk_only (GdkDisplay *display,
-				   GdkWindow **grab_window,
-				   gboolean   *owner_events)
-{
-  GdkDeviceGrabInfo *info;
-
-  g_return_val_if_fail (GDK_IS_DISPLAY (display), FALSE);
-
-  /* What we're interested in is the steady state (ie last grab),
-     because we're interested e.g. if we grabbed so that we
-     can ungrab, even if our grab is not active just yet. */
-  /* FIXME: which device? */
-  info = _gdk_display_get_last_device_grab (display, display->core_pointer);
-
-  if (info)
-    {
-      if (grab_window)
-        *grab_window = info->window;
-      if (owner_events)
-        *owner_events = info->owner_events;
-
-      return TRUE;
-    }
-  else
-    return FALSE;
-}
-
 
 /**
  * gdk_display_pointer_is_grabbed:
