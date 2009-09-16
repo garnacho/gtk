@@ -1490,9 +1490,11 @@ _gdk_display_check_grab_ownership (GdkDisplay *display,
   GHashTableIter iter;
   gpointer key, value;
   GdkGrabOwnership higher_ownership, device_ownership;
+  gboolean device_is_keyboard;
 
   g_hash_table_iter_init (&iter, display->device_grabs);
   higher_ownership = device_ownership = GDK_OWNERSHIP_NONE;
+  device_is_keyboard = (device->source == GDK_SOURCE_KEYBOARD);
 
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
@@ -1505,6 +1507,11 @@ _gdk_display_check_grab_ownership (GdkDisplay *display,
       grabs = grab_list_find (grabs, serial);
 
       if (!grabs)
+        continue;
+
+      /* Discard device if it's not of the same type */
+      if ((device_is_keyboard && dev->source != GDK_SOURCE_KEYBOARD) ||
+          (!device_is_keyboard && dev->source == GDK_SOURCE_KEYBOARD))
         continue;
 
       grab = grabs->data;
