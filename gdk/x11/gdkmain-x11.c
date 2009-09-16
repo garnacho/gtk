@@ -202,14 +202,21 @@ _gdk_xgrab_check_unmap (GdkWindow *window,
 			gulong     serial)
 {
   GdkDisplay *display = gdk_drawable_get_display (window);
+  GdkDeviceManager *device_manager;
+  GList *devices, *d;
 
-  /* FIXME: which device? */
-  _gdk_display_end_device_grab (display, display->core_pointer, serial, window, TRUE);
+  device_manager = gdk_device_manager_get_for_display (display);
 
-  /* FIXME: which keyb? */
-  _gdk_display_end_device_grab (display,
-                                gdk_device_get_relative (display->core_pointer),
-                                serial, window, TRUE);
+  /* Get all devices */
+  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+  devices = g_list_concat (devices, gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_SLAVE));
+  devices = g_list_concat (devices, gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_FLOATING));
+
+  /* End all grabs on the newly hidden window */
+  for (d = devices; d; d = d->next)
+    _gdk_display_end_device_grab (display, d->data, serial, window, TRUE);
+
+  g_list_free (devices);
 }
 
 /**
@@ -223,32 +230,35 @@ void
 _gdk_xgrab_check_destroy (GdkWindow *window)
 {
   GdkDisplay *display = gdk_drawable_get_display (window);
+  GdkDeviceManager *device_manager;
   GdkDeviceGrabInfo *grab;
+  GList *devices, *d;
 
-  /* Make sure there is no lasting grab in this native
-     window */
-  /* FIXME: which device? */
-  grab = _gdk_display_get_last_device_grab (display, display->core_pointer);
-  if (grab && grab->native_window == window)
+  device_manager = gdk_device_manager_get_for_display (display);
+
+  /* Get all devices */
+  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+  devices = g_list_concat (devices, gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_SLAVE));
+  devices = g_list_concat (devices, gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_FLOATING));
+
+  for (d = devices; d; d = d->next)
     {
-      /* We don't know the actual serial to end, but it
-	 doesn't really matter as this only happens
-	 after we get told of the destroy from the
-	 server so we know its ended in the server,
-	 just make sure its ended. */
-      grab->serial_end = grab->serial_start;
-      grab->implicit_ungrab = TRUE;
+      /* Make sure there is no lasting grab in this native window */
+      grab = _gdk_display_get_last_device_grab (display, d->data);
+
+      if (grab && grab->native_window == window)
+        {
+          /* We don't know the actual serial to end, but it
+             doesn't really matter as this only happens
+             after we get told of the destroy from the
+             server so we know its ended in the server,
+             just make sure its ended. */
+          grab->serial_end = grab->serial_start;
+          grab->implicit_ungrab = TRUE;
+        }
     }
 
-  /* FIXME: which keyboard? */
-  grab = _gdk_display_get_last_device_grab (display,
-                                            gdk_device_get_relative (display->core_pointer));
-
-  if (grab && grab->native_window == window)
-    {
-      grab->serial_end = grab->serial_start;
-      grab->implicit_ungrab = TRUE;
-    }
+  g_list_free (devices);
 }
 
 void
