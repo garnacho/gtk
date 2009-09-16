@@ -642,22 +642,6 @@ gdk_device_manager_core_translate_event (GdkEventTranslator *translator,
 	  break;
 	}
 
-      /* Handle focusing (in the case where no window manager is running */
-      if (toplevel && xevent->xcrossing.detail != NotifyInferior)
-	{
-	  toplevel->has_pointer = TRUE;
-
-	  if (xevent->xcrossing.focus && !toplevel->has_focus_window)
-	    {
-	      gboolean had_focus = HAS_FOCUS (toplevel);
-
-	      toplevel->has_pointer_focus = TRUE;
-
-	      if (HAS_FOCUS (toplevel) != had_focus)
-		generate_focus_event (device_manager, window, TRUE);
-	    }
-	}
-
       event->crossing.type = GDK_ENTER_NOTIFY;
       event->crossing.window = window;
       event->crossing.device = device_manager->core_pointer;
@@ -700,22 +684,6 @@ gdk_device_manager_core_translate_event (GdkEventTranslator *translator,
 	{
 	  return_val = FALSE;
 	  break;
-	}
-
-      /* Handle focusing (in the case where no window manager is running */
-      if (toplevel && xevent->xcrossing.detail != NotifyInferior)
-	{
-	  toplevel->has_pointer = FALSE;
-
-	  if (xevent->xcrossing.focus && !toplevel->has_focus_window)
-	    {
-	      gboolean had_focus = HAS_FOCUS (toplevel);
-
-	      toplevel->has_pointer_focus = FALSE;
-
-	      if (HAS_FOCUS (toplevel) != had_focus)
-		generate_focus_event (device_manager, window, FALSE);
-	    }
 	}
 
       event->crossing.type = GDK_LEAVE_NOTIFY;

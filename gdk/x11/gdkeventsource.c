@@ -29,6 +29,9 @@ static gboolean gdk_event_source_dispatch (GSource     *source,
                                            gpointer     user_data);
 static void     gdk_event_source_finalize (GSource     *source);
 
+#define HAS_FOCUS(toplevel)                           \
+  ((toplevel)->has_focus || (toplevel)->has_pointer_focus)
+
 struct _GdkEventSource
 {
   GSource source;
@@ -84,6 +87,41 @@ gdk_event_source_get_filter_window (GdkEventSource *event_source,
     window = NULL;
 
   return window;
+}
+
+static void
+handle_focus_change (GdkEventCrossing *event)
+{
+  GdkToplevelX11 *toplevel;
+  gboolean focus_in;
+
+  toplevel = _gdk_x11_window_get_toplevel (event->window);
+  focus_in = (event->type == GDK_ENTER_NOTIFY);
+
+  if (toplevel && event->detail != GDK_NOTIFY_INFERIOR)
+    {
+      toplevel->has_pointer = focus_in;
+
+      if (event->focus && !toplevel->has_focus_window)
+        {
+          gboolean had_focus = HAS_FOCUS (toplevel);
+
+          toplevel->has_pointer_focus = focus_in;
+
+          if (HAS_FOCUS (toplevel) != had_focus)
+            {
+              GdkEvent focus_event;
+
+              focus_event.type = GDK_FOCUS_CHANGE;
+              focus_event.focus_change.window = event->window;
+              focus_event.focus_change.send_event = FALSE;
+              focus_event.focus_change.in = focus_in;
+              focus_event.focus_change.device = event->device;
+
+              gdk_event_put (&focus_event);
+            }
+        }
+    }
 }
 
 static GdkEvent *
@@ -150,6 +188,14 @@ gdk_event_source_translate_event (GdkEventSource *event_source,
       event = gdk_event_translator_translate (translator,
                                               event_source->display,
                                               xevent);
+    }
+
+  if (event &&
+      (event->type == GDK_ENTER_NOTIFY ||
+       event->type == GDK_LEAVE_NOTIFY))
+    {
+      /* Handle focusing (in the case where no window manager is running */
+      handle_focus_change (&event->crossing);
     }
 
   return event;
