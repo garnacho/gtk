@@ -17,6 +17,8 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include <string.h>
+
 #include <gdk/gdkdeviceprivate.h>
 #include "gdkdevicemanager-xi2.h"
 #include "gdkeventtranslator.h"
@@ -173,8 +175,21 @@ create_device (GdkDisplay   *display,
     input_source = GDK_SOURCE_KEYBOARD;
   else
     {
-      /* FIXME: Set other input sources */
-      input_source = GDK_SOURCE_MOUSE;
+      gchar *tmp_name;
+
+      tmp_name = g_ascii_strdown (dev->name, -1);
+
+      if (g_str_has_suffix (tmp_name, "pointer"))
+        input_source = GDK_SOURCE_MOUSE;
+      else if (strcmp (tmp_name, "wacom") == 0 ||
+               strcmp (tmp_name, "pen") == 0)
+        input_source = GDK_SOURCE_PEN;
+      else if (strcmp (tmp_name, "eraser") == 0)
+        input_source = GDK_SOURCE_ERASER;
+      else if (strcmp (tmp_name, "cursor") == 0)
+        input_source = GDK_SOURCE_CURSOR;
+      else
+        input_source = GDK_SOURCE_PEN;
     }
 
   switch (dev->use)
@@ -857,7 +872,9 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
         if (ev->evtype == XI_KeyPress)
           set_user_time (event);
 
-        /* FIXME: emulate autorepeat on key release? */
+        /* FIXME: emulate autorepeat on key
+         * release? XI2 seems attached to Xkb.
+         */
       }
 
       break;
@@ -947,7 +964,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
 
         event->motion.state = gdk_device_xi2_translate_state (&xev->mods, &xev->buttons);
 
-        /* FIXME: There doesn't seem to be motion hints in XI */
+        /* There doesn't seem to be motion hints in XI */
         event->motion.is_hint = FALSE;
 
         event->motion.axes = translate_axes (event->motion.device,
@@ -996,7 +1013,6 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
       break;
     }
 
-  /* FIXME: should use ev->send_event? looks uninitialized sometimes */
   event->any.send_event = cookie->send_event;
 
   if (return_val)
