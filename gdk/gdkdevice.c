@@ -160,8 +160,10 @@ static void
 gdk_device_dispose (GObject *object)
 {
   GdkDevicePrivate *priv;
+  GdkDevice *device;
 
-  priv = GDK_DEVICE_GET_PRIVATE (object);
+  device = GDK_DEVICE (object);
+  priv = GDK_DEVICE_GET_PRIVATE (device);
 
   if (priv->relative)
     {
@@ -169,6 +171,20 @@ gdk_device_dispose (GObject *object)
       g_object_unref (priv->relative);
       priv->relative = NULL;
     }
+
+  if (priv->axes)
+    {
+      g_array_free (priv->axes, TRUE);
+      priv->axes = NULL;
+    }
+
+  g_free (device->name);
+  g_free (device->keys);
+  g_free (device->axes);
+
+  device->name = NULL;
+  device->keys = NULL;
+  device->axes = NULL;
 
   G_OBJECT_CLASS (gdk_device_parent_class)->dispose (object);
 }

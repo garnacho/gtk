@@ -357,8 +357,13 @@ gdk_device_manager_xi2_finalize (GObject *object)
 
   device_manager_xi2 = GDK_DEVICE_MANAGER_XI2 (object);
 
+  g_list_foreach (device_manager_xi2->master_devices, (GFunc) g_object_unref, NULL);
   g_list_free (device_manager_xi2->master_devices);
+
+  g_list_foreach (device_manager_xi2->slave_devices, (GFunc) g_object_unref, NULL);
   g_list_free (device_manager_xi2->slave_devices);
+
+  g_list_foreach (device_manager_xi2->floating_devices, (GFunc) g_object_unref, NULL);
   g_list_free (device_manager_xi2->floating_devices);
 
   g_hash_table_destroy (device_manager_xi2->id_table);

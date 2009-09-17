@@ -596,6 +596,12 @@ gdk_window_finalize (GObject *object)
   if (obj->device_cursor)
     g_hash_table_destroy (obj->device_cursor);
 
+  if (obj->device_events)
+    g_hash_table_destroy (obj->device_events);
+
+  if (obj->devices_inside)
+    g_list_free (obj->devices_inside);
+
   G_OBJECT_CLASS (parent_class)->finalize (object);
 }
 
