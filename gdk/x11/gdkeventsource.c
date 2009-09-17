@@ -93,34 +93,33 @@ static void
 handle_focus_change (GdkEventCrossing *event)
 {
   GdkToplevelX11 *toplevel;
-  gboolean focus_in;
+  gboolean focus_in, had_focus;
 
   toplevel = _gdk_x11_window_get_toplevel (event->window);
   focus_in = (event->type == GDK_ENTER_NOTIFY);
 
-  if (toplevel && event->detail != GDK_NOTIFY_INFERIOR)
+  if (!toplevel || event->detail == GDK_NOTIFY_INFERIOR)
+    return;
+
+  toplevel->has_pointer = focus_in;
+
+  if (!event->focus || toplevel->has_focus_window)
+    return;
+
+  had_focus = HAS_FOCUS (toplevel);
+  toplevel->has_pointer_focus = focus_in;
+
+  if (HAS_FOCUS (toplevel) != had_focus)
     {
-      toplevel->has_pointer = focus_in;
+      GdkEvent focus_event;
 
-      if (event->focus && !toplevel->has_focus_window)
-        {
-          gboolean had_focus = HAS_FOCUS (toplevel);
+      focus_event.type = GDK_FOCUS_CHANGE;
+      focus_event.focus_change.window = event->window;
+      focus_event.focus_change.send_event = FALSE;
+      focus_event.focus_change.in = focus_in;
+      focus_event.focus_change.device = event->device;
 
-          toplevel->has_pointer_focus = focus_in;
-
-          if (HAS_FOCUS (toplevel) != had_focus)
-            {
-              GdkEvent focus_event;
-
-              focus_event.type = GDK_FOCUS_CHANGE;
-              focus_event.focus_change.window = event->window;
-              focus_event.focus_change.send_event = FALSE;
-              focus_event.focus_change.in = focus_in;
-              focus_event.focus_change.device = event->device;
-
-              gdk_event_put (&focus_event);
-            }
-        }
+      gdk_event_put (&focus_event);
     }
 }
 
@@ -192,7 +191,8 @@ gdk_event_source_translate_event (GdkEventSource *event_source,
 
   if (event &&
       (event->type == GDK_ENTER_NOTIFY ||
-       event->type == GDK_LEAVE_NOTIFY))
+       event->type == GDK_LEAVE_NOTIFY) &&
+      event->crossing.window != NULL)
     {
       /* Handle focusing (in the case where no window manager is running */
       handle_focus_change (&event->crossing);
