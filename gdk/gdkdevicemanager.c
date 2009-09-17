@@ -75,6 +75,15 @@ gdk_device_manager_class_init (GdkDeviceManagerClass *klass)
 							GDK_TYPE_DISPLAY,
  							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
+  /**
+   * GdkDeviceManager::device-added:
+   * @device_manager: the object on which the signal is emitted
+   * @device: the newly added #GdkDevice.
+   *
+   * The ::device-added signal is emitted either when a new master
+   * pointer is created, or when a slave (Hardware) input device
+   * is plugged in.
+   */
   signals [DEVICE_ADDED] =
     g_signal_new (g_intern_static_string ("device-added"),
                   G_TYPE_FROM_CLASS (klass),
@@ -85,6 +94,15 @@ gdk_device_manager_class_init (GdkDeviceManagerClass *klass)
                   G_TYPE_NONE, 1,
                   GDK_TYPE_DEVICE);
 
+  /**
+   * GdkDeviceManager::device-removed:
+   * @device_manager: the object on which the signal is emitted
+   * @device: the just removed #GdkDevice.
+   *
+   * The ::device-added signal is emitted either when a master
+   * pointer is removed, or when a slave (Hardware) input device
+   * is unplugged.
+   */
   signals [DEVICE_REMOVED] =
     g_signal_new (g_intern_static_string ("device-removed"),
                   G_TYPE_FROM_CLASS (klass),
@@ -95,6 +113,18 @@ gdk_device_manager_class_init (GdkDeviceManagerClass *klass)
                   G_TYPE_NONE, 1,
                   GDK_TYPE_DEVICE);
 
+  /**
+   * GdkDeviceManager::device-changed:
+   * @device_manager: the object on which the signal is emitted
+   * @device: the #GdkDevice that changed.
+   *
+   * The ::device-changed signal is emitted either when some
+   * #GdkDevice has changed the number of either axes or keys.
+   * For example In X this will normally happen when the slave
+   * device routing events through the master device changes,
+   * in that case the master device will change to reflect the
+   * new slave device axes and keys.
+   */
   signals [DEVICE_CHANGED] =
     g_signal_new (g_intern_static_string ("device-changed"),
                   G_TYPE_FROM_CLASS (klass),

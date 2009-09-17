@@ -371,6 +371,15 @@ gdk_device_set_axis_use (GdkDevice   *device,
     }
 }
 
+/**
+ * gdk_device_get_display:
+ * @device: a #GdkDevice
+ *
+ * Returns the #GdkDisplay to which @device pertains.
+ *
+ * Returns: a #GdkDisplay. This memory is owned by GTK+,
+ *          and must not be freed or unreffed.
+ **/
 GdkDisplay *
 gdk_device_get_display (GdkDevice *device)
 {
@@ -419,6 +428,14 @@ _gdk_device_set_relative (GdkDevice *device,
     priv->relative = g_object_ref (relative);
 }
 
+/**
+ * gdk_device_get_device_type:
+ * @device: a #GdkDevice
+ *
+ * Returns the device type for @device.
+ *
+ * Returns: the #GdkDeviceType for @device.
+ **/
 GdkDeviceType
 gdk_device_get_device_type (GdkDevice *device)
 {
@@ -431,6 +448,15 @@ gdk_device_get_device_type (GdkDevice *device)
   return priv->type;
 }
 
+/**
+ * gdk_device_list_axes:
+ * @device: a #GdkDevice
+ *
+ * Returns a #GList of #GdkAtom<!-- -->s, containing the labels for
+ * the axes that @device currently has.
+ *
+ * Returns: A #GList of #GdkAtom<!-- -->s, free with g_list_free().
+ **/
 GList *
 gdk_device_list_axes (GdkDevice *device)
 {
@@ -521,6 +547,49 @@ gdk_device_get_axis (GdkDevice  *device,
   return FALSE;
 }
 
+/**
+ * gdk_device_grab:
+ * @device: a #GdkDevice
+ * @window: the #GdkWindow which will own the grab (the grab window)
+ * @grab_ownership: 
+ * @owner_events: if %FALSE then all device events are reported with respect to
+ *                @window and are only reported if selected by @event_mask. If
+ *                %TRUE then pointer events for this application are reported
+ *                as normal, but pointer events outside this application are
+ *                reported with respect to @window and only if selected by
+ *                @event_mask. In either mode, unreported events are discarded.
+ * @event_mask: specifies the event mask, which is used in accordance with
+ *              @owner_events.
+ * @cursor: the cursor to display while the grab is active if the device is
+ *          a pointer. If this is %NULL then the normal cursors are used for
+ *          @window and its descendants, and the cursor for @window is used
+ *          elsewhere.
+ * @time_: the timestamp of the event which led to this pointer grab. This
+ *         usually comes from the #GdkEvent struct, though %GDK_CURRENT_TIME
+ *         can be used if the time isn't known.
+ *
+ * Grabs the device so that all events coming from this device are passed to
+ * this application until the device is ungrabbed with gdk_display_device_ungrab(),
+ * or the window becomes unviewable. This overrides any previous grab on the device
+ * by this client.
+ *
+ * Device grabs are used for operations which need complete control over the
+ * given device events (either pointer or keyboard). For example in GTK+ this
+ * is used for Drag and Drop operations, popup menus and such.
+ *
+ * Note that if the event mask of an X window has selected both button press
+ * and button release events, then a button press event will cause an automatic
+ * pointer grab until the button is released. X does this automatically since
+ * most applications expect to receive button press and release events in pairs.
+ * It is equivalent to a pointer grab on the window with @owner_events set to
+ * %TRUE.
+ *
+ * If you set up anything at the time you take the grab that needs to be
+ * cleaned up when the grab ends, you should handle the #GdkEventGrabBroken
+ * events that are emitted when the grab ends unvoluntarily.
+ *
+ * Returns: %GDK_GRAB_SUCCESS if the grab was successful.
+ **/
 GdkGrabStatus
 gdk_device_grab (GdkDevice        *device,
                  GdkWindow        *window,

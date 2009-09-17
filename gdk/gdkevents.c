@@ -918,6 +918,15 @@ gdk_event_get_axis (const GdkEvent *event,
   return gdk_device_get_axis (device, axes, axis_use, value);
 }
 
+/**
+ * gdk_event_get_device:
+ * @event: a #GdkEvent.
+ *
+ * If the event contains a "device" field, this function will return
+ * it, else it will return %NULL.
+ *
+ * Returns: a #GdkDevice, or %NULL.
+ **/
 GdkDevice *
 gdk_event_get_device (const GdkEvent *event)
 {

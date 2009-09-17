@@ -623,6 +623,17 @@ _gdk_display_enable_motion_hints (GdkDisplay *display)
     }
 }
 
+/**
+ * gdk_display_get_device_state:
+ * @display: a #GdkDisplay.
+ * @device: device to query status to.
+ * @screen: location to store the #GdkScreen the @device is on, or %NULL.
+ * @x: location to store root window X coordinate of @device, or %NULL.
+ * @y: location to store root window Y coordinate of @device, or %NULL.
+ * @mask: location to store current modifier mask for @device, or %NULL.
+ *
+ * Gets the current location and state of @device for a given display.
+ **/
 void
 gdk_display_get_device_state (GdkDisplay       *display,
                               GdkDevice        *device,
@@ -650,6 +661,18 @@ gdk_display_get_device_state (GdkDisplay       *display,
     *mask = tmp_mask;
 }
 
+/**
+ * gdk_display_get_window_at_device_position:
+ * @display: a #GdkDisplay.
+ * @device: #GdkDevice to query info to.
+ * @win_x: return location for the X coordinate of the device location, relative to the window origin, or %NULL.
+ * @win_y: return location for the Y coordinate of the device location, relative to the window origin, or %NULL.
+ *
+ * Obtains the window underneath @device, returning the location of the device in @win_x and @win_y. Returns
+ * %NULL if the window tree under @device is not known to GDK (for example, belongs to another application).
+ *
+ * Returns: the #GdkWindow under the device position, or %NULL.
+ **/
 GdkWindow *
 gdk_display_get_window_at_device_position (GdkDisplay *display,
                                            GdkDevice  *device,
@@ -672,6 +695,18 @@ gdk_display_get_window_at_device_position (GdkDisplay *display,
   return window;
 }
 
+/**
+ * gdk_display_set_device_hooks:
+ * @display: a #GdkDisplay.
+ * @new_hooks: a table of pointers to functions for getting quantities related to all
+ *             devices position, or %NULL to restore the default table.
+ *
+ * This function allows for hooking into the operation of getting the current location of any
+ * #GdkDevice on a particular #GdkDisplay. This is only useful for such low-level tools as
+ * an event recorder. Applications should never have any reason to use this facility.
+ *
+ * Returns: The previous device hook table.
+ **/
 GdkDisplayDeviceHooks *
 gdk_display_set_device_hooks (GdkDisplay                  *display,
                               const GdkDisplayDeviceHooks *new_hooks)

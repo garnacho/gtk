@@ -5883,6 +5883,22 @@ gdk_window_get_pointer (GdkWindow	  *window,
   return gdk_window_get_device_position (window, display->core_pointer, x, y, mask);
 }
 
+/**
+ * gdk_window_get_device_position:
+ * @window: a #GdkWindow.
+ * @device: #GdkDevice to query to.
+ * @x: return location for the X coordinate of @device, or %NULL.
+ * @y: return location for the Y coordinate of @device, or %NULL.
+ * @mask: return location for the modifier mask, or %NULL.
+ *
+ * Obtains the current device position and modifier state.
+ * The position is given in coordinates relative to the upper left
+ * corner of @window.
+ *
+ * Returns: The window underneath @device (as with
+ * gdk_display_get_window_at_device_position()), or %NULL if the
+ * window is not known to GDK.
+ **/
 GdkWindow *
 gdk_window_get_device_position (GdkWindow       *window,
                                 GdkDevice       *device,
@@ -6548,9 +6564,10 @@ gdk_window_withdraw (GdkWindow *window)
  * @event_mask: event mask for @window
  *
  * The event mask for a window determines which events will be reported
- * for that window. For example, an event mask including #GDK_BUTTON_PRESS_MASK
- * means the window should report button press events. The event mask
- * is the bitwise OR of values from the #GdkEventMask enumeration.
+ * for that window from all master input devices. For example, an event mask
+ * including #GDK_BUTTON_PRESS_MASK means the window should report button
+ * press events. The event mask is the bitwise OR of values from the
+ * #GdkEventMask enumeration.
  **/
 void
 gdk_window_set_events (GdkWindow       *window,
@@ -6584,7 +6601,8 @@ gdk_window_set_events (GdkWindow       *window,
  * gdk_window_get_events:
  * @window: a #GdkWindow
  *
- * Gets the event mask for @window. See gdk_window_set_events().
+ * Gets the event mask for @window for all master input devices. See
+ * gdk_window_set_events().
  *
  * Return value: event mask for @window
  **/
@@ -6602,6 +6620,18 @@ gdk_window_get_events (GdkWindow *window)
   return private->event_mask;
 }
 
+/**
+ * gdk_window_set_device_events:
+ * @window: a #GdkWindow
+ * @device: #GdkDevice to enable events for.
+ * @event_mask: event mask for @window
+ *
+ * Sets the event mask for a given device (Normally a floating device, not
+ * attached to any visible pointer) to @window. For example, an event mask
+ * including #GDK_BUTTON_PRESS_MASK means the window should report button
+ * press events. The event mask is the bitwise OR of values from the
+ * #GdkEventMask enumeration.
+ **/
 void
 gdk_window_set_device_events (GdkWindow    *window,
                               GdkDevice    *device,
@@ -6661,6 +6691,15 @@ gdk_window_set_device_events (GdkWindow    *window,
   GDK_DEVICE_GET_CLASS (device)->select_window_events (device, window, device_mask);
 }
 
+/**
+ * gdk_window_get_device_events:
+ * @window: a #GdkWindow.
+ * @device: a #GdkDevice.
+ *
+ * Returns the event mask for @window corresponding to an specific device.
+ *
+ * Returns: device event mask for @window
+ **/
 GdkEventMask
 gdk_window_get_device_events (GdkWindow *window,
                               GdkDevice *device)
@@ -7403,7 +7442,7 @@ gdk_window_get_cursor (GdkWindow *window)
  * @window: a #GdkWindow
  * @cursor: a cursor
  *
- * Sets the mouse pointer for a #GdkWindow. Use gdk_cursor_new_for_display()
+ * Sets the default mouse pointer for a #GdkWindow. Use gdk_cursor_new_for_display()
  * or gdk_cursor_new_from_pixmap() to create the cursor. To make the cursor
  * invisible, use %GDK_BLANK_CURSOR. Passing %NULL for the @cursor argument
  * to gdk_window_set_cursor() means that @window will use the cursor of its
@@ -7440,6 +7479,20 @@ gdk_window_set_cursor (GdkWindow *window,
     }
 }
 
+/**
+ * gdk_window_get_device_cursor:
+ * @window: a #GdkWindow.
+ * @device: a #GdkDevice.
+ *
+ * Retrieves a #GdkCursor pointer for the @device currently set on the
+ * specified #GdkWindow, or %NULL.  If the return value is %NULL then
+ * there is no custom cursor set on the specified window, and it is
+ * using the cursor for its parent window.
+ *
+ * Returns: a #GdkCursor, or %NULL. The returned object is owned
+ *   by the #GdkWindow and should not be unreferenced directly. Use
+ *   gdk_window_set_cursor() to unset the cursor of the window
+ **/
 GdkCursor *
 gdk_window_get_device_cursor (GdkWindow *window,
                               GdkDevice *device)
@@ -7454,6 +7507,19 @@ gdk_window_get_device_cursor (GdkWindow *window,
   return g_hash_table_lookup (private->device_cursor, device);
 }
 
+/**
+ * gdk_window_set_device_cursor:
+ * @window: a #Gdkwindow
+ * @device: a #GdkDevice
+ * @cursor: a #GdkCursor
+ *
+ * Sets a specific #GdkCursor for a given device when it gets inside @window.
+ * Use gdk_cursor_new_for_display() or gdk_cursor_new_from_pixmap() to create
+ * the cursor. To make the cursor invisible, use %GDK_BLANK_CURSOR. Passing
+ * %NULL for the @cursor argument to gdk_window_set_cursor() means that
+ * @window will use the cursor of its parent window. Most windows should
+ * use this default.
+ **/
 void
 gdk_window_set_device_cursor (GdkWindow *window,
                               GdkDevice *device,
@@ -8779,6 +8845,16 @@ gdk_window_beep (GdkWindow *window)
     gdk_display_beep (display);
 }
 
+/**
+ * gdk_window_set_support_multidevice:
+ * @window: a #GdkWindow.
+ * @support_multidevice: %TRUE to enable multidevice support in @window.
+ *
+ * This function will enable multidevice features in @window.
+ *
+ * Multidevice aware windows will need to handle properly some things such
+ * as multiple per enter/leave events (one per device) and grab ownerships.
+ **/
 void
 gdk_window_set_support_multidevice (GdkWindow *window,
                                     gboolean   support_multidevice)
@@ -8798,6 +8874,15 @@ gdk_window_set_support_multidevice (GdkWindow *window,
   /* FIXME: What to do if called when some pointers are inside the window ? */
 }
 
+/**
+ * gdk_window_get_support_multidevice:
+ * @window: a #GdkWindow.
+ *
+ * Returns %TRUE if the window is aware of the existence of multiple
+ * devices.
+ *
+ * Returns: %TRUE if the window handles multidevice features.
+ **/
 gboolean
 gdk_window_get_support_multidevice (GdkWindow *window)
 {
