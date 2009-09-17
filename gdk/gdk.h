@@ -114,6 +114,7 @@ gint gdk_input_add	  (gint		     source,
 void gdk_input_remove	  (gint		     tag);
 #endif /* GDK_DISABLE_DEPRECATED */
 
+#ifndef GDK_MULTIDEVICE_SAFE
 GdkGrabStatus gdk_pointer_grab       (GdkWindow    *window,
 				      gboolean      owner_events,
 				      GdkEventMask  event_mask,
@@ -123,6 +124,7 @@ GdkGrabStatus gdk_pointer_grab       (GdkWindow    *window,
 GdkGrabStatus gdk_keyboard_grab      (GdkWindow    *window,
 				      gboolean      owner_events,
 				      guint32       time_);
+#endif /* GDK_MULTIDEVICE_SAFE */
 
 GdkGrabStatus gdk_device_grab        (GdkDevice        *device,
                                       GdkWindow        *window,
@@ -138,9 +140,12 @@ gboolean gdk_device_grab_info_libgtk_only (GdkDisplay  *display,
                                            gboolean    *owner_events);
 
 #ifndef GDK_MULTIHEAD_SAFE
+
+#ifndef GDK_MULTIDEVICE_SAFE
 void          gdk_pointer_ungrab     (guint32       time_);
 void          gdk_keyboard_ungrab    (guint32       time_);
 gboolean      gdk_pointer_is_grabbed (void);
+#endif /* GDK_MULTIDEVICE_SAFE */
 
 gint gdk_screen_width  (void) G_GNUC_CONST;
 gint gdk_screen_height (void) G_GNUC_CONST;

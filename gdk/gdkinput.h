@@ -36,6 +36,8 @@
 
 G_BEGIN_DECLS
 
+#if !defined (GDK_MULTIDEVICE_SAFE) && !defined (GDK_DISABLE_DEPRECATED)
+
 #ifndef GDK_MULTIHEAD_SAFE
 
 /* Returns a list of GdkDevice * */
@@ -50,6 +52,8 @@ GdkDevice *gdk_display_get_core_pointer (GdkDisplay *display);
 void gdk_input_set_extension_events (GdkWindow        *window,
 				     gint              mask,
 				     GdkExtensionMode  mode);
+
+#endif /* !GDK_MULTIDEVICE_SAFE && GDK_DISABLE_DEPRECATED */
 
 G_END_DECLS
 

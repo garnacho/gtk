@@ -175,14 +175,18 @@ gint        gdk_display_get_n_screens      (GdkDisplay  *display);
 GdkScreen * gdk_display_get_screen         (GdkDisplay  *display,
 					    gint         screen_num);
 GdkScreen * gdk_display_get_default_screen (GdkDisplay  *display);
+
+#ifndef GDK_MULTIDEVICE_SAFE
 void        gdk_display_pointer_ungrab     (GdkDisplay  *display,
 					    guint32      time_);
-void        gdk_display_device_ungrab      (GdkDisplay  *display,
-                                            GdkDevice   *device,
-                                            guint32      time_);
 void        gdk_display_keyboard_ungrab    (GdkDisplay  *display,
 					    guint32      time_);
 gboolean    gdk_display_pointer_is_grabbed (GdkDisplay  *display);
+#endif /* GDK_MULTIDEVICE_SAFE */
+
+void        gdk_display_device_ungrab      (GdkDisplay  *display,
+                                            GdkDevice   *device,
+                                            guint32      time_);
 gboolean    gdk_display_device_is_grabbed  (GdkDisplay  *display,
                                             GdkDevice   *device);
 void        gdk_display_beep               (GdkDisplay  *display);
@@ -210,7 +214,11 @@ void gdk_display_set_double_click_distance (GdkDisplay   *display,
 
 GdkDisplay *gdk_display_get_default (void);
 
+#ifndef GDK_MULTIDEVICE_SAFE
+
+#ifndef GDK_DISABLE_DEPRECATED
 GdkDevice  *gdk_display_get_core_pointer (GdkDisplay *display);
+#endif /* GDK_DISABLE_DEPRECATED */
 
 void             gdk_display_get_pointer           (GdkDisplay             *display,
 						    GdkScreen             **screen,
@@ -224,6 +232,7 @@ void             gdk_display_warp_pointer          (GdkDisplay             *disp
 						    GdkScreen              *screen,
 						    gint                   x,
 						    gint                   y);
+#endif /* GDK_MULTIDEVICE_SAFE */
 
 void             gdk_display_get_device_state              (GdkDisplay            *display,
                                                             GdkDevice             *device,
@@ -241,8 +250,10 @@ void             gdk_display_warp_device                   (GdkDisplay          
                                                             gint                   x,
                                                             gint                   y);
 
+#ifndef GDK_MULTIDEVICE_SAFE
 GdkDisplayPointerHooks *gdk_display_set_pointer_hooks (GdkDisplay                   *display,
 						       const GdkDisplayPointerHooks *new_hooks);
+#endif /* GDK_MULTIDEVICE_SAFE */
 
 GdkDisplayDeviceHooks *gdk_display_set_device_hooks (GdkDisplay                  *display,
                                                      const GdkDisplayDeviceHooks *new_hooks);
