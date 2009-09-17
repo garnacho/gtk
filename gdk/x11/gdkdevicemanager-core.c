@@ -69,7 +69,8 @@ gdk_device_manager_event_translator_init (GdkEventTranslatorIface *iface)
 }
 
 static GdkDevice *
-create_core_pointer (GdkDisplay *display)
+create_core_pointer (GdkDeviceManager *device_manager,
+                     GdkDisplay       *display)
 {
   return g_object_new (GDK_TYPE_DEVICE_CORE,
                        "name", "Core Pointer",
@@ -78,11 +79,13 @@ create_core_pointer (GdkDisplay *display)
                        "input-mode", GDK_MODE_SCREEN,
                        "has-cursor", TRUE,
                        "display", display,
+                       "device-manager", device_manager,
                        NULL);
 }
 
 static GdkDevice *
-create_core_keyboard (GdkDisplay *display)
+create_core_keyboard (GdkDeviceManager *device_manager,
+                      GdkDisplay       *display)
 {
   return g_object_new (GDK_TYPE_DEVICE_CORE,
                        "name", "Core Keyboard",
@@ -90,6 +93,7 @@ create_core_keyboard (GdkDisplay *display)
                        "input-source", GDK_SOURCE_KEYBOARD,
                        "has-cursor", TRUE,
                        "display", display,
+                       "device-manager", device_manager,
                        NULL);
 }
 
@@ -119,8 +123,8 @@ gdk_device_manager_core_constructed (GObject *object)
 
   device_manager = GDK_DEVICE_MANAGER_CORE (object);
   display = gdk_device_manager_get_display (GDK_DEVICE_MANAGER (object));
-  device_manager->core_pointer = create_core_pointer (display);
-  device_manager->core_keyboard = create_core_keyboard (display);
+  device_manager->core_pointer = create_core_pointer (GDK_DEVICE_MANAGER (device_manager), display);
+  device_manager->core_keyboard = create_core_keyboard (GDK_DEVICE_MANAGER (device_manager), display);
 
   _gdk_device_set_relative (device_manager->core_pointer, device_manager->core_keyboard);
   _gdk_device_set_relative (device_manager->core_keyboard, device_manager->core_pointer);

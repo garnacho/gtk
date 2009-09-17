@@ -164,8 +164,9 @@ translate_device_classes (GdkDisplay      *display,
 }
 
 static GdkDevice *
-create_device (GdkDisplay   *display,
-               XIDeviceInfo *dev)
+create_device (GdkDeviceManager *device_manager,
+               GdkDisplay       *display,
+               XIDeviceInfo     *dev)
 {
   GdkInputSource input_source;
   GdkDeviceType type;
@@ -215,6 +216,7 @@ create_device (GdkDisplay   *display,
                          "input-mode", (dev->use == XIMasterPointer) ? GDK_MODE_SCREEN : GDK_MODE_DISABLED,
                          "has-cursor", (dev->use == XIMasterPointer),
                          "display", display,
+                         "device-manager", device_manager,
                          "device-id", dev->deviceid,
                          NULL);
 
@@ -232,7 +234,7 @@ add_device (GdkDeviceManagerXI2 *device_manager,
   GdkDevice *device;
 
   display = gdk_device_manager_get_display (GDK_DEVICE_MANAGER (device_manager));
-  device = create_device (display, dev);
+  device = create_device (GDK_DEVICE_MANAGER (device_manager), display, dev);
 
   g_hash_table_replace (device_manager->id_table,
                         GINT_TO_POINTER (dev->deviceid),

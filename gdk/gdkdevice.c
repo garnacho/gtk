@@ -43,6 +43,7 @@ struct _GdkAxisInfo
 
 struct _GdkDevicePrivate
 {
+  GdkDeviceManager *device_manager;
   GdkDisplay *display;
   GdkDevice *relative;
   GdkDeviceType type;
@@ -65,6 +66,7 @@ G_DEFINE_ABSTRACT_TYPE (GdkDevice, gdk_device, G_TYPE_OBJECT)
 enum {
   PROP_0,
   PROP_DISPLAY,
+  PROP_DEVICE_MANAGER,
   PROP_NAME,
   PROP_RELATIVE,
   PROP_TYPE,
@@ -90,6 +92,13 @@ gdk_device_class_init (GdkDeviceClass *klass)
                                                         P_("Device Display"),
                                                         P_("Display to which the device belongs to"),
                                                         GDK_TYPE_DISPLAY,
+                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+  g_object_class_install_property (object_class,
+				   PROP_DEVICE_MANAGER,
+				   g_param_spec_object ("device-manager",
+                                                        P_("Device manager"),
+                                                        P_("Device manager to which the device belongs to"),
+                                                        GDK_TYPE_DEVICE_MANAGER,
                                                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
   g_object_class_install_property (object_class,
 				   PROP_NAME,
@@ -203,6 +212,9 @@ gdk_device_set_property (GObject      *object,
     case PROP_DISPLAY:
       priv->display = g_value_get_object (value);
       break;
+    case PROP_DEVICE_MANAGER:
+      priv->device_manager = g_value_get_object (value);
+      break;
     case PROP_NAME:
       if (device->name)
         g_free (device->name);
@@ -240,6 +252,9 @@ gdk_device_get_property (GObject    *object,
     {
     case PROP_DISPLAY:
       g_value_set_object (value, priv->display);
+      break;
+    case PROP_DEVICE_MANAGER:
+      g_value_set_object (value, priv->device_manager);
       break;
     case PROP_RELATIVE:
       g_value_set_object (value, priv->relative);
