@@ -10217,11 +10217,17 @@ _gdk_windowing_got_event (GdkDisplay *display,
 
   if (device)
     {
+      GdkInputMode mode;
+
+      g_object_get (device, "input-mode", &mode, NULL);
       _gdk_display_device_grab_update (display, device, serial);
 
-      if (!_gdk_display_check_grab_ownership (display, device, serial))
+      if (mode == GDK_MODE_DISABLED ||
+          !_gdk_display_check_grab_ownership (display, device, serial))
         {
-          /* Device events are blocked by another device grab */
+          /* Device events are blocked by another
+           * device grab, or the device is disabled
+           */
           unlink_event = TRUE;
           goto out;
         }
