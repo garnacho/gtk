@@ -1411,6 +1411,7 @@ gdk_display_open (const gchar *display_name)
     gdk_display_request_selection_notification (display, 
 						GDK_SCREEN_X11 (display_x11->screens[i])->cm_selection_atom);
 
+  g_signal_emit_by_name (display, "opened");
   g_signal_emit_by_name (gdk_display_manager_get(),
 			 "display_opened", display);
 

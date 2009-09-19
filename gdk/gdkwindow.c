@@ -553,10 +553,30 @@ gdk_window_class_init (GdkWindowObjectClass *klass)
 }
 
 static void
+device_removed_cb (GdkDeviceManager *device_manager,
+                   GdkDevice        *device,
+                   GdkWindow        *window)
+{
+  GdkWindowObject *private;
+
+  private = (GdkWindowObject *) window;
+
+  private->devices_inside = g_list_remove (private->devices_inside, device);
+  g_hash_table_remove (private->device_cursor, device);
+
+  if (private->device_events)
+    g_hash_table_remove (private->device_events, device);
+}
+
+static void
 gdk_window_finalize (GObject *object)
 {
   GdkWindow *window = GDK_WINDOW (object);
   GdkWindowObject *obj = (GdkWindowObject *) object;
+  GdkDeviceManager *device_manager;
+
+  device_manager = gdk_display_get_device_manager (GDK_WINDOW_DISPLAY (window));
+  g_signal_handlers_disconnect_by_func (device_manager, device_removed_cb, window);
 
   if (!GDK_WINDOW_DESTROYED (window))
     {
@@ -1201,6 +1221,7 @@ gdk_window_new (GdkWindow     *parent,
   gboolean native;
   GdkEventMask event_mask;
   GdkWindow *real_parent;
+  GdkDeviceManager *device_manager;
 
   g_return_val_if_fail (attributes != NULL, NULL);
 
@@ -1376,6 +1397,11 @@ gdk_window_new (GdkWindow     *parent,
 
   private->device_cursor = g_hash_table_new_full (NULL, NULL, NULL,
                                                   (GDestroyNotify) gdk_cursor_unref);
+
+  device_manager = gdk_display_get_device_manager (GDK_WINDOW_DISPLAY (parent));
+  g_signal_connect (device_manager, "device-removed",
+                    G_CALLBACK (device_removed_cb), window);
+
   return window;
 }
 
