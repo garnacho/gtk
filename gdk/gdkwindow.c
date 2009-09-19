@@ -1938,9 +1938,10 @@ _gdk_window_destroy_hierarchy (GdkWindow *window,
 					   NULL, NULL);
 	    }
 
-
+#if 0
 	  if (private->extension_events)
 	    GDK_WINDOW_IMPL_GET_IFACE (private->impl)->input_window_destroy (window);
+#endif
 
 	  if (gdk_window_has_impl (private))
 	    {
