@@ -171,6 +171,7 @@ create_device (GdkDeviceManager *device_manager,
   GdkInputSource input_source;
   GdkDeviceType type;
   GdkDevice *device;
+  GdkInputMode mode;
 
   if (dev->use == XIMasterKeyboard || dev->use == XISlaveKeyboard)
     input_source = GDK_SOURCE_KEYBOARD;
@@ -198,14 +199,17 @@ create_device (GdkDeviceManager *device_manager,
     case XIMasterKeyboard:
     case XIMasterPointer:
       type = GDK_DEVICE_TYPE_MASTER;
+      mode = GDK_MODE_SCREEN;
       break;
     case XISlaveKeyboard:
     case XISlavePointer:
       type = GDK_DEVICE_TYPE_SLAVE;
+      mode = GDK_MODE_DISABLED;
       break;
     case XIFloatingSlave:
     default:
       type = GDK_DEVICE_TYPE_FLOATING;
+      mode = GDK_MODE_DISABLED;
       break;
     }
 
@@ -213,7 +217,7 @@ create_device (GdkDeviceManager *device_manager,
                          "name", dev->name,
                          "type", type,
                          "input-source", input_source,
-                         "input-mode", (dev->use == XIMasterPointer) ? GDK_MODE_SCREEN : GDK_MODE_DISABLED,
+                         "input-mode", mode,
                          "has-cursor", (dev->use == XIMasterPointer),
                          "display", display,
                          "device-manager", device_manager,
