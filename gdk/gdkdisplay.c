@@ -257,6 +257,9 @@ gdk_display_finalize (GObject *object)
   g_hash_table_destroy (display->pointers_info);
   g_hash_table_destroy (display->multiple_click_info);
 
+  if (display->device_manager)
+    g_object_unref (display->device_manager);
+
   G_OBJECT_CLASS (gdk_display_parent_class)->finalize (object);
 }
 
@@ -377,7 +380,7 @@ gdk_display_pointer_ungrab (GdkDisplay *display,
 
   g_return_if_fail (GDK_IS_DISPLAY (display));
 
-  device_manager = gdk_device_manager_get_for_display (display);
+  device_manager = gdk_display_get_device_manager (display);
   devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
 
   /* FIXME: Should this be generic to all backends? */
@@ -445,7 +448,7 @@ gdk_display_keyboard_ungrab (GdkDisplay *display,
 
   g_return_if_fail (GDK_IS_DISPLAY (display));
 
-  device_manager = gdk_device_manager_get_for_display (display);
+  device_manager = gdk_display_get_device_manager (display);
   devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
 
   /* FIXME: Should this be generic to all backends? */
@@ -1670,7 +1673,7 @@ gdk_display_pointer_is_grabbed (GdkDisplay *display)
 
   g_return_val_if_fail (GDK_IS_DISPLAY (display), TRUE);
 
-  device_manager = gdk_device_manager_get_for_display (display);
+  device_manager = gdk_display_get_device_manager (display);
   devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
 
   for (dev = devices; dev; dev = dev->next)
@@ -1700,6 +1703,23 @@ gdk_display_device_is_grabbed (GdkDisplay *display,
   info = _gdk_display_get_last_device_grab (display, device);
 
   return (info && !info->implicit);
+}
+
+/**
+ * gdk_display_get_device_manager:
+ * @display: a #GdkDisplay.
+ *
+ * Returns the #GdkDeviceManager associated to @display.
+ *
+ * Returns: A #GdkDeviceManager, or %NULL. This memory is
+ *          owned by GDK and must not be freed or unreferenced.
+ **/
+GdkDeviceManager *
+gdk_display_get_device_manager (GdkDisplay *display)
+{
+  g_return_val_if_fail (GDK_IS_DISPLAY (display), NULL);
+
+  return display->device_manager;
 }
 
 #define __GDK_DISPLAY_C__

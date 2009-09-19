@@ -30,6 +30,7 @@
 
 #include <gdk/gdktypes.h>
 #include <gdk/gdkevents.h>
+#include <gdk/gdkdevicemanager.h>
 
 G_BEGIN_DECLS
 
@@ -111,6 +112,9 @@ struct _GdkDisplay
 
   /* Last reported event time from server */
   guint32 last_event_time;
+
+  /* Device manager associated to the display */
+  GdkDeviceManager *device_manager;
 };
 
 struct _GdkDisplayClass
@@ -283,6 +287,9 @@ void     gdk_display_store_clipboard                (GdkDisplay    *display,
 gboolean gdk_display_supports_shapes           (GdkDisplay    *display);
 gboolean gdk_display_supports_input_shapes     (GdkDisplay    *display);
 gboolean gdk_display_supports_composite        (GdkDisplay    *display);
+
+GdkDeviceManager * gdk_display_get_device_manager (GdkDisplay *display);
+
 
 G_END_DECLS
 

@@ -48,7 +48,6 @@ enum {
 };
 
 static guint signals [LAST_SIGNAL] = { 0 };
-static GHashTable *device_managers = NULL;
 
 typedef struct GdkDeviceManagerPrivate GdkDeviceManagerPrivate;
 
@@ -184,35 +183,6 @@ gdk_device_manager_get_property (GObject      *object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
     }
-}
-
-/**
- * gdk_device_manager_get_for_display:
- * @display: A #GdkDisplay
- *
- * Returns the #GdkDeviceManager attached to @display.
- *
- * Returns: the #GdkDeviceManager attached to @display. This memory
- *          is owned by GTK+, and must not be freed or unreffed.
- **/
-GdkDeviceManager *
-gdk_device_manager_get_for_display (GdkDisplay *display)
-{
-  GdkDeviceManager *device_manager;
-
-  if (G_UNLIKELY (!device_managers))
-    device_managers = g_hash_table_new (g_direct_hash,
-                                        g_direct_equal);
-
-  device_manager = g_hash_table_lookup (device_managers, display);
-
-  if (G_UNLIKELY (!device_manager))
-    {
-      device_manager = _gdk_device_manager_new (display);
-      g_hash_table_insert (device_managers, display, device_manager);
-    }
-
-  return device_manager;
 }
 
 /**

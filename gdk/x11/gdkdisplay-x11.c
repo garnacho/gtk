@@ -40,6 +40,7 @@
 #include "gdkscreen-x11.h"
 #include "gdkinternals.h"
 #include "gdkdeviceprivate.h"
+#include "gdkdevicemanager.h"
 #include "xsettings-client.h"
 #include "gdkalias.h"
 
@@ -1081,7 +1082,7 @@ _gdk_event_init (GdkDisplay *display)
   gdk_event_source_add_translator ((GdkEventSource *) display_x11->event_source,
                                    GDK_EVENT_TRANSLATOR (display));
 
-  device_manager = gdk_device_manager_get_for_display (display);
+  device_manager = gdk_display_get_device_manager (display);
   gdk_event_source_add_translator ((GdkEventSource *) display_x11->event_source,
                                    GDK_EVENT_TRANSLATOR (device_manager));
 
@@ -1100,7 +1101,7 @@ _gdk_input_init (GdkDisplay *display)
   GList *list, *l;
 
   display_x11 = GDK_DISPLAY_X11 (display);
-  device_manager = gdk_device_manager_get_for_display (display);
+  device_manager = gdk_display_get_device_manager (display);
 
   /* For backwards compatibility, just add
    * floating devices that are not keyboards.
@@ -1212,6 +1213,8 @@ gdk_display_open (const gchar *display_name)
   
   /*set the default screen */
   display_x11->default_screen = display_x11->screens[DefaultScreen (display_x11->xdisplay)];
+
+  display->device_manager = _gdk_device_manager_new (display);
 
   _gdk_event_init (display);
 

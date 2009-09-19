@@ -26,7 +26,6 @@
 
 #include <gdk/gdktypes.h>
 #include <gdk/gdkdevice.h>
-#include <gdk/gdkdisplay.h>
 
 G_BEGIN_DECLS
 
@@ -63,8 +62,6 @@ struct _GdkDeviceManagerClass
 };
 
 GType gdk_device_manager_get_type (void) G_GNUC_CONST;
-
-GdkDeviceManager * gdk_device_manager_get_for_display (GdkDisplay *display);
 
 GdkDisplay *             gdk_device_manager_get_display      (GdkDeviceManager *device_manager);
 GList *                  gdk_device_manager_get_devices      (GdkDeviceManager *device_manager,

@@ -205,7 +205,7 @@ _gdk_xgrab_check_unmap (GdkWindow *window,
   GdkDeviceManager *device_manager;
   GList *devices, *d;
 
-  device_manager = gdk_device_manager_get_for_display (display);
+  device_manager = gdk_display_get_device_manager (display);
 
   /* Get all devices */
   devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
@@ -234,7 +234,7 @@ _gdk_xgrab_check_destroy (GdkWindow *window)
   GdkDeviceGrabInfo *grab;
   GList *devices, *d;
 
-  device_manager = gdk_device_manager_get_for_display (display);
+  device_manager = gdk_display_get_device_manager (display);
 
   /* Get all devices */
   devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);

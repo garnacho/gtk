@@ -2309,7 +2309,7 @@ _gdk_events_queue (GdkDisplay *display)
 	    continue;
 	}
 
-      device_manager = gdk_device_manager_get_for_display (display);
+      device_manager = gdk_display_get_device_manager (display);
       event = gdk_event_translator_translate (GDK_EVENT_TRANSLATOR (device_manager),
                                               display, &xevent);
 

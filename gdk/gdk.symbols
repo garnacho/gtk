@@ -390,7 +390,6 @@ gdk_cursor_get_image
 #if IN_HEADER(__GDK_DEVICE_MANAGER_H__)
 #if IN_FILE(__GDK_DEVICE_MANAGER_C__)
 gdk_device_manager_get_display
-gdk_device_manager_get_for_display
 gdk_device_manager_get_type G_GNUC_CONST
 #endif
 #endif
@@ -436,6 +435,7 @@ gdk_display_get_type G_GNUC_CONST
 gdk_display_peek_event
 gdk_display_put_event
 #ifndef GDK_MULTIDEVICE_SAFE
+gdk_display_get_device_manager
 gdk_display_get_pointer
 gdk_display_get_window_at_pointer
 gdk_display_keyboard_ungrab
