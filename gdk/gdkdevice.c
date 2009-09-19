@@ -344,9 +344,6 @@ gdk_device_set_mode (GdkDevice    *device,
 {
   g_return_val_if_fail (GDK_IS_DEVICE (device), FALSE);
 
-  if (gdk_device_get_device_type (device) == GDK_DEVICE_TYPE_MASTER)
-    return FALSE;
-
   if (device->mode == mode)
     return TRUE;
 
@@ -355,7 +352,8 @@ gdk_device_set_mode (GdkDevice    *device,
   device->mode = mode;
   g_object_notify (G_OBJECT (device), "input-mode");
 
-  _gdk_input_check_extension_events (device);
+  if (gdk_device_get_device_type (device) != GDK_DEVICE_TYPE_MASTER)
+    _gdk_input_check_extension_events (device);
 
   return TRUE;
 }
