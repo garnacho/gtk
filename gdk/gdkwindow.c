@@ -9273,6 +9273,18 @@ _gdk_synthesize_crossing_events (GdkDisplay                 *display,
   if (a == b)
     return; /* No crossings generated between src and dest */
 
+  if (gdk_device_get_device_type (device) != GDK_DEVICE_TYPE_MASTER)
+    {
+      if (a && gdk_window_get_device_events (src, device) == 0)
+        a = NULL;
+
+      if (b && gdk_window_get_device_events (dest, device) == 0)
+        b = NULL;
+    }
+
+  if (!a && !b)
+    return;
+
   c = find_common_ancestor (a, b);
 
   non_linear |= (c != a) && (c != b);
@@ -9962,11 +9974,16 @@ proxy_pointer_event (GdkDisplay                 *display,
 
       event_win = get_event_window (display,
                                     device,
-				    pointer_window,
-				    source_event->type,
-				    state,
-				    &evmask,
-				    serial);
+                                    pointer_window,
+                                    source_event->type,
+                                    state,
+                                    &evmask,
+                                    serial);
+
+      if (event_win &&
+          gdk_device_get_device_type (device) != GDK_DEVICE_TYPE_MASTER &&
+          gdk_window_get_device_events (event_win, device) == 0)
+        return TRUE;
 
       is_hint = FALSE;
 
@@ -10083,6 +10100,10 @@ proxy_button_event (GdkEvent *source_event,
 				NULL, serial);
 
   if (event_win == NULL || display->ignore_core_events)
+    return TRUE;
+
+  if (gdk_device_get_device_type (device) != GDK_DEVICE_TYPE_MASTER &&
+      gdk_window_get_device_events (event_win, device) == 0)
     return TRUE;
 
   event = _gdk_make_event (event_win, type, source_event, FALSE);
