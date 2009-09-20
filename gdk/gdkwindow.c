@@ -9203,7 +9203,9 @@ send_crossing_event (GdkDisplay                 *display,
           block_event = TRUE;
         }
 
-      if (!g_list_find (window->devices_inside, device))
+      if (gdk_device_get_device_type == GDK_DEVICE_TYPE_MASTER &&
+          device->mode != GDK_MODE_DISABLED &&
+          !g_list_find (window->devices_inside, device))
         window->devices_inside = g_list_prepend (window->devices_inside, device);
     }
 
