@@ -1136,6 +1136,9 @@ _gdk_input_init (GdkDisplay *display)
       break;
     }
 
+  /* Add the core pointer to the devices list */
+  display_x11->input_devices = g_list_prepend (display_x11->input_devices, display->core_pointer);
+
   g_list_free (list);
 }
 
