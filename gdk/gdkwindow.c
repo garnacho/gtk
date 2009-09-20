@@ -6747,6 +6747,10 @@ gdk_window_get_device_events (GdkWindow *window,
     return 0;
 
   private = (GdkWindowObject *) window;
+
+  if (!private->device_events)
+    return 0;
+
   mask = GPOINTER_TO_INT (g_hash_table_lookup (private->device_events, device));
 
   /* FIXME: device could be controlled by private->event_mask */
