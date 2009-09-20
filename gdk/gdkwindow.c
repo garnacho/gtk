@@ -6721,7 +6721,7 @@ gdk_window_set_device_events (GdkWindow    *window,
     }
 
   device_mask = get_native_device_event_mask (private, device);
-  GDK_DEVICE_GET_CLASS (device)->select_window_events (device, window, device_mask);
+  GDK_DEVICE_GET_CLASS (device)->select_window_events (device, native, device_mask);
 }
 
 /**
