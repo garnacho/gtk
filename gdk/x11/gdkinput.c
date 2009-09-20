@@ -369,21 +369,23 @@ _gdk_input_select_device_events (GdkWindow *impl_window,
                 "has-cursor", &has_cursor,
                 NULL);
 
-  if (iw != NULL && mode != GDK_MODE_DISABLED)
+  if (iw == NULL || mode == GDK_MODE_DISABLED)
+    return;
+
+  for (l = iw->windows; l != NULL; l = l->next)
     {
-      for (l = iw->windows; l != NULL; l = l->next)
-	{
-	  w = l->data;
-	  if (has_cursor || (w->extension_events & GDK_ALL_DEVICES_MASK))
-	    event_mask |= w->extension_events;
-	}
+      w = l->data;
+
+      if (has_cursor || (w->extension_events & GDK_ALL_DEVICES_MASK))
+        {
+          event_mask = w->extension_events;
+
+          if (event_mask)
+            event_mask |= GDK_PROXIMITY_OUT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK;
+
+          gdk_window_set_device_events ((GdkWindow *) w, dev, event_mask);
+        }
     }
-  event_mask &= ~GDK_ALL_DEVICES_MASK;
-
-  if (event_mask)
-    event_mask |= GDK_PROXIMITY_OUT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK;
-
-  gdk_window_set_device_events (impl_window, dev, event_mask);
 }
 
 static void
@@ -480,7 +482,7 @@ gdk_input_set_extension_events (GdkWindow *window, gint mask,
   for (tmp_list = display_x11->input_devices; tmp_list; tmp_list = tmp_list->next)
     {
       GdkDevice *dev = tmp_list->data;
-      _gdk_input_select_device_events (window, dev);
+      _gdk_input_select_device_events (impl_window, dev);
     }
 }
 
