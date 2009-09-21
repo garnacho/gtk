@@ -270,6 +270,7 @@ struct _GdkWindowObject
   guint visibility : 2; /* The visibility wrt the toplevel (i.e. based on clip_region) */
   guint native_visibility : 2; /* the native visibility of a impl windows */
   guint viewable : 1; /* mapped and all parents mapped */
+  guint applied_shape : 1;
 
   guint num_offscreen_children;
   GdkWindowPaint *implicit_paint;
@@ -286,6 +287,8 @@ struct _GdkWindowObject
   GHashTable *device_events;
 };
 
+#define GDK_WINDOW_TYPE(d) (((GdkWindowObject*)(GDK_WINDOW (d)))->window_type)
+#define GDK_WINDOW_DESTROYED(d) (((GdkWindowObject*)(GDK_WINDOW (d)))->destroyed)
 
 extern GdkEventFunc   _gdk_event_func;    /* Callback for events */
 extern gpointer       _gdk_event_data;
@@ -652,6 +655,8 @@ GdkEvent * _gdk_make_event (GdkWindow    *window,
 			    GdkEventType  type,
 			    GdkEvent     *event_in_queue,
 			    gboolean      before_event);
+gboolean _gdk_window_event_parent_of (GdkWindow *parent,
+                                      GdkWindow *child);
 
 void _gdk_synthesize_crossing_events (GdkDisplay                 *display,
 				      GdkWindow                  *src,
