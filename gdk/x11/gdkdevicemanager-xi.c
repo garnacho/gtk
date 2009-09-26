@@ -498,7 +498,7 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
 	}
 
       event->button.device = device;
-      event->button.window = window;
+      event->button.window = g_object_ref (window);
       event->button.time = xdbe->time;
 
       event->button.axes = g_new (gdouble, device->num_axes);
@@ -567,7 +567,7 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
       event->key.type = (xdke->type == device_xi->key_press_type) ?
 	GDK_KEY_PRESS : GDK_KEY_RELEASE;
 
-      event->key.window = window;
+      event->key.window = g_object_ref (window);
       event->key.time = xdke->time;
 
 #if 0
@@ -619,7 +619,7 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
 #endif
 
       event->motion.type = GDK_MOTION_NOTIFY;
-      event->motion.window = window;
+      event->motion.window = g_object_ref (window);
       event->motion.time = xdme->time;
       event->motion.state = gdk_input_translate_state (xdme->state,
                                                        xdme->device_state);
@@ -651,7 +651,7 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
       event->proximity.device = device;
       event->proximity.type = (xevent->type == device_xi->proximity_in_type) ?
 	GDK_PROXIMITY_IN : GDK_PROXIMITY_OUT;
-      event->proximity.window = window;
+      event->proximity.window = g_object_ref (window);
       event->proximity.time = xpne->time;
 
       /* Update the timestamp of the latest user interaction, if the event has
