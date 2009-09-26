@@ -24,6 +24,8 @@
 #include "gdkintl.h"
 #include "gdkx.h"
 
+#define MAX_DEVICE_CLASSES 13
+
 static void gdk_device_xi_constructed  (GObject *object);
 static void gdk_device_xi_set_property (GObject      *object,
                                         guint         prop_id,
@@ -52,6 +54,15 @@ static void gdk_device_xi_warp              (GdkDevice *device,
                                              GdkScreen *screen,
                                              gint       x,
                                              gint       y);
+static GdkGrabStatus gdk_device_xi_grab     (GdkDevice    *device,
+                                             GdkWindow    *window,
+                                             gboolean      owner_events,
+                                             GdkEventMask  event_mask,
+                                             GdkWindow    *confine_to,
+                                             GdkCursor    *cursor,
+                                             guint32       time_);
+static void          gdk_device_xi_ungrab   (GdkDevice    *device,
+                                             guint32       time_);
 
 
 G_DEFINE_TYPE (GdkDeviceXI, gdk_device_xi, GDK_TYPE_DEVICE)
@@ -75,6 +86,8 @@ gdk_device_xi_class_init (GdkDeviceXIClass *klass)
   device_class->get_state = gdk_device_xi_get_state;
   device_class->set_window_cursor = gdk_device_xi_set_window_cursor;
   device_class->warp = gdk_device_xi_warp;
+  device_class->grab = gdk_device_xi_grab;
+  device_class->ungrab = gdk_device_xi_ungrab;
 
   g_object_class_install_property (object_class,
 				   PROP_DEVICE_ID,
@@ -294,4 +307,160 @@ gdk_device_xi_warp (GdkDevice *device,
                     gint       x,
                     gint       y)
 {
+}
+
+static void
+find_events (GdkDevice    *device,
+             GdkEventMask  mask,
+             XEventClass  *classes,
+             int          *num_classes)
+{
+  GdkDeviceXI *device_xi;
+  XEventClass class;
+  gint i;
+
+  device_xi = GDK_DEVICE_XI (device);
+  i = 0;
+
+  if (mask & GDK_BUTTON_PRESS_MASK)
+    {
+      DeviceButtonPress (device_xi->xdevice, device_xi->button_press_type, class);
+      if (class != 0)
+        classes[i++] = class;
+
+      DeviceButtonPressGrab (device_xi->xdevice, 0, class);
+      if (class != 0)
+        classes[i++] = class;
+    }
+
+  if (mask & GDK_BUTTON_RELEASE_MASK)
+    {
+      DeviceButtonRelease (device_xi->xdevice, device_xi->button_release_type, class);
+      if (class != 0)
+        classes[i++] = class;
+    }
+
+  if (mask & GDK_POINTER_MOTION_MASK)
+    {
+      DeviceMotionNotify (device_xi->xdevice, device_xi->motion_notify_type, class);
+      if (class != 0)
+        classes[i++] = class;
+    }
+  else if (mask & (GDK_BUTTON1_MOTION_MASK | GDK_BUTTON2_MOTION_MASK |
+                   GDK_BUTTON3_MOTION_MASK | GDK_BUTTON_MOTION_MASK |
+                   GDK_POINTER_MOTION_HINT_MASK))
+    {
+      /* Make sure device->motionnotify_type is set */
+      DeviceMotionNotify (device_xi->xdevice, device_xi->motion_notify_type, class);
+    }
+
+  if (mask & GDK_BUTTON1_MOTION_MASK)
+    {
+      DeviceButton1Motion (device_xi->xdevice, 0, class);
+      if (class != 0)
+        classes[i++] = class;
+    }
+
+  if (mask & GDK_BUTTON2_MOTION_MASK)
+    {
+      DeviceButton2Motion (device_xi->xdevice, 0, class);
+      if (class != 0)
+        classes[i++] = class;
+    }
+
+  if (mask & GDK_BUTTON3_MOTION_MASK)
+    {
+      DeviceButton3Motion (device_xi->xdevice, 0, class);
+      if (class != 0)
+        classes[i++] = class;
+    }
+
+  if (mask & GDK_BUTTON_MOTION_MASK)
+    {
+      DeviceButtonMotion (device_xi->xdevice, 0, class);
+      if (class != 0)
+        classes[i++] = class;
+    }
+
+  if (mask & GDK_POINTER_MOTION_HINT_MASK)
+    {
+      /* We'll get into trouble if the macros change, but at
+       * least we'll know about it, and we avoid warnings now
+       */
+      DevicePointerMotionHint (device_xi->xdevice, 0, class);
+      if (class != 0)
+        classes[i++] = class;
+    }
+
+  if (mask & GDK_KEY_PRESS_MASK)
+    {
+      DeviceKeyPress (device_xi->xdevice, device_xi->key_press_type, class);
+      if (class != 0)
+        classes[i++] = class;
+    }
+
+  if (mask & GDK_KEY_RELEASE_MASK)
+    {
+      DeviceKeyRelease (device_xi->xdevice, device_xi->key_release_type, class);
+      if (class != 0)
+        classes[i++] = class;
+    }
+
+  if (mask & GDK_PROXIMITY_IN_MASK)
+    {
+      ProximityIn (device_xi->xdevice, device_xi->proximity_in_type, class);
+      if (class != 0)
+        classes[i++] = class;
+    }
+
+  if (mask & GDK_PROXIMITY_OUT_MASK)
+    {
+      ProximityOut (device_xi->xdevice, device_xi->proximity_out_type, class);
+      if (class != 0)
+        classes[i++] = class;
+    }
+
+  *num_classes = i;
+}
+
+static GdkGrabStatus
+gdk_device_xi_grab (GdkDevice    *device,
+                    GdkWindow    *window,
+                    gboolean      owner_events,
+                    GdkEventMask  event_mask,
+                    GdkWindow    *confine_to,
+                    GdkCursor    *cursor,
+                    guint32       time_)
+{
+  XEventClass event_classes[MAX_DEVICE_CLASSES];
+  gint status, num_classes;
+  GdkDeviceXI *device_xi;
+
+  device_xi = GDK_DEVICE_XI (device);
+  find_events (device, event_mask, event_classes, &num_classes);
+
+  status = XGrabDevice (GDK_WINDOW_XDISPLAY (window),
+                        device_xi->xdevice,
+                        GDK_WINDOW_XWINDOW (window),
+                        owner_events,
+                        num_classes, event_classes,
+                        GrabModeAsync, GrabModeAsync,
+                        time_);
+
+  return gdk_x11_convert_grab_status (status);
+}
+
+static void
+gdk_device_xi_ungrab (GdkDevice *device,
+                      guint32    time_)
+{
+  GdkDisplay *display;
+  GdkDeviceXI *device_xi;
+
+  device_xi = GDK_DEVICE_XI (device);
+  display = gdk_device_get_display (device);
+
+  XUngrabDevice (GDK_DISPLAY_XDISPLAY (device),
+                 device_xi->xdevice,
+                 time_);
 }
