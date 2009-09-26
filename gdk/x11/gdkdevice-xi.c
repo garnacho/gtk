@@ -45,6 +45,13 @@ static void gdk_device_xi_get_state       (GdkDevice       *device,
                                            GdkWindow       *window,
                                            gdouble         *axes,
                                            GdkModifierType *mask);
+static void gdk_device_xi_set_window_cursor (GdkDevice *device,
+                                             GdkWindow *window,
+                                             GdkCursor *cursor);
+static void gdk_device_xi_warp              (GdkDevice *device,
+                                             GdkScreen *screen,
+                                             gint       x,
+                                             gint       y);
 
 
 G_DEFINE_TYPE (GdkDeviceXI, gdk_device_xi, GDK_TYPE_DEVICE)
@@ -66,6 +73,8 @@ gdk_device_xi_class_init (GdkDeviceXIClass *klass)
 
   device_class->get_history = gdk_device_xi_get_history;
   device_class->get_state = gdk_device_xi_get_state;
+  device_class->set_window_cursor = gdk_device_xi_set_window_cursor;
+  device_class->warp = gdk_device_xi_warp;
 
   g_object_class_install_property (object_class,
 				   PROP_DEVICE_ID,
@@ -270,4 +279,19 @@ gdk_device_xi_get_state (GdkDevice       *device,
     }
 
   XFreeDeviceState (state);
+}
+
+static void
+gdk_device_xi_set_window_cursor (GdkDevice *device,
+                                 GdkWindow *window,
+                                 GdkCursor *cursor)
+{
+}
+
+static void
+gdk_device_xi_warp (GdkDevice *device,
+                    GdkScreen *screen,
+                    gint       x,
+                    gint       y)
+{
 }
