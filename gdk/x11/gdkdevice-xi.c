@@ -41,6 +41,11 @@ static gboolean gdk_device_xi_get_history (GdkDevice      *device,
                                            GdkTimeCoord ***events,
                                            guint          *n_events);
 
+static void gdk_device_xi_get_state       (GdkDevice       *device,
+                                           GdkWindow       *window,
+                                           gdouble         *axes,
+                                           GdkModifierType *mask);
+
 
 G_DEFINE_TYPE (GdkDeviceXI, gdk_device_xi, GDK_TYPE_DEVICE)
 
@@ -60,6 +65,7 @@ gdk_device_xi_class_init (GdkDeviceXIClass *klass)
   object_class->get_property = gdk_device_xi_get_property;
 
   device_class->get_history = gdk_device_xi_get_history;
+  device_class->get_state = gdk_device_xi_get_state;
 
   g_object_class_install_property (object_class,
 				   PROP_DEVICE_ID,
@@ -203,4 +209,65 @@ gdk_device_xi_get_history (GdkDevice      *device,
   *n_events = (guint) n_events_return;
 
   return TRUE;
+}
+
+static void
+gdk_device_xi_get_state (GdkDevice       *device,
+                         GdkWindow       *window,
+                         gdouble         *axes,
+                         GdkModifierType *mask)
+{
+  GdkDeviceXI *device_xi;
+  XDeviceState *state;
+  XInputClass *input_class;
+  gint i, j;
+
+  if (mask)
+    gdk_window_get_pointer (window, NULL, NULL, mask);
+
+  device_xi = GDK_DEVICE_XI (device);
+
+  state = XQueryDeviceState (GDK_WINDOW_XDISPLAY (window),
+                             device_xi->xdevice);
+  input_class = state->data;
+
+  for (i = 0; i < state->num_classes; i++)
+    {
+      switch (input_class->class)
+        {
+        case ValuatorClass:
+          if (axes)
+            {
+              gint width, height;
+
+              gdk_drawable_get_size (GDK_DRAWABLE (window), &width, &height);
+
+              for (j = 0; j < device->num_axes; j++)
+                {
+                  _gdk_device_translate_axis (device,
+                                              width, height,
+                                              0, 0,
+                                              j,
+                                              (gdouble) ((XValuatorState *) input_class)->valuators[j],
+                                              &axes[j]);
+                }
+            }
+          break;
+
+        case ButtonClass:
+          if (mask)
+            {
+              *mask &= 0xFF;
+              if (((XButtonState *)input_class)->num_buttons > 0)
+                *mask |= ((XButtonState *)input_class)->buttons[0] << 7;
+              /* GDK_BUTTON1_MASK = 1 << 8, and button n is stored
+               * in bit 1<<(n%8) in byte n/8. n = 1,2,... */
+            }
+          break;
+        }
+
+      input_class = (XInputClass *)(((char *)input_class)+input_class->length);
+    }
+
+  XFreeDeviceState (state);
 }
