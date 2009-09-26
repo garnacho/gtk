@@ -63,6 +63,9 @@ static GdkGrabStatus gdk_device_xi_grab     (GdkDevice    *device,
                                              guint32       time_);
 static void          gdk_device_xi_ungrab   (GdkDevice    *device,
                                              guint32       time_);
+static void gdk_device_xi_select_window_events (GdkDevice    *device,
+                                                GdkWindow    *window,
+                                                GdkEventMask  mask);
 
 
 G_DEFINE_TYPE (GdkDeviceXI, gdk_device_xi, GDK_TYPE_DEVICE)
@@ -88,6 +91,7 @@ gdk_device_xi_class_init (GdkDeviceXIClass *klass)
   device_class->warp = gdk_device_xi_warp;
   device_class->grab = gdk_device_xi_grab;
   device_class->ungrab = gdk_device_xi_ungrab;
+  device_class->select_window_events = gdk_device_xi_select_window_events;
 
   g_object_class_install_property (object_class,
 				   PROP_DEVICE_ID,
@@ -463,4 +467,22 @@ gdk_device_xi_ungrab (GdkDevice *device,
   XUngrabDevice (GDK_DISPLAY_XDISPLAY (device),
                  device_xi->xdevice,
                  time_);
+}
+
+static void
+gdk_device_xi_select_window_events (GdkDevice    *device,
+                                    GdkWindow    *window,
+                                    GdkEventMask  event_mask)
+{
+  XEventClass event_classes[MAX_DEVICE_CLASSES];
+  gint num_classes;
+  GdkDeviceXI *device_xi;
+
+  device_xi = GDK_DEVICE_XI (device);
+  find_events (device, event_mask, event_classes, &num_classes);
+
+  XSelectExtensionEvent (GDK_WINDOW_XDISPLAY (window),
+			 GDK_WINDOW_XWINDOW (window),
+			 event_classes, num_classes);
+
 }
