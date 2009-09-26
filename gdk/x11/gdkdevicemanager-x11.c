@@ -22,8 +22,12 @@
 #include "gdkdevicemanager-core.h"
 
 #ifdef XINPUT_2
-#include "gdkdevicemanager-xi2.h"
-#endif /* XINPUT_2 */
+#  include "gdkdevicemanager-xi2.h"
+#else
+#  ifdef XINPUT_XFREE
+#    include "gdkdevicemanager-xi.h"
+#  endif
+#endif
 
 GdkDeviceManager *
 _gdk_device_manager_new (GdkDisplay *display)
@@ -58,6 +62,11 @@ _gdk_device_manager_new (GdkDisplay *display)
 
               return device_manager;
             }
+#else
+          return g_object_new (GDK_TYPE_DEVICE_MANAGER_XI,
+                               "display", display,
+                               "event-base", firstevent,
+                               NULL);
 #endif
         }
 #endif /* XINPUT_2 || XINPUT_XFREE */
