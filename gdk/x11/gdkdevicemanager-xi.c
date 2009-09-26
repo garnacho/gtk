@@ -145,36 +145,41 @@ translate_class_info (GdkDevice   *device,
 	{
 	  XValuatorInfo *xvi = (XValuatorInfo *)class;
 
-          device->num_axes = xvi->num_axes;
-	  device->axes = g_new0 (GdkDeviceAxis, xvi->num_axes);
-#if 0
-	  gdkdev->axes = g_new (GdkAxisInfo, xvi->num_axes);
-
           for (j = 0; j < xvi->num_axes; j++)
-	    {
-	      gdkdev->axes[j].resolution =
-		gdkdev->axes[j].xresolution = xvi->axes[j].resolution;
-	      gdkdev->axes[j].min_value =
-		gdkdev->axes[j].xmin_value = xvi->axes[j].min_value;
-	      gdkdev->axes[j].max_value =
-		gdkdev->axes[j].xmax_value = xvi->axes[j].max_value;
-	      gdkdev->info.axes[j].use = GDK_AXIS_IGNORE;
-	    }
-#endif
-	  j=0;
+            {
+              GdkAxisUse use;
 
-          if (j < xvi->num_axes)
-	    gdk_device_set_axis_use (device, j++, GDK_AXIS_X);
-	  if (j < xvi->num_axes)
-	    gdk_device_set_axis_use (device, j++, GDK_AXIS_Y);
-	  if (j < xvi->num_axes)
-	    gdk_device_set_axis_use (device, j++, GDK_AXIS_PRESSURE);
-	  if (j < xvi->num_axes)
-	    gdk_device_set_axis_use (device, j++, GDK_AXIS_XTILT);
-	  if (j < xvi->num_axes)
-	    gdk_device_set_axis_use (device, j++, GDK_AXIS_YTILT);
-	  if (j < xvi->num_axes)
-	    gdk_device_set_axis_use (device, j++, GDK_AXIS_WHEEL);
+              switch (j)
+                {
+                case 0:
+                  use = GDK_AXIS_X;
+                  break;
+                case 1:
+                  use = GDK_AXIS_Y;
+                  break;
+                case 2:
+                  use = GDK_AXIS_PRESSURE;
+                  break;
+                case 3:
+                  use = GDK_AXIS_XTILT;
+                  break;
+                case 4:
+                  use = GDK_AXIS_YTILT;
+                  break;
+                case 5:
+                  use = GDK_AXIS_WHEEL;
+                  break;
+                default:
+                  use = GDK_AXIS_IGNORE;
+                }
+
+              _gdk_device_add_axis (device,
+                                    GDK_NONE,
+                                    use,
+                                    xvi->axes[j].min_value,
+                                    xvi->axes[j].max_value,
+                                    xvi->axes[j].resolution);
+            }
 
 	  break;
 	}
