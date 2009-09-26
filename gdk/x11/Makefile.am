@@ -66,10 +66,10 @@ libgdk_x11_la_SOURCES =    	\
 
 if XINPUT_2
 libgdk_x11_la_SOURCES += gdkdevicemanager-xi2.c gdkdevice-xi2.c
-elif if XINPUT_XFREE
-libgdk_x11_la_SOURCES += gdkdevicemanager-xi.c gdkdevice-xi.c
 else
-libgdk_x11_la_SOURCES += gdkinput-none.c
+if XINPUT_XFREE
+libgdk_x11_la_SOURCES += gdkdevicemanager-xi.c gdkdevice-xi.c
+endif
 endif
 
 
