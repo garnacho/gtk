@@ -190,6 +190,10 @@ create_device (GdkDisplay  *display,
 {
   GdkDevice *device;
 
+  if (info->use != IsXExtensionPointer &&
+      info->use != IsXExtensionKeyboard)
+    return NULL;
+
   device = g_object_new (GDK_TYPE_DEVICE_XI,
                          "name", info->name,
                          "input-source", GDK_SOURCE_MOUSE,
@@ -220,11 +224,14 @@ gdk_device_manager_xi_constructed (GObject *object)
       GdkDevice *device;
 
       device = create_device (display, &devices[i]);
-      priv->devices = g_list_prepend (priv->devices, device);
 
-      g_hash_table_insert (priv->id_table,
-                           GINT_TO_POINTER (devices[i].id),
-                           device);
+      if (device)
+        {
+          priv->devices = g_list_prepend (priv->devices, device);
+          g_hash_table_insert (priv->id_table,
+                               GINT_TO_POINTER (devices[i].id),
+                               device);
+        }
     }
 
   XFreeDeviceList(devices);
