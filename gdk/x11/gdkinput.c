@@ -375,7 +375,7 @@ _gdk_input_select_device_events (GdkWindow *impl_window,
   guint event_mask;
   GdkWindowObject *w;
   GdkInputWindow *iw;
-  GdkInputMode *mode;
+  GdkInputMode mode;
   gboolean has_cursor;
   GList *l;
 
@@ -500,7 +500,7 @@ gdk_input_set_extension_events (GdkWindow *window, gint mask,
   for (tmp_list = display_x11->input_devices; tmp_list; tmp_list = tmp_list->next)
     {
       GdkDevice *dev = tmp_list->data;
-      _gdk_input_select_device_events (impl_window, dev);
+      _gdk_input_select_device_events (GDK_WINDOW (impl_window), dev);
     }
 }
 
