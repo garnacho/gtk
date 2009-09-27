@@ -310,120 +310,33 @@ gdk_device_manager_xi_event_translator_init (GdkEventTranslatorIface *iface)
   iface->translate_event = gdk_device_manager_xi_translate_event;
 }
 
-static void
-gdk_input_translate_coordinates (GdkDevice *device,
-				 GdkWindow *window,
-				 gint      *axis_data,
-				 gdouble   *axis_out,
-				 gdouble   *x_out,
-				 gdouble   *y_out)
+static gdouble *
+translate_axes (GdkDevice *device,
+                GdkWindow *window,
+                gdouble    x,
+                gdouble    y,
+                gint      *axis_data)
 {
-#if 0
-  GdkWindowObject *priv, *impl_window;
+  gdouble *data;
+  gint n_axes, i;
+  gint width, height;
 
-  int i;
-  int x_axis = 0;
-  int y_axis = 0;
-
-  double device_width, device_height;
-  double x_offset, y_offset, x_scale, y_scale;
-
-  priv = (GdkWindowObject *) window;
-  impl_window = (GdkWindowObject *)_gdk_window_get_impl_window (window);
+  n_axes = device->num_axes;
+  data = g_new0 (gdouble, n_axes);
+  gdk_drawable_get_size (GDK_DRAWABLE (window), &width, &height);
 
   for (i = 0; i < device->num_axes; i++)
     {
-      switch (device->axes[i].use)
-	{
-	case GDK_AXIS_X:
-	  x_axis = i;
-	  break;
-	case GDK_AXIS_Y:
-	  y_axis = i;
-	  break;
-	default:
-	  break;
-	}
+      _gdk_device_translate_axis (device,
+                                  (gdouble) width,
+                                  (gdouble) height,
+                                  x, y,
+                                  i,
+                                  axis_data[i],
+                                  &data[i]);
     }
 
-  device_width = gdkdev->axes[x_axis].max_value - gdkdev->axes[x_axis].min_value;
-  device_height = gdkdev->axes[y_axis].max_value - gdkdev->axes[y_axis].min_value;
-
-  if (device->mode == GDK_MODE_SCREEN)
-    {
-      x_scale = gdk_screen_get_width (gdk_drawable_get_screen (window)) / device_width;
-      y_scale = gdk_screen_get_height (gdk_drawable_get_screen (window)) / device_height;
-
-      x_offset = - impl_window->input_window->root_x - priv->abs_x;
-      y_offset = - impl_window->input_window->root_y - priv->abs_y;
-    }
-  else				/* GDK_MODE_WINDOW */
-    {
-      double x_resolution = gdkdev->axes[x_axis].resolution;
-      double y_resolution = gdkdev->axes[y_axis].resolution;
-      double device_aspect;
-      /*
-       * Some drivers incorrectly report the resolution of the device
-       * as zero (in partiular linuxwacom < 0.5.3 with usb tablets).
-       * This causes the device_aspect to become NaN and totally
-       * breaks windowed mode.  If this is the case, the best we can
-       * do is to assume the resolution is non-zero is equal in both
-       * directions (which is true for many devices).  The absolute
-       * value of the resolution doesn't matter since we only use the
-       * ratio.
-       */
-      if ((x_resolution == 0) || (y_resolution == 0))
-	{
-	  x_resolution = 1;
-	  y_resolution = 1;
-	}
-      device_aspect = (device_height * y_resolution) /
-	(device_width * x_resolution);
-      if (device_aspect * priv->width >= priv->height)
-	{
-	  /* device taller than window */
-	  x_scale = priv->width / device_width;
-	  y_scale = (x_scale * x_resolution) / y_resolution;
-
-	  x_offset = 0;
-	  y_offset = - (device_height * y_scale - priv->height) / 2;
-	}
-      else
-	{
-	  /* window taller than device */
-	  y_scale = priv->height / device_height;
-	  x_scale = (y_scale * y_resolution) / x_resolution;
-
-	  y_offset = 0;
-	  x_offset = - (device_width * x_scale - priv->width) / 2;
-	}
-    }
-
-  for (i=0; i<gdkdev->info.num_axes; i++)
-    {
-      switch (gdkdev->info.axes[i].use)
-	{
-	case GDK_AXIS_X:
-	  axis_out[i] = x_offset + x_scale * (axis_data[x_axis] -
-	    gdkdev->axes[x_axis].min_value);
-	  if (x_out)
-	    *x_out = axis_out[i];
-	  break;
-	case GDK_AXIS_Y:
-	  axis_out[i] = y_offset + y_scale * (axis_data[y_axis] -
-	    gdkdev->axes[y_axis].min_value);
-	  if (y_out)
-	    *y_out = axis_out[i];
-	  break;
-	default:
-	  axis_out[i] =
-	    (device->axes[i].max * (axis_data[i] - gdkdev->axes[i].min_value) +
-	     device->axes[i].min * (gdkdev->axes[i].max_value - axis_data[i])) /
-	    (gdkdev->axes[i].max_value - gdkdev->axes[i].min_value);
-	  break;
-	}
-    }
-#endif
+  return data;
 }
 
 /* combine the state of the core device and the device state
@@ -433,7 +346,7 @@ gdk_input_translate_coordinates (GdkDevice *device,
  * Any button remapping should go on here.
  */
 static guint
-gdk_input_translate_state (guint state, guint device_state)
+translate_state (guint state, guint device_state)
 {
   return device_state | (state & 0xFF);
 }
@@ -494,34 +407,23 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
     {
       XDeviceButtonEvent *xdbe = (XDeviceButtonEvent *) xevent;
 
-      if (xdbe->type == device_xi->button_press_type)
-	{
-	  event->button.type = GDK_BUTTON_PRESS;
-#if 0
-	  gdkdev->button_state |= 1 << xdbe->button;
-#endif
-	}
-      else
-	{
-	  event->button.type = GDK_BUTTON_RELEASE;
-#if 0
-	  gdkdev->button_state &= ~(1 << xdbe->button);
-#endif
-	}
+      event->button.type = (xdbe->type == device_xi->button_press_type) ?
+        GDK_BUTTON_PRESS : GDK_BUTTON_RELEASE;
 
       event->button.device = device;
       event->button.window = g_object_ref (window);
       event->button.time = xdbe->time;
 
       event->button.axes = g_new (gdouble, device->num_axes);
-      gdk_input_translate_coordinates (device, window, xdbe->axis_data,
-				       event->button.axes,
-				       &event->button.x, &event->button.y);
+      translate_axes (device, window,
+                      (gdouble) xdbe->x,
+                      (gdouble) xdbe->y,
+                      xdbe->axis_data);
 #if 0
       event->button.x_root = event->button.x + priv->abs_x + input_window->root_x;
       event->button.y_root = event->button.y + priv->abs_y + input_window->root_y;
 #endif
-      event->button.state = gdk_input_translate_state (xdbe->state, xdbe->device_state);
+      event->button.state = translate_state (xdbe->state, xdbe->device_state);
       event->button.button = xdbe->button;
 
       if (event->button.type == GDK_BUTTON_PRESS)
@@ -583,7 +485,7 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
       event->key.time = xdke->time;
 
 #if 0
-      event->key.state = gdk_input_translate_state (xdke->state, xdke->device_state)
+      event->key.state = translate_state (xdke->state, xdke->device_state)
 	| device->keys[xdke->keycode - device_xi->min_keycode].modifiers;
 #endif
 
@@ -622,9 +524,10 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
       event->motion.device = device;
 
       event->motion.axes = g_new (gdouble, device->num_axes);
-      gdk_input_translate_coordinates (device, window, xdme->axis_data,
-                                       event->motion.axes,
-                                       &event->motion.x, &event->motion.y);
+      translate_axes (device, window,
+                      (gdouble) xdme->x,
+                      (gdouble) xdme->y,
+                      xdme->axis_data);
 #if 0
       event->motion.x_root = event->motion.x + priv->abs_x + input_window->root_x;
       event->motion.y_root = event->motion.y + priv->abs_y + input_window->root_y;
@@ -633,8 +536,8 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
       event->motion.type = GDK_MOTION_NOTIFY;
       event->motion.window = g_object_ref (window);
       event->motion.time = xdme->time;
-      event->motion.state = gdk_input_translate_state (xdme->state,
-                                                       xdme->device_state);
+      event->motion.state = translate_state (xdme->state,
+                                             xdme->device_state);
       event->motion.is_hint = xdme->is_hint;
 
       GDK_NOTE (EVENTS,
