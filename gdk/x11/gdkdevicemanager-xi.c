@@ -414,18 +414,17 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
       event->button.window = g_object_ref (window);
       event->button.time = xdbe->time;
 
-      event->button.axes = g_new (gdouble, device->num_axes);
       event->button.x = (gdouble) xdbe->x;
       event->button.y = (gdouble) xdbe->y;
+      event->button.x_root = (gdouble) xdbe->x_root;
+      event->button.y_root = (gdouble) xdbe->y_root;
 
+      event->button.axes = g_new (gdouble, device->num_axes);
       translate_axes (device, window,
                       event->button.x,
                       event->button.y,
                       xdbe->axis_data);
-#if 0
-      event->button.x_root = event->button.x + priv->abs_x + input_window->root_x;
-      event->button.y_root = event->button.y + priv->abs_y + input_window->root_y;
-#endif
+
       event->button.state = translate_state (xdbe->state, xdbe->device_state);
       event->button.button = xdbe->button;
 
@@ -526,19 +525,16 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
 
       event->motion.device = device;
 
-      event->motion.axes = g_new (gdouble, device->num_axes);
-
       event->motion.x = (gdouble) xdme->x;
       event->motion.y = (gdouble) xdme->y;
+      event->motion.x_root = (gdouble) xdme->x_root;
+      event->motion.y_root = (gdouble) xdme->y_root;
 
+      event->motion.axes = g_new (gdouble, device->num_axes);
       translate_axes (device, window,
                       event->motion.x,
                       event->motion.y,
                       xdme->axis_data);
-#if 0
-      event->motion.x_root = event->motion.x + priv->abs_x + input_window->root_x;
-      event->motion.y_root = event->motion.y + priv->abs_y + input_window->root_y;
-#endif
 
       event->motion.type = GDK_MOTION_NOTIFY;
       event->motion.window = g_object_ref (window);
