@@ -415,9 +415,12 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
       event->button.time = xdbe->time;
 
       event->button.axes = g_new (gdouble, device->num_axes);
+      event->button.x = (gdouble) xdbe->x;
+      event->button.y = (gdouble) xdbe->y;
+
       translate_axes (device, window,
-                      (gdouble) xdbe->x,
-                      (gdouble) xdbe->y,
+                      event->button.x,
+                      event->button.y,
                       xdbe->axis_data);
 #if 0
       event->button.x_root = event->button.x + priv->abs_x + input_window->root_x;
@@ -524,9 +527,13 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
       event->motion.device = device;
 
       event->motion.axes = g_new (gdouble, device->num_axes);
+
+      event->motion.x = (gdouble) xdme->x;
+      event->motion.y = (gdouble) xdme->y;
+
       translate_axes (device, window,
-                      (gdouble) xdme->x,
-                      (gdouble) xdme->y,
+                      event->motion.x,
+                      event->motion.y,
                       xdme->axis_data);
 #if 0
       event->motion.x_root = event->motion.x + priv->abs_x + input_window->root_x;
