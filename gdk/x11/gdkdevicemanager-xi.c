@@ -34,6 +34,7 @@ struct GdkDeviceManagerXIPrivate
   GHashTable *id_table;
   gint event_base;
   GList *devices;
+  gboolean ignore_core_events;
 };
 
 static void gdk_device_manager_xi_constructed  (GObject      *object);
@@ -375,16 +376,19 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
                                        GdkEvent           *event,
                                        XEvent             *xevent)
 {
+  GdkDeviceManagerXIPrivate *priv;
   GdkEventTranslatorIface *parent_iface;
-  GdkWindowObject *priv, *impl_window;
+  GdkWindowObject *impl_window;
   GdkInputWindow *input_window;
   GdkDeviceXI *device_xi;
   GdkDevice *device;
   GdkWindow *window;
 
   parent_iface = g_type_interface_peek_parent (GDK_EVENT_TRANSLATOR_GET_IFACE (translator));
+  priv = GDK_DEVICE_MANAGER_XI_GET_PRIVATE (translator);
 
-  if (parent_iface->translate_event (translator, display, event, xevent))
+  if (!priv->ignore_core_events &&
+      parent_iface->translate_event (translator, display, event, xevent))
     return TRUE;
 
   device = lookup_device (GDK_DEVICE_MANAGER_XI (translator), xevent);
@@ -394,7 +398,6 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
     return FALSE;
 
   window = gdk_window_lookup_for_display (display, xevent->xany.window);
-  priv = (GdkWindowObject *) window;
 
   if (!window)
     return FALSE;
@@ -566,9 +569,18 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
     {
       XProximityNotifyEvent *xpne = (XProximityNotifyEvent *) xevent;
 
+      if (xevent->type == device_xi->proximity_in_type)
+        {
+          event->proximity.type = GDK_PROXIMITY_IN;
+          priv->ignore_core_events = TRUE;
+        }
+      else
+        {
+          event->proximity.type = GDK_PROXIMITY_OUT;
+          priv->ignore_core_events = FALSE;
+        }
+
       event->proximity.device = device;
-      event->proximity.type = (xevent->type == device_xi->proximity_in_type) ?
-	GDK_PROXIMITY_IN : GDK_PROXIMITY_OUT;
       event->proximity.window = g_object_ref (window);
       event->proximity.time = xpne->time;
 
