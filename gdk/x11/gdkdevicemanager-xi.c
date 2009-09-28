@@ -90,6 +90,31 @@ gdk_device_manager_xi_class_init (GdkDeviceManagerXIClass *klass)
   g_type_class_add_private (object_class, sizeof (GdkDeviceManagerXIPrivate));
 }
 
+static GdkFilterReturn
+window_input_info_filter (GdkXEvent *xevent,
+                          GdkEvent  *event,
+                          gpointer   user_data)
+{
+  GdkDeviceManager *device_manager;
+  GdkDisplay *display;
+  GdkWindow *window;
+  XEvent *xev;
+
+  device_manager = user_data;
+  xev = (XEvent *) xevent;
+
+  display = gdk_device_manager_get_display (device_manager);
+  window = gdk_window_lookup_for_display (display, xev->xany.window);
+
+  if (window &&
+      xev->type == ConfigureNotify)
+    gdk_device_xi_update_window_info (window,
+                                      (gdouble) xev->xconfigure.x,
+                                      (gdouble) xev->xconfigure.y);
+
+  return GDK_FILTER_CONTINUE;
+}
+
 static void
 gdk_device_manager_xi_init (GdkDeviceManagerXI *device_manager)
 {
@@ -98,6 +123,8 @@ gdk_device_manager_xi_init (GdkDeviceManagerXI *device_manager)
   priv = GDK_DEVICE_MANAGER_XI_GET_PRIVATE (device_manager);
   priv->id_table = g_hash_table_new_full (NULL, NULL, NULL,
                                           (GDestroyNotify) g_object_unref);
+
+  gdk_window_add_filter (NULL, window_input_info_filter, device_manager);
 }
 
 static void
@@ -259,6 +286,10 @@ gdk_device_manager_xi_finalize (GObject *object)
 
   g_list_foreach (priv->devices, (GFunc) g_object_unref, NULL);
   g_list_free (priv->devices);
+
+  g_hash_table_destroy (priv->id_table);
+
+  gdk_window_remove_filter (NULL, window_input_info_filter, object);
 
   G_OBJECT_CLASS (gdk_device_manager_xi_parent_class)->finalize (object);
 }

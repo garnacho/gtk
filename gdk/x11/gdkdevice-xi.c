@@ -26,6 +26,14 @@
 
 #define MAX_DEVICE_CLASSES 13
 
+static GQuark quark_window_input_info = 0;
+
+typedef struct
+{
+  gdouble root_x;
+  gdouble root_y;
+} GdkWindowInputInfo;
+
 static void gdk_device_xi_constructed  (GObject *object);
 static void gdk_device_xi_set_property (GObject      *object,
                                         guint         prop_id,
@@ -95,6 +103,8 @@ gdk_device_xi_class_init (GdkDeviceXIClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   GdkDeviceClass *device_class = GDK_DEVICE_CLASS (klass);
+
+  quark_window_input_info = g_quark_from_static_string ("gdk-window-input-info");
 
   object_class->constructed = gdk_device_xi_constructed;
   object_class->set_property = gdk_device_xi_set_property;
@@ -514,8 +524,11 @@ gdk_device_xi_select_window_events (GdkDevice    *device,
                                     GdkEventMask  event_mask)
 {
   XEventClass event_classes[MAX_DEVICE_CLASSES];
-  gint num_classes;
   GdkDeviceXI *device_xi;
+  gint num_classes;
+
+  event_mask |= (GDK_PROXIMITY_IN_MASK |
+                 GDK_PROXIMITY_OUT_MASK);
 
   device_xi = GDK_DEVICE_XI (device);
   find_events (device, event_mask, event_classes, &num_classes);
@@ -524,4 +537,34 @@ gdk_device_xi_select_window_events (GdkDevice    *device,
 			 GDK_WINDOW_XWINDOW (window),
 			 event_classes, num_classes);
 
+  if (event_mask)
+    {
+      GdkWindowInputInfo *info;
+
+      info = g_new0 (GdkWindowInputInfo, 1);
+      g_object_set_qdata_full (G_OBJECT (window),
+                               quark_window_input_info,
+                               info,
+                               (GDestroyNotify) g_free);
+    }
+  else
+    g_object_set_qdata (G_OBJECT (window),
+                        quark_window_input_info,
+                        NULL);
+}
+
+void
+gdk_device_xi_update_window_info (GdkWindow *window,
+                                  gdouble    root_x,
+                                  gdouble    root_y)
+{
+  GdkWindowInputInfo *info;
+
+  info = g_object_get_qdata (G_OBJECT (window),
+                             quark_window_input_info);
+  if (info)
+    {
+      info->root_x = root_x;
+      info->root_y = root_y;
+    }
 }
