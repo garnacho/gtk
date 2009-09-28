@@ -229,6 +229,7 @@ gdk_device_xi_get_history (GdkDevice      *device,
   if (!device_coords)
     return FALSE;
 
+  *n_events = (guint) n_events_return;
   coords = allocate_history (device, *n_events);
 
   for (i = 0; i < *n_events; i++)
@@ -249,7 +250,6 @@ gdk_device_xi_get_history (GdkDevice      *device,
   XFreeDeviceMotionEvents (device_coords);
 
   *events = coords;
-  *n_events = (guint) n_events_return;
 
   return TRUE;
 }
