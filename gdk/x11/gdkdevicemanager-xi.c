@@ -377,8 +377,6 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
 {
   GdkDeviceManagerXIPrivate *priv;
   GdkEventTranslatorIface *parent_iface;
-  GdkWindowObject *impl_window;
-  GdkInputWindow *input_window;
   GdkDeviceXI *device_xi;
   GdkDevice *device;
   GdkWindow *window;
@@ -400,9 +398,6 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
 
   if (!window)
     return FALSE;
-
-  impl_window = (GdkWindowObject *) _gdk_window_get_impl_window (window);
-  input_window = impl_window->input_window;
 
   if ((xevent->type == device_xi->button_press_type) ||
       (xevent->type == device_xi->button_release_type))
