@@ -959,6 +959,15 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
                                                  event->button.window,
                                                  &xev->valuators);
 
+            if (event->button.device->mode == GDK_MODE_WINDOW)
+              {
+                GdkDevice *device = event->button.device;
+
+                /* Update event coordinates from axes */
+                gdk_device_get_axis (device, event->button.axes, GDK_AXIS_X, &event->button.x);
+                gdk_device_get_axis (device, event->button.axes, GDK_AXIS_Y, &event->button.y);
+              }
+
             event->button.state = gdk_device_xi2_translate_state (&xev->mods, &xev->buttons);
             event->button.button = xev->detail;
           }
@@ -1000,6 +1009,15 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
                                              event->motion.y,
                                              event->motion.window,
                                              &xev->valuators);
+
+        if (event->motion.device->mode == GDK_MODE_WINDOW)
+          {
+            GdkDevice *device = event->motion.device;
+
+            /* Update event coordinates from axes */
+            gdk_device_get_axis (device, event->motion.axes, GDK_AXIS_X, &event->motion.x);
+            gdk_device_get_axis (device, event->motion.axes, GDK_AXIS_Y, &event->motion.y);
+          }
       }
       break;
     case XI_Enter:
