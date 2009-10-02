@@ -775,19 +775,174 @@ find_axis_info (GArray     *array,
   return NULL;
 }
 
+GdkAxisUse
+_gdk_device_get_axis_use (GdkDevice *device,
+                          guint      index)
+{
+  GdkDevicePrivate *priv;
+  GdkAxisInfo info;
+
+  priv = GDK_DEVICE_GET_PRIVATE (device);
+
+  info = g_array_index (priv->axes, GdkAxisInfo, index);
+  return info.use;
+}
+
+gboolean
+_gdk_device_translate_window_coord (GdkDevice *device,
+                                    GdkWindow *window,
+                                    guint      index,
+                                    gdouble    value,
+                                    gdouble   *axis_value)
+{
+  GdkDevicePrivate *priv;
+  GdkAxisInfo axis_info;
+  GdkAxisInfo *axis_info_x, *axis_info_y;
+  gdouble device_width, device_height;
+  gdouble x_offset, y_offset;
+  gdouble x_scale, y_scale;
+  gdouble x_resolution, y_resolution;
+  gdouble device_aspect;
+  gint window_width, window_height;
+  GdkWindowObject *window_private;
+
+  priv = GDK_DEVICE_GET_PRIVATE (device);
+
+  if (index >= priv->axes->len)
+    return FALSE;
+
+  axis_info = g_array_index (priv->axes, GdkAxisInfo, index);
+
+  if (axis_info.use != GDK_AXIS_X &&
+      axis_info.use != GDK_AXIS_Y)
+    return FALSE;
+
+  if (axis_info.use == GDK_AXIS_X)
+    {
+      axis_info_x = &axis_info;
+      axis_info_y = find_axis_info (priv->axes, GDK_AXIS_Y);
+    }
+  else
+    {
+      axis_info_x = find_axis_info (priv->axes, GDK_AXIS_X);
+      axis_info_y = &axis_info;
+    }
+
+  device_width = axis_info_x->max_value - axis_info_x->min_value;
+  device_height = axis_info_y->max_value - axis_info_y->min_value;
+
+  window_private = (GdkWindowObject *) window;
+  gdk_drawable_get_size (window, &window_width, &window_height);
+
+  x_resolution = axis_info_x->resolution;
+  y_resolution = axis_info_y->resolution;
+
+  /*
+   * Some drivers incorrectly report the resolution of the device
+   * as zero (in partiular linuxwacom < 0.5.3 with usb tablets).
+   * This causes the device_aspect to become NaN and totally
+   * breaks windowed mode.  If this is the case, the best we can
+   * do is to assume the resolution is non-zero is equal in both
+   * directions (which is true for many devices).  The absolute
+   * value of the resolution doesn't matter since we only use the
+   * ratio.
+   */
+  if (x_resolution == 0 || y_resolution == 0)
+    {
+      x_resolution = 1;
+      y_resolution = 1;
+    }
+
+  device_aspect = (device_height * y_resolution) /
+    (device_width * x_resolution);
+
+  if (device_aspect * window_width >= window_height)
+    {
+      /* device taller than window */
+      x_scale = window_width / device_width;
+      y_scale = (x_scale * x_resolution) / y_resolution;
+
+      x_offset = 0;
+      y_offset = - (device_height * y_scale - window_height) / 2;
+    }
+  else
+    {
+      /* window taller than device */
+      y_scale = window_height / device_height;
+      x_scale = (y_scale * y_resolution) / x_resolution;
+
+      y_offset = 0;
+      x_offset = - (device_width * x_scale - window_width) / 2;
+    }
+
+  if (axis_value)
+    {
+      if (axis_info.use == GDK_AXIS_X)
+        *axis_value = x_offset + x_scale * (value - axis_info.min_value);
+      else
+        *axis_value = y_offset + y_scale * (value - axis_info.min_value);
+    }
+
+  return TRUE;
+}
+
+gboolean
+_gdk_device_translate_screen_coord (GdkDevice *device,
+                                    GdkWindow *window,
+                                    gint       window_root_x,
+                                    gint       window_root_y,
+                                    guint      index,
+                                    gdouble    value,
+                                    gdouble   *axis_value)
+{
+  GdkDevicePrivate *priv;
+  GdkAxisInfo axis_info;
+  gdouble axis_width, scale, offset;
+  GdkWindowObject *window_private;
+
+  if (device->mode != GDK_MODE_SCREEN)
+    return FALSE;
+
+  priv = GDK_DEVICE_GET_PRIVATE (device);
+
+  if (index >= priv->axes->len)
+    return FALSE;
+
+  axis_info = g_array_index (priv->axes, GdkAxisInfo, index);
+
+  if (axis_info.use != GDK_AXIS_X &&
+      axis_info.use != GDK_AXIS_Y)
+    return FALSE;
+
+  axis_width = axis_info.max_value - axis_info.min_value;
+  window_private = (GdkWindowObject *) window;
+
+  if (axis_info.use == GDK_AXIS_X)
+    {
+      scale = gdk_screen_get_width (gdk_drawable_get_screen (window)) / axis_width;
+      offset = - window_root_x - window_private->abs_x;
+    }
+  else
+    {
+      scale = gdk_screen_get_height (gdk_drawable_get_screen (window)) / axis_width;
+      offset = - window_root_y - window_private->abs_y;
+    }
+
+  if (axis_value)
+    *axis_value = offset + scale * (value - axis_info.min_value);
+
+  return TRUE;
+}
+
 gboolean
 _gdk_device_translate_axis (GdkDevice *device,
-                            gdouble    window_width,
-                            gdouble    window_height,
-                            gdouble    window_x,
-                            gdouble    window_y,
                             guint      index,
                             gdouble    value,
                             gdouble   *axis_value)
 {
   GdkDevicePrivate *priv;
   GdkAxisInfo axis_info;
-  gdouble out = 0;
+  gdouble axis_width, out;
 
   priv = GDK_DEVICE_GET_PRIVATE (device);
 
@@ -798,92 +953,11 @@ _gdk_device_translate_axis (GdkDevice *device,
 
   if (axis_info.use == GDK_AXIS_X ||
       axis_info.use == GDK_AXIS_Y)
-    {
-      GdkAxisInfo *axis_info_x, *axis_info_y;
-      gdouble device_width, device_height;
-      gdouble x_offset, y_offset;
-      gdouble x_scale, y_scale;
+    return FALSE;
 
-      if (axis_info.use == GDK_AXIS_X)
-        {
-          axis_info_x = &axis_info;
-          axis_info_y = find_axis_info (priv->axes, GDK_AXIS_Y);
-        }
-      else
-        {
-          axis_info_x = find_axis_info (priv->axes, GDK_AXIS_X);
-          axis_info_y = &axis_info;
-        }
-
-      device_width = axis_info_x->max_value - axis_info_x->min_value;
-      device_height = axis_info_y->max_value - axis_info_y->min_value;
-
-      if (device->mode == GDK_MODE_SCREEN)
-        {
-          if (axis_info.use == GDK_AXIS_X)
-            out = window_x;
-          else
-            out = window_y;
-        }
-      else /* GDK_MODE_WINDOW */
-        {
-          gdouble x_resolution, y_resolution, device_aspect;
-
-          x_resolution = axis_info_x->resolution;
-          y_resolution = axis_info_y->resolution;
-
-          /*
-           * Some drivers incorrectly report the resolution of the device
-           * as zero (in partiular linuxwacom < 0.5.3 with usb tablets).
-           * This causes the device_aspect to become NaN and totally
-           * breaks windowed mode.  If this is the case, the best we can
-           * do is to assume the resolution is non-zero is equal in both
-           * directions (which is true for many devices).  The absolute
-           * value of the resolution doesn't matter since we only use the
-           * ratio.
-           */
-          if (x_resolution == 0 || y_resolution == 0)
-            {
-              x_resolution = 1;
-              y_resolution = 1;
-            }
-
-          device_aspect = (device_height * y_resolution) /
-            (device_width * x_resolution);
-
-          if (device_aspect * window_width >= window_height)
-            {
-              /* device taller than window */
-              x_scale = window_width / device_width;
-              y_scale = (x_scale * x_resolution) / y_resolution;
-
-              x_offset = 0;
-              y_offset = - (device_height * y_scale - window_height) / 2;
-            }
-          else
-            {
-              /* window taller than device */
-              y_scale = window_height / device_height;
-              x_scale = (y_scale * y_resolution) / x_resolution;
-
-              y_offset = 0;
-              x_offset = - (device_width * x_scale - window_width) / 2;
-            }
-
-          if (axis_info.use == GDK_AXIS_X)
-            out = x_offset + x_scale * (value - axis_info.min_value);
-          else
-            out = y_offset + y_scale * (value - axis_info.min_value);
-        }
-    }
-  else
-    {
-      gdouble axis_width;
-
-      axis_width = axis_info.max_value - axis_info.min_value;
-      out = (axis_info.max_axis * (value - axis_info.min_value) +
-             axis_info.min_axis * (axis_info.max_value - value)) / axis_width;
-    }
+  axis_width = axis_info.max_value - axis_info.min_value;
+  out = (axis_info.max_axis * (value - axis_info.min_value) +
+         axis_info.min_axis * (axis_info.max_value - value)) / axis_width;
 
   if (axis_value)
     *axis_value = out;

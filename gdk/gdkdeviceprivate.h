@@ -98,14 +98,27 @@ guint _gdk_device_add_axis   (GdkDevice   *device,
                               gdouble      max_value,
                               gdouble      resolution);
 
-gboolean _gdk_device_translate_axis (GdkDevice *device,
-                                     gdouble    window_width,
-                                     gdouble    window_height,
-                                     gdouble    window_x,
-                                     gdouble    window_y,
-                                     guint      index,
-                                     gdouble    value,
-                                     gdouble   *axis_value);
+GdkAxisUse _gdk_device_get_axis_use (GdkDevice *device,
+                                     guint      index);
+
+gboolean   _gdk_device_translate_window_coord (GdkDevice *device,
+                                               GdkWindow *window,
+                                               guint      index,
+                                               gdouble    value,
+                                               gdouble   *axis_value);
+
+gboolean   _gdk_device_translate_screen_coord (GdkDevice *device,
+                                               GdkWindow *window,
+                                               gint       window_root_x,
+                                               gint       window_root_y,
+                                               guint      index,
+                                               gdouble    value,
+                                               gdouble   *axis_value);
+
+gboolean   _gdk_device_translate_axis         (GdkDevice *device,
+                                               guint      index,
+                                               gdouble    value,
+                                               gdouble   *axis_value);
 
 void _gdk_input_check_extension_events (GdkDevice *device);
 

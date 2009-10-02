@@ -696,18 +696,32 @@ translate_axes (GdkDevice       *device,
 
   for (i = 0; i < valuators->mask_len * 8; i++)
     {
-      if (XIMaskIsSet (valuators->mask, i))
-        {
-          gdouble value;
+      GdkAxisUse use;
+      gdouble val;
 
-          _gdk_device_translate_axis (device,
-                                      (gdouble) width,
-                                      (gdouble) height,
-                                      x, y,
-                                      i,
-                                      *vals++,
-                                      &value);
-          axes[i] = value;
+      if (!XIMaskIsSet (valuators->mask, i))
+        continue;
+
+      use = _gdk_device_get_axis_use (device, i);
+      val = *vals++;
+
+      switch (use)
+        {
+        case GDK_AXIS_X:
+        case GDK_AXIS_Y:
+          if (device->mode == GDK_MODE_WINDOW)
+            _gdk_device_translate_window_coord (device, window, i, val, &axes[i]);
+          else
+            {
+              if (use == GDK_AXIS_X)
+                axes[i] = x;
+              else
+                axes[i] = y;
+            }
+          break;
+        default:
+          _gdk_device_translate_axis (device, i, val, &axes[i]);
+          break;
         }
     }
 

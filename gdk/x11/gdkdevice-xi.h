@@ -64,9 +64,14 @@ struct _GdkDeviceXIClass
 
 GType gdk_device_xi_get_type (void) G_GNUC_CONST;
 
-void gdk_device_xi_update_window_info (GdkWindow *window,
-                                       gdouble    root_x,
-                                       gdouble    root_y);
+void     gdk_device_xi_update_window_info (GdkWindow *window);
+
+void     gdk_device_xi_translate_axes     (GdkDevice *device,
+                                           GdkWindow *window,
+                                           gint      *axis_data,
+                                           gdouble   *axes,
+                                           gdouble   *x,
+                                           gdouble   *y);
 
 G_END_DECLS
 

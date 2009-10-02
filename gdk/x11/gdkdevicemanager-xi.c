@@ -106,11 +106,8 @@ window_input_info_filter (GdkXEvent *xevent,
   display = gdk_device_manager_get_display (device_manager);
   window = gdk_window_lookup_for_display (display, xev->xany.window);
 
-  if (window &&
-      xev->type == ConfigureNotify)
-    gdk_device_xi_update_window_info (window,
-                                      (gdouble) xev->xconfigure.x,
-                                      (gdouble) xev->xconfigure.y);
+  if (window && xev->type == ConfigureNotify)
+    gdk_device_xi_update_window_info (window);
 
   return GDK_FILTER_CONTINUE;
 }
@@ -342,35 +339,6 @@ gdk_device_manager_xi_event_translator_init (GdkEventTranslatorIface *iface)
   iface->translate_event = gdk_device_manager_xi_translate_event;
 }
 
-static gdouble *
-translate_axes (GdkDevice *device,
-                GdkWindow *window,
-                gdouble    x,
-                gdouble    y,
-                gint      *axis_data)
-{
-  gdouble *data;
-  gint n_axes, i;
-  gint width, height;
-
-  n_axes = device->num_axes;
-  data = g_new0 (gdouble, n_axes);
-  gdk_drawable_get_size (GDK_DRAWABLE (window), &width, &height);
-
-  for (i = 0; i < device->num_axes; i++)
-    {
-      _gdk_device_translate_axis (device,
-                                  (gdouble) width,
-                                  (gdouble) height,
-                                  x, y,
-                                  i,
-                                  axis_data[i],
-                                  &data[i]);
-    }
-
-  return data;
-}
-
 /* combine the state of the core device and the device state
  * into one - for now we do this in a simple-minded manner -
  * we just take the keyboard portion of the core device and
@@ -448,15 +416,17 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
       event->button.window = g_object_ref (window);
       event->button.time = xdbe->time;
 
-      event->button.x = (gdouble) xdbe->x;
-      event->button.y = (gdouble) xdbe->y;
       event->button.x_root = (gdouble) xdbe->x_root;
       event->button.y_root = (gdouble) xdbe->y_root;
 
-      event->button.axes = translate_axes (device, window,
-                                           event->button.x,
-                                           event->button.y,
-                                           xdbe->axis_data);
+      event->button.axes = g_new0 (gdouble, device->num_axes);
+      gdk_device_xi_translate_axes (device, window,
+                                    xdbe->axis_data,
+                                    event->button.axes,
+                                    &event->button.x,
+                                    &event->button.y);
+
+      
 
       event->button.state = translate_state (xdbe->state, xdbe->device_state);
       event->button.button = xdbe->button;
@@ -480,7 +450,7 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
 	gdk_x11_window_set_user_time (gdk_window_get_toplevel (window),
 				      gdk_event_get_time (event));
       return TRUE;
-  }
+    }
 
   if ((xevent->type == device_xi->key_press_type) ||
       (xevent->type == device_xi->key_release_type))
@@ -556,17 +526,18 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
     {
       XDeviceMotionEvent *xdme = (XDeviceMotionEvent *) xevent;
 
+      priv->ignore_core_events = TRUE;
       event->motion.device = device;
 
-      event->motion.x = (gdouble) xdme->x;
-      event->motion.y = (gdouble) xdme->y;
       event->motion.x_root = (gdouble) xdme->x_root;
       event->motion.y_root = (gdouble) xdme->y_root;
 
-      event->motion.axes = translate_axes (device, window,
-                                           event->motion.x,
-                                           event->motion.y,
-                                           xdme->axis_data);
+      event->motion.axes = g_new0 (gdouble, device->num_axes);
+      gdk_device_xi_translate_axes (device, window,
+                                    xdme->axis_data,
+                                    event->motion.axes,
+                                    &event->motion.x,
+                                    &event->motion.y);
 
       event->motion.type = GDK_MOTION_NOTIFY;
       event->motion.window = g_object_ref (window);
