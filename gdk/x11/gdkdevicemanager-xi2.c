@@ -192,6 +192,8 @@ create_device (GdkDeviceManager *device_manager,
         input_source = GDK_SOURCE_CURSOR;
       else
         input_source = GDK_SOURCE_PEN;
+
+      g_free (tmp_name);
     }
 
   switch (dev->use)
