@@ -298,6 +298,25 @@ gdk_device_get_state (GdkDevice       *device,
     GDK_DEVICE_GET_CLASS (device)->get_state (device, window, axes, mask);
 }
 
+/**
+ * gdk_device_get_history:
+ * @device: a #GdkDevice
+ * @window: the window with respect to which which the event coordinates will be reported
+ * @start: starting timestamp for range of events to return
+ * @stop: ending timestamp for the range of events to return
+ * @events: location to store a newly-allocated array of #GdkTimeCoord, or %NULL
+ * @n_events: location to store the length of @events, or %NULL
+ *
+ * Obtains the motion history for a device; given a starting and
+ * ending timestamp, return all events in the motion history for
+ * the device in the given range of time. Some windowing systems
+ * do not support motion history, in which case, %FALSE will
+ * be returned. (This is not distinguishable from the case where
+ * motion history is supported and no events were found.)
+ *
+ * Return value: %TRUE if the windowing system supports motion history and
+ *  at least one event was found.
+ **/
 gboolean
 gdk_device_get_history (GdkDevice      *device,
                         GdkWindow      *window,
@@ -540,6 +559,18 @@ gdk_device_get_axis_value (GdkDevice *device,
   return FALSE;
 }
 
+/**
+ * gdk_device_get_axis:
+ * @device: a #GdkDevice
+ * @axes: pointer to an array of axes
+ * @use: the use to look for
+ * @value: location to store the found value.
+ *
+ * Interprets an array of double as axis values for a given device,
+ * and locates the value in the array for a given axis use.
+ *
+ * Return value: %TRUE if the given axis use was found, otherwise %FALSE
+ **/
 gboolean
 gdk_device_get_axis (GdkDevice  *device,
                      gdouble    *axes,
