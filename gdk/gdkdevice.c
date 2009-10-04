@@ -395,8 +395,15 @@ gdk_device_set_axis_use (GdkDevice   *device,
 			 guint        index,
 			 GdkAxisUse   use)
 {
+  GdkDevicePrivate *priv;
+  GdkAxisInfo *info;
+
   g_return_if_fail (GDK_IS_DEVICE (device));
   g_return_if_fail (index < device->num_axes);
+
+  priv = GDK_DEVICE_GET_PRIVATE (device);
+  info = &g_array_index (priv->axes, GdkAxisInfo, index);
+  info->use = use;
 
   device->axes[index].use = use;
 
@@ -404,17 +411,17 @@ gdk_device_set_axis_use (GdkDevice   *device,
     {
     case GDK_AXIS_X:
     case GDK_AXIS_Y:
-      device->axes[index].min = 0.;
-      device->axes[index].max = 0.;
+      device->axes[index].min = info->min_value = 0;
+      device->axes[index].max = info->max_value = 0;
       break;
     case GDK_AXIS_XTILT:
     case GDK_AXIS_YTILT:
-      device->axes[index].min = -1.;
-      device->axes[index].max = 1;
+      device->axes[index].min = info->min_value = -1;
+      device->axes[index].max = info->max_value = 1;
       break;
     default:
-      device->axes[index].min = 0.;
-      device->axes[index].max = 1;
+      device->axes[index].min = info->min_value = 0;
+      device->axes[index].max = info->max_value = 1;
       break;
     }
 }
