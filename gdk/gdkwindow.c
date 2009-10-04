@@ -3343,8 +3343,6 @@ gdk_window_flush_if_exposing (GdkWindow *window)
 {
   GdkWindowObject *private;
   GdkWindowObject *impl_window;
-  GList *l;
-  GdkWindowRegionMove *move;
 
   private = (GdkWindowObject *) window;
   impl_window = gdk_window_get_impl_window (private);
@@ -7853,7 +7851,6 @@ gdk_window_set_cursor (GdkWindow *window,
 		       GdkCursor *cursor)
 {
   GdkWindowObject *private;
-  GdkWindowImplIface *impl_iface;
   GdkDisplay *display;
 
   g_return_if_fail (GDK_IS_WINDOW (window));
@@ -9578,7 +9575,6 @@ send_crossing_event (GdkDisplay                 *display,
   GdkEvent *event;
   guint32 window_event_mask, type_event_mask;
   GdkDeviceGrabInfo *grab;
-  GdkWindowImplIface *impl_iface;
   gboolean block_event = FALSE;
 
   grab = _gdk_display_has_device_grab (display, device, serial);
