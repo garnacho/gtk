@@ -576,9 +576,11 @@ gdk_device_xi_translate_axes (GdkDevice *device,
 {
   GdkWindow *impl_window;
   gdouble root_x, root_y;
+  gdouble temp_x, temp_y;
   gint i;
 
   impl_window = _gdk_window_get_impl_window (window);
+  temp_x = temp_y = 0;
 
   if (!gdk_device_xi_get_window_info (impl_window, &root_x, &root_y))
     return;
@@ -602,10 +604,10 @@ gdk_device_xi_translate_axes (GdkDevice *device,
                                                 root_x, root_y,
                                                 i, axis_data[i],
                                                 &axes[i]);
-          if (x && use == GDK_AXIS_X)
-            *x = axes[i];
-          else if (y && use == GDK_AXIS_Y)
-            *y = axes[i];
+          if (use == GDK_AXIS_X)
+            temp_x = axes[i];
+          else if (use == GDK_AXIS_Y)
+            temp_y = axes[i];
 
           break;
         default:
@@ -613,4 +615,10 @@ gdk_device_xi_translate_axes (GdkDevice *device,
           break;
         }
     }
+
+  if (x)
+    *x = temp_x;
+
+  if (y)
+    *y = temp_y;
 }
