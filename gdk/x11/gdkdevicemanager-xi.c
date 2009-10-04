@@ -221,27 +221,33 @@ create_device (GdkDeviceManager *device_manager,
 {
   GdkInputSource input_source;
   GdkDevice *device;
-  gchar *tmp_name;
 
   if (info->use != IsXExtensionPointer &&
       info->use != IsXExtensionKeyboard)
     return NULL;
 
-  tmp_name = g_ascii_strdown (info->name, -1);
-
-  if (g_str_has_suffix (tmp_name, "pointer"))
-    input_source = GDK_SOURCE_MOUSE;
-  else if (strcmp (tmp_name, "wacom") == 0 ||
-           strcmp (tmp_name, "pen") == 0)
-    input_source = GDK_SOURCE_PEN;
-  else if (strcmp (tmp_name, "eraser") == 0)
-    input_source = GDK_SOURCE_ERASER;
-  else if (strcmp (tmp_name, "cursor") == 0)
-    input_source = GDK_SOURCE_CURSOR;
+  if (info->use == IsXExtensionKeyboard)
+    input_source = GDK_SOURCE_KEYBOARD;
   else
-    input_source = GDK_SOURCE_PEN;
+    {
+      gchar *tmp_name;
 
-  g_free (tmp_name);
+      tmp_name = g_ascii_strdown (info->name, -1);
+
+      if (g_str_has_suffix (tmp_name, "pointer"))
+        input_source = GDK_SOURCE_MOUSE;
+      else if (strcmp (tmp_name, "wacom") == 0 ||
+               strcmp (tmp_name, "pen") == 0)
+        input_source = GDK_SOURCE_PEN;
+      else if (strcmp (tmp_name, "eraser") == 0)
+        input_source = GDK_SOURCE_ERASER;
+      else if (strcmp (tmp_name, "cursor") == 0)
+        input_source = GDK_SOURCE_CURSOR;
+      else
+        input_source = GDK_SOURCE_PEN;
+
+      g_free (tmp_name);
+    }
 
   device = g_object_new (GDK_TYPE_DEVICE_XI,
                          "name", info->name,
@@ -441,8 +447,6 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
                                     event->button.axes,
                                     &event->button.x,
                                     &event->button.y);
-
-      
 
       event->button.state = translate_state (xdbe->state, xdbe->device_state);
       event->button.button = xdbe->button;
