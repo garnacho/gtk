@@ -8988,7 +8988,7 @@ update_cursor (GdkDisplay *display,
   GdkDeviceGrabInfo *grab;
 
   pointer_info = _gdk_display_get_pointer_info (display, device);
-  pointer_window = (GdkWindowObject *) pointer_info->window_under_pointer;
+  pointer_window = pointer_info->window_under_pointer;
 
   /* We ignore the serials here and just pick the last grab
      we've sent, as that would shortly be used anyway. */
