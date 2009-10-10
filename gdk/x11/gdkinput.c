@@ -370,24 +370,28 @@ gdk_device_free_history (GdkTimeCoord **events,
 
 static void
 _gdk_input_select_device_events (GdkWindow *impl_window,
-                                 GdkDevice *dev)
+                                 GdkDevice *device)
 {
   guint event_mask;
   GdkWindowObject *w;
   GdkInputWindow *iw;
   GdkInputMode mode;
   gboolean has_cursor;
+  GdkDeviceType type;
   GList *l;
 
   event_mask = 0;
   iw = ((GdkWindowObject *)impl_window)->input_window;
 
-  g_object_get (dev,
+  g_object_get (device,
+                "type", &type,
                 "input-mode", &mode,
                 "has-cursor", &has_cursor,
                 NULL);
 
-  if (iw == NULL || mode == GDK_MODE_DISABLED)
+  if (iw == NULL ||
+      mode == GDK_MODE_DISABLED ||
+      type == GDK_DEVICE_TYPE_MASTER)
     return;
 
   for (l = iw->windows; l != NULL; l = l->next)
@@ -401,7 +405,7 @@ _gdk_input_select_device_events (GdkWindow *impl_window,
           if (event_mask)
             event_mask |= GDK_PROXIMITY_OUT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK;
 
-          gdk_window_set_device_events ((GdkWindow *) w, dev, event_mask);
+          gdk_window_set_device_events ((GdkWindow *) w, device, event_mask);
         }
     }
 }
