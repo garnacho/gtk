@@ -366,6 +366,10 @@ gdk_device_set_mode (GdkDevice    *device,
   if (device->mode == mode)
     return TRUE;
 
+  if (mode == GDK_MODE_DISABLED &&
+      gdk_device_get_device_type (device) == GDK_DEVICE_TYPE_MASTER)
+    return FALSE;
+
   /* FIXME: setting has_cursor when mode is window? */
 
   device->mode = mode;
