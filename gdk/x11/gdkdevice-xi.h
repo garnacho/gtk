@@ -55,6 +55,8 @@ struct _GdkDeviceXI
 
   /* Mask of buttons (used for button grabs) */
   gint button_state;
+
+  guint in_proximity : 1;
 };
 
 struct _GdkDeviceXIClass

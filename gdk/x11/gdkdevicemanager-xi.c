@@ -546,8 +546,10 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
     {
       XDeviceMotionEvent *xdme = (XDeviceMotionEvent *) xevent;
 
-      priv->ignore_core_events = TRUE;
       event->motion.device = device;
+
+      if (device_xi->in_proximity)
+        priv->ignore_core_events = TRUE;
 
       event->motion.x_root = (gdouble) xdme->x_root;
       event->motion.y_root = (gdouble) xdme->y_root;
@@ -592,11 +594,13 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
       if (xevent->type == device_xi->proximity_in_type)
         {
           event->proximity.type = GDK_PROXIMITY_IN;
+          device_xi->in_proximity = TRUE;
           priv->ignore_core_events = TRUE;
         }
       else
         {
           event->proximity.type = GDK_PROXIMITY_OUT;
+          device_xi->in_proximity = FALSE;
           priv->ignore_core_events = FALSE;
         }
 
