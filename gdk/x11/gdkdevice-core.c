@@ -62,11 +62,6 @@ static void      gdk_device_core_select_window_events (GdkDevice       *device,
 
 G_DEFINE_TYPE (GdkDeviceCore, gdk_device_core, GDK_TYPE_DEVICE)
 
-static GdkDeviceAxis gdk_device_core_axes[] = {
-  { GDK_AXIS_X, 0, 0 },
-  { GDK_AXIS_Y, 0, 0 }
-};
-
 static void
 gdk_device_core_class_init (GdkDeviceCoreClass *klass)
 {
@@ -89,11 +84,8 @@ gdk_device_core_init (GdkDeviceCore *device_core)
 
   device = GDK_DEVICE (device_core);
 
-  device->num_axes = G_N_ELEMENTS (gdk_device_core_axes);
-  device->axes = gdk_device_core_axes;
-
-  device->num_keys = 0;
-  device->keys = NULL;
+  _gdk_device_add_axis (device, GDK_NONE, GDK_AXIS_X, 0, 0, 1);
+  _gdk_device_add_axis (device, GDK_NONE, GDK_AXIS_Y, 0, 0, 1);
 }
 
 static void
