@@ -799,6 +799,17 @@ _gdk_device_add_axis (GdkDevice   *device,
   return pos;
 }
 
+void
+_gdk_device_set_keys (GdkDevice *device,
+                      guint      num_keys)
+{
+  if (device->keys)
+    g_free (device->keys);
+
+  device->num_keys = num_keys;
+  device->keys = g_new0 (GdkDeviceKey, num_keys);
+}
+
 GdkAxisInfo *
 find_axis_info (GArray     *array,
                 GdkAxisUse  use)

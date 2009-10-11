@@ -98,6 +98,9 @@ guint _gdk_device_add_axis   (GdkDevice   *device,
                               gdouble      max_value,
                               gdouble      resolution);
 
+void _gdk_device_set_keys    (GdkDevice   *device,
+                              guint        num_keys);
+
 GdkAxisUse _gdk_device_get_axis_use (GdkDevice *device,
                                      guint      index);
 
