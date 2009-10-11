@@ -128,9 +128,11 @@ static void
 translate_class_info (GdkDevice   *device,
                       XDeviceInfo *info)
 {
+  GdkDeviceXI *device_xi;
   XAnyClassPtr class;
   gint i, j;
 
+  device_xi = GDK_DEVICE_XI (device);
   class = info->inputclassinfo;
 
   for (i = 0; i < info->num_classes; i++)
@@ -140,29 +142,13 @@ translate_class_info (GdkDevice   *device,
 	break;
       case KeyClass:
 	{
-#if 0
 	  XKeyInfo *xki = (XKeyInfo *)class;
-	  /* Hack to catch XFree86 3.3.1 bug. Other devices better
-	   * not have exactly 25 keys...
-	   */
-	  if ((xki->min_keycode == 8) && (xki->max_keycode == 32))
-	    {
-	      gdkdev->info.num_keys = 32;
-	      gdkdev->min_keycode = 1;
-	    }
-	  else
-	    {
-	      gdkdev->info.num_keys = xki->max_keycode - xki->min_keycode + 1;
-	      gdkdev->min_keycode = xki->min_keycode;
-	    }
-	  gdkdev->info.keys = g_new (GdkDeviceKey, gdkdev->info.num_keys);
+          guint num_keys;
 
-	  for (j=0; j<gdkdev->info.num_keys; j++)
-	    {
-	      gdkdev->info.keys[j].keyval = 0;
-	      gdkdev->info.keys[j].modifiers = 0;
-	    }
-#endif
+          num_keys = xki->max_keycode - xki->min_keycode + 1;
+          _gdk_device_set_keys (device, num_keys);
+
+          device_xi->min_keycode = xki->min_keycode;
 
 	  break;
 	}
@@ -484,16 +470,14 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
 		 xdke->deviceid,
 		 xdke->keycode));
 
-#if 0
-      if (xdke->keycode < gdkdev->min_keycode ||
-	  xdke->keycode >= gdkdev->min_keycode + gdkdev->info.num_keys)
+      if (xdke->keycode < device_xi->min_keycode ||
+	  xdke->keycode >= device_xi->min_keycode + device->num_keys)
 	{
 	  g_warning ("Invalid device key code received");
 	  return FALSE;
 	}
 
-      event->key.keyval = device->keys[xdke->keycode - gdkdev->min_keycode].keyval;
-#endif
+      event->key.keyval = device->keys[xdke->keycode - device_xi->min_keycode].keyval;
 
       if (event->key.keyval == 0)
 	{
@@ -509,10 +493,8 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
       event->key.window = g_object_ref (window);
       event->key.time = xdke->time;
 
-#if 0
       event->key.state = translate_state (xdke->state, xdke->device_state)
 	| device->keys[xdke->keycode - device_xi->min_keycode].modifiers;
-#endif
 
       /* Add a string translation for the key event */
       if ((event->key.keyval >= 0x20) && (event->key.keyval <= 0xFF))
