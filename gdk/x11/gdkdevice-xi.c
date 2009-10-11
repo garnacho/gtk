@@ -109,6 +109,7 @@ gdk_device_xi_class_init (GdkDeviceXIClass *klass)
   object_class->constructed = gdk_device_xi_constructed;
   object_class->set_property = gdk_device_xi_set_property;
   object_class->get_property = gdk_device_xi_get_property;
+  object_class->dispose = gdk_device_xi_dispose;
 
   device_class->get_history = gdk_device_xi_get_history;
   device_class->get_state = gdk_device_xi_get_state;
@@ -190,6 +191,24 @@ gdk_device_xi_get_property (GObject    *object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
     }
+}
+
+static void
+gdk_device_xi_dispose (GObject *object)
+{
+  GdkDeviceXI *device_xi;
+  GdkDisplay *display;
+
+  device_xi = GDK_DEVICE_XI (object);
+  display = gdk_device_get_display (GDK_DEVICE (device_xi));
+
+  if (device_xi->xdevice)
+    {
+      XCloseDevice (GDK_DISPLAY_XDISPLAY (display), device_xi->xdevice);
+      device_xi->xdevice = NULL;
+    }
+
+  G_OBJECT_CLASS (gdk_device_xi_parent_class)->dispose (object);
 }
 
 static GdkTimeCoord **
