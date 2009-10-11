@@ -37,107 +37,6 @@
 #include "gdkwindow.h"
 #include "gdkalias.h"
 
-#if 0
-
-static GdkDeviceAxis gdk_input_core_axes[] = {
-  { GDK_AXIS_X, 0, 0 },
-  { GDK_AXIS_Y, 0, 0 }
-};
-
-void
-_gdk_init_input_core (GdkDisplay *display)
-{
-  GdkDevicePrivate *private;
-
-  display->core_pointer = g_object_new (GDK_TYPE_DEVICE, NULL);
-  private = (GdkDevicePrivate *)display->core_pointer;
-
-  display->core_pointer->name = "Core Pointer";
-  display->core_pointer->source = GDK_SOURCE_MOUSE;
-  display->core_pointer->mode = GDK_MODE_SCREEN;
-  display->core_pointer->has_cursor = TRUE;
-  display->core_pointer->num_axes = 2;
-  display->core_pointer->axes = gdk_input_core_axes;
-  display->core_pointer->num_keys = 0;
-  display->core_pointer->keys = NULL;
-
-  private->display = display;
-}
-
-static void gdk_device_class_init (GdkDeviceClass *klass);
-static void gdk_device_dispose    (GObject        *object);
-
-static gpointer gdk_device_parent_class = NULL;
-
-GType
-gdk_device_get_type (void)
-{
-  static GType object_type = 0;
-
-  if (!object_type)
-    {
-      static const GTypeInfo object_info =
-	{
-	  sizeof (GdkDeviceClass),
-	  (GBaseInitFunc) NULL,
-	  (GBaseFinalizeFunc) NULL,
-	  (GClassInitFunc) gdk_device_class_init,
-	  NULL,           /* class_finalize */
-	  NULL,           /* class_data */
-	  sizeof (GdkDevicePrivate),
-	  0,              /* n_preallocs */
-	  (GInstanceInitFunc) NULL,
-	};
-
-      object_type = g_type_register_static (G_TYPE_OBJECT,
-					    g_intern_static_string ("GdkDevice"),
-					    &object_info, 0);
-    }
-
-  return object_type;
-}
-
-static void
-gdk_device_class_init (GdkDeviceClass *klass)
-{
-  GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-  gdk_device_parent_class = g_type_class_peek_parent (klass);
-
-  object_class->dispose  = gdk_device_dispose;
-}
-
-static void
-gdk_device_dispose (GObject *object)
-{
-  GdkDevicePrivate *gdkdev = (GdkDevicePrivate *) object;
-
-  if (gdkdev->display && !GDK_IS_CORE (gdkdev))
-    {
-#ifndef XINPUT_NONE
-      if (gdkdev->xdevice)
-	{
-	  XCloseDevice (GDK_DISPLAY_XDISPLAY (gdkdev->display), gdkdev->xdevice);
-	  gdkdev->xdevice = NULL;
-	}
-      g_free (gdkdev->axes);
-      gdkdev->axes = NULL;
-#endif /* !XINPUT_NONE */
-
-      g_free (gdkdev->info.name);
-      g_free (gdkdev->info.keys);
-      g_free (gdkdev->info.axes);
-
-      gdkdev->info.name = NULL;
-      gdkdev->info.keys = NULL;
-      gdkdev->info.axes = NULL;
-    }
-
-  G_OBJECT_CLASS (gdk_device_parent_class)->dispose (object);
-}
-
-#endif
-
 /**
  * gdk_devices_list:
  *
@@ -153,76 +52,6 @@ gdk_devices_list (void)
 }
 
 #if 0
-
-/**
- * gdk_display_list_devices:
- * @display: a #GdkDisplay
- *
- * Returns the list of available input devices attached to @display.
- * The list is statically allocated and should not be freed.
- *
- * Return value: a list of #GdkDevice
- *
- * Since: 2.2
- **/
-GList *
-gdk_display_list_devices (GdkDisplay *display)
-{
-  g_return_val_if_fail (GDK_IS_DISPLAY (display), NULL);
-
-  return GDK_DISPLAY_X11 (display)->input_devices;
-}
-
-void
-gdk_device_set_source (GdkDevice      *device,
-		       GdkInputSource  source)
-{
-  g_return_if_fail (device != NULL);
-
-  device->source = source;
-}
-
-void
-gdk_device_set_key (GdkDevice      *device,
-		    guint           index,
-		    guint           keyval,
-		    GdkModifierType modifiers)
-{
-  g_return_if_fail (device != NULL);
-  g_return_if_fail (index < device->num_keys);
-
-  device->keys[index].keyval = keyval;
-  device->keys[index].modifiers = modifiers;
-}
-
-void
-gdk_device_set_axis_use (GdkDevice   *device,
-			 guint        index,
-			 GdkAxisUse   use)
-{
-  g_return_if_fail (device != NULL);
-  g_return_if_fail (index < device->num_axes);
-
-  device->axes[index].use = use;
-
-  switch (use)
-    {
-    case GDK_AXIS_X:
-    case GDK_AXIS_Y:
-      device->axes[index].min = 0.;
-      device->axes[index].max = 0.;
-      break;
-    case GDK_AXIS_XTILT:
-    case GDK_AXIS_YTILT:
-      device->axes[index].min = -1.;
-      device->axes[index].max = 1;
-      break;
-    default:
-      device->axes[index].min = 0.;
-      device->axes[index].max = 1;
-      break;
-    }
-}
 
 static gboolean
 impl_coord_in_window (GdkWindow *window,
@@ -340,32 +169,6 @@ gdk_device_get_history  (GdkDevice         *device,
   return result;
 }
 
-GdkTimeCoord **
-_gdk_device_allocate_history (GdkDevice *device,
-			      gint       n_events)
-{
-  GdkTimeCoord **result = g_new (GdkTimeCoord *, n_events);
-  gint i;
-
-  for (i=0; i<n_events; i++)
-    result[i] = g_malloc (sizeof (GdkTimeCoord) -
-			  sizeof (double) * (GDK_MAX_TIMECOORD_AXES - device->num_axes));
-
-  return result;
-}
-
-void
-gdk_device_free_history (GdkTimeCoord **events,
-			 gint           n_events)
-{
-  gint i;
-
-  for (i=0; i<n_events; i++)
-    g_free (events[i]);
-
-  g_free (events);
-}
-
 #endif
 
 static void
@@ -481,14 +284,6 @@ gdk_input_set_extension_events (GdkWindow *window, gint mask,
 	  iw->grabbed = FALSE;
 
 	  display_x11->input_windows = g_list_append (display_x11->input_windows, iw);
-
-#if 0
-#ifndef XINPUT_NONE
-	  /* we might not receive ConfigureNotify so get the root_relative_geometry
-	   * now, just in case */
-	  _gdk_input_get_root_relative_geometry (window, &iw->root_x, &iw->root_y);
-#endif /* !XINPUT_NONE */
-#endif
 	  impl_window->input_window = iw;
 	}
 
@@ -529,45 +324,6 @@ _gdk_input_check_extension_events (GdkDevice *device)
       _gdk_input_select_device_events (input_window->impl_window, device);
     }
 }
-
-#if 0
-/**
- * gdk_device_get_axis:
- * @device: a #GdkDevice
- * @axes: pointer to an array of axes
- * @use: the use to look for
- * @value: location to store the found value.
- *
- * Interprets an array of double as axis values for a given device,
- * and locates the value in the array for a given axis use.
- *
- * Return value: %TRUE if the given axis use was found, otherwise %FALSE
- **/
-gboolean
-gdk_device_get_axis (GdkDevice  *device,
-		     gdouble    *axes,
-		     GdkAxisUse  use,
-		     gdouble    *value)
-{
-  gint i;
-
-  g_return_val_if_fail (device != NULL, FALSE);
-
-  if (axes == NULL)
-    return FALSE;
-
-  for (i=0; i<device->num_axes; i++)
-    if (device->axes[i].use == use)
-      {
-	if (value)
-	  *value = axes[i];
-	return TRUE;
-      }
-
-  return FALSE;
-}
-
-#endif
 
 #define __GDK_INPUT_C__
 #include "gdkaliasdef.c"

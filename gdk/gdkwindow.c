@@ -2023,11 +2023,6 @@ _gdk_window_destroy_hierarchy (GdkWindow *window,
 
 	  impl_iface = GDK_WINDOW_IMPL_GET_IFACE (private->impl);
 
-#if 0
-	  if (private->extension_events)
-	    impl_iface->input_window_destroy (window);
-#endif
-
 	  if (gdk_window_has_impl (private))
 	    impl_iface->destroy (window, recursing_native,
 				 foreign_destroy);
@@ -9620,15 +9615,6 @@ send_crossing_event (GdkDisplay                 *display,
   if (block_event)
     return;
 
-#if 0
-  if (window->extension_events != 0)
-    {
-      impl_iface = GDK_WINDOW_IMPL_GET_IFACE (window->impl);
-      impl_iface->input_window_crossing ((GdkWindow *) window,
-					 type == GDK_ENTER_NOTIFY);
-    }
-#endif
-
   if (window_event_mask & type_event_mask)
     {
       event = _gdk_make_event ((GdkWindow *)window, type, event_in_queue, TRUE);
@@ -10632,22 +10618,6 @@ gdk_window_print_tree (GdkWindow *window,
 
 #endif /* DEBUG_WINDOW_PRINTING */
 
-static gboolean
-is_input_event (GdkDisplay *display,
-		GdkEvent *event)
-{
-  GdkDevice *core_pointer;
-
-  core_pointer = gdk_display_get_core_pointer (display);
-  if ((event->type == GDK_MOTION_NOTIFY &&
-       event->motion.device != core_pointer) ||
-      ((event->type == GDK_BUTTON_PRESS ||
-	event->type == GDK_BUTTON_RELEASE) &&
-       event->button.device != core_pointer))
-    return TRUE;
-  return FALSE;
-}
-
 void
 _gdk_windowing_got_event (GdkDisplay *display,
 			  GList      *event_link,
@@ -10748,11 +10718,6 @@ _gdk_windowing_got_event (GdkDisplay *display,
 						event_private);
       return;
     }
-
-#if 0
-  if (is_input_event (display, event))
-    return;
-#endif
 
   if (!(is_button_type (event->type) ||
 	is_motion_type (event->type)) ||

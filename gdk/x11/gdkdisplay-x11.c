@@ -679,14 +679,6 @@ gdk_display_x11_translate_event (GdkEventTranslator *translator,
 	  _gdk_x11_screen_size_changed (screen, xevent);
         }
 
-#if 0
-      if (window &&
-	  xevent->xconfigure.event == xevent->xconfigure.window &&
-	  !GDK_WINDOW_DESTROYED (window) &&
-          window_private->input_window != NULL)
-	_gdk_input_configure_event (&xevent->xconfigure, window);
-#endif
-
 #ifdef HAVE_XSYNC
       if (toplevel && display_x11->use_sync && !XSyncValueIsZero (toplevel->pending_counter_value))
 	{
