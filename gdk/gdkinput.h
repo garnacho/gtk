@@ -47,8 +47,6 @@ GdkDevice *gdk_device_get_core_pointer (void);
 
 #endif /* GDK_MULTIHEAD_SAFE */
 
-GdkDevice *gdk_display_get_core_pointer (GdkDisplay *display);
-
 void gdk_input_set_extension_events (GdkWindow        *window,
 				     gint              mask,
 				     GdkExtensionMode  mode);
