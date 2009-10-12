@@ -5622,10 +5622,6 @@ gdk_window_impl_iface_init (GdkWindowImplIface *iface)
   iface->queue_antiexpose = _gdk_x11_window_queue_antiexpose;
   iface->queue_translation = _gdk_x11_window_queue_translation;
   iface->destroy = _gdk_x11_window_destroy;
-#if 0
-  iface->input_window_destroy = _gdk_input_window_destroy;
-  iface->input_window_crossing = _gdk_input_crossing_event;
-#endif
 }
 
 static Bool

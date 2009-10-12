@@ -144,10 +144,6 @@ struct _GdkWindowImplIface
   void         (* destroy)              (GdkWindow       *window,
 					 gboolean         recursing,
 					 gboolean         foreign_destroy);
-
-  void         (* input_window_destroy) (GdkWindow       *window);
-  void         (* input_window_crossing)(GdkWindow       *window,
-					 gboolean         enter);
 };
 
 /* Interface Functions */
