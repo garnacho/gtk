@@ -28,14 +28,22 @@
 
 #include <stdlib.h>
 
-#include "gdkx.h"
-#include "gdkinput.h"
-#include "gdkprivate.h"
-#include "gdkinputprivate.h"
 #include "gdkscreen-x11.h"
 #include "gdkdisplay-x11.h"
 #include "gdkwindow.h"
 #include "gdkalias.h"
+
+/* Addition used for extension_events mask */
+#define GDK_ALL_DEVICES_MASK (1<<30)
+
+struct _GdkInputWindow
+{
+  GList *windows; /* GdkWindow:s with extension_events set */
+
+  /* gdk window */
+  GdkWindow *impl_window; /* an impl window */
+};
+
 
 /**
  * gdk_devices_list:
@@ -281,7 +289,6 @@ gdk_input_set_extension_events (GdkWindow *window, gint mask,
 	  iw->impl_window = (GdkWindow *)impl_window;
 
 	  iw->windows = NULL;
-	  iw->grabbed = FALSE;
 
 	  display_x11->input_windows = g_list_append (display_x11->input_windows, iw);
 	  impl_window->input_window = iw;
