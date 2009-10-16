@@ -211,19 +211,6 @@ gdk_device_xi_dispose (GObject *object)
   G_OBJECT_CLASS (gdk_device_xi_parent_class)->dispose (object);
 }
 
-static GdkTimeCoord **
-allocate_history (GdkDevice *device,
-                  gint       n_events)
-{
-  GdkTimeCoord **result = g_new (GdkTimeCoord *, n_events);
-  gint i;
-
-  for (i = 0; i < n_events; i++)
-    result[i] = g_malloc (sizeof (GdkTimeCoord) -
-			  sizeof (double) * (GDK_MAX_TIMECOORD_AXES - device->num_axes));
-  return result;
-}
-
 static gboolean
 gdk_device_xi_get_history (GdkDevice      *device,
                            GdkWindow      *window,
@@ -255,7 +242,7 @@ gdk_device_xi_get_history (GdkDevice      *device,
     return FALSE;
 
   *n_events = (guint) n_events_return;
-  coords = allocate_history (device, *n_events);
+  coords = _gdk_device_allocate_history (device, *n_events);
 
   for (i = 0; i < *n_events; i++)
     {
