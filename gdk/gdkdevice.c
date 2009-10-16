@@ -336,6 +336,19 @@ gdk_device_get_history (GdkDevice      *device,
                                                      events, n_events);
 }
 
+GdkTimeCoord **
+_gdk_device_allocate_history (GdkDevice *device,
+                              guint      n_events)
+{
+  GdkTimeCoord **result = g_new (GdkTimeCoord *, n_events);
+  gint i;
+
+  for (i = 0; i < n_events; i++)
+    result[i] = g_malloc (sizeof (GdkTimeCoord) -
+			  sizeof (double) * (GDK_MAX_TIMECOORD_AXES - device->num_axes));
+  return result;
+}
+
 void
 gdk_device_free_history (GdkTimeCoord **events,
                          gint           n_events)

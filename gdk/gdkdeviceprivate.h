@@ -123,6 +123,9 @@ gboolean   _gdk_device_translate_axis         (GdkDevice *device,
                                                gdouble    value,
                                                gdouble   *axis_value);
 
+GdkTimeCoord ** _gdk_device_allocate_history  (GdkDevice *device,
+                                               guint      n_events);
+
 void _gdk_input_check_extension_events (GdkDevice *device);
 
 
