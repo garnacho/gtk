@@ -22,6 +22,12 @@
 #include "gdkprivate-x11.h"
 #include "gdkx.h"
 
+static gboolean gdk_device_core_get_history (GdkDevice      *device,
+                                             GdkWindow      *window,
+                                             guint32         start,
+                                             guint32         stop,
+                                             GdkTimeCoord ***events,
+                                             guint          *n_events);
 static void gdk_device_core_get_state (GdkDevice       *device,
                                        GdkWindow       *window,
                                        gdouble         *axes,
@@ -67,6 +73,7 @@ gdk_device_core_class_init (GdkDeviceCoreClass *klass)
 {
   GdkDeviceClass *device_class = GDK_DEVICE_CLASS (klass);
 
+  device_class->get_history = gdk_device_core_get_history;
   device_class->get_state = gdk_device_core_get_state;
   device_class->set_window_cursor = gdk_device_core_set_window_cursor;
   device_class->warp = gdk_device_core_warp;
@@ -86,6 +93,88 @@ gdk_device_core_init (GdkDeviceCore *device_core)
 
   _gdk_device_add_axis (device, GDK_NONE, GDK_AXIS_X, 0, 0, 1);
   _gdk_device_add_axis (device, GDK_NONE, GDK_AXIS_Y, 0, 0, 1);
+}
+
+static gboolean
+impl_coord_in_window (GdkWindow *window,
+		      int        impl_x,
+		      int        impl_y)
+{
+  GdkWindowObject *priv = (GdkWindowObject *) window;
+
+  if (impl_x < priv->abs_x ||
+      impl_x > priv->abs_x + priv->width)
+    return FALSE;
+
+  if (impl_y < priv->abs_y ||
+      impl_y > priv->abs_y + priv->height)
+    return FALSE;
+
+  return TRUE;
+}
+
+static gboolean
+gdk_device_core_get_history (GdkDevice      *device,
+                             GdkWindow      *window,
+                             guint32         start,
+                             guint32         stop,
+                             GdkTimeCoord ***events,
+                             guint          *n_events)
+{
+  GdkWindowObject *priv;
+  XTimeCoord *xcoords;
+  GdkTimeCoord **coords;
+  GdkWindow *impl_window;
+  int tmp_n_events;
+  int i, j;
+
+  impl_window = _gdk_window_get_impl_window (window);
+  xcoords = XGetMotionEvents (GDK_DRAWABLE_XDISPLAY (window),
+                              GDK_DRAWABLE_XID (impl_window),
+                              start, stop, &tmp_n_events);
+  if (!xcoords)
+    return FALSE;
+
+  priv = (GdkWindowObject *) window;
+  coords = _gdk_device_allocate_history (device, tmp_n_events);
+
+  for (i = 0, j = 0; i < tmp_n_events; i++)
+    {
+      if (impl_coord_in_window (window, xcoords[i].x, xcoords[i].y))
+        {
+          coords[j]->time = xcoords[i].time;
+          coords[j]->axes[0] = xcoords[i].x - priv->abs_x;
+          coords[j]->axes[1] = xcoords[i].y - priv->abs_y;
+          j++;
+        }
+    }
+
+  XFree (xcoords);
+
+  /* free the events we allocated too much */
+  for (i = j; i < tmp_n_events; i++)
+    {
+      g_free (coords[i]);
+      coords[i] = NULL;
+    }
+
+  tmp_n_events = j;
+
+  if (tmp_n_events == 0)
+    {
+      gdk_device_free_history (coords, tmp_n_events);
+      return FALSE;
+    }
+
+  if (n_events)
+    *n_events = tmp_n_events;
+
+  if (events)
+    *events = coords;
+  else if (coords)
+    gdk_device_free_history (coords, tmp_n_events);
+
+  return TRUE;
 }
 
 static void
