@@ -2363,6 +2363,7 @@ gtk_list_store_swap
 #if IN_FILE(__GTK_MAIN_C__)
 gtk_get_option_group
 gtk_get_current_event
+gtk_get_current_event_device
 gtk_get_current_event_state
 gtk_get_current_event_time
 #ifndef GTK_DISABLE_DEPRECATED

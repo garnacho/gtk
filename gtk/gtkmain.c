@@ -2262,6 +2262,23 @@ gtk_get_current_event_state (GdkModifierType *state)
 }
 
 /**
+ * gtk_get_current_event_device:
+ *
+ * If there is a current event and it has a device, return that
+ * device, otherwise return %NULL.
+ *
+ * Returns: a #GdkDevice, or %NULL
+ **/
+GdkDevice *
+gtk_get_current_event_device (void)
+{
+  if (current_events)
+    return gdk_event_get_device (current_events->data);
+  else
+    return NULL;
+}
+
+/**
  * gtk_get_event_widget:
  * @event: a #GdkEvent
  *

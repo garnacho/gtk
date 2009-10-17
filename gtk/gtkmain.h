@@ -209,6 +209,7 @@ void	   gtk_key_snooper_remove  (guint	    snooper_handler_id);
 GdkEvent*       gtk_get_current_event       (void);
 guint32         gtk_get_current_event_time  (void);
 gboolean        gtk_get_current_event_state (GdkModifierType *state);
+GdkDevice *     gtk_get_current_event_device (void);
 
 GtkWidget* gtk_get_event_widget	   (GdkEvent	   *event);
 
