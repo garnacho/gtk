@@ -437,7 +437,7 @@ gdk_display_pointer_ungrab (GdkDisplay *display,
       if (device->source != GDK_SOURCE_MOUSE)
         continue;
 
-      gdk_display_device_ungrab (display, device, time_);
+      gdk_device_ungrab (device, time_);
     }
 
   g_list_free (devices);
@@ -505,7 +505,7 @@ gdk_display_keyboard_ungrab (GdkDisplay *display,
       if (device->source != GDK_SOURCE_KEYBOARD)
         continue;
 
-      gdk_display_device_ungrab (display, device, time);
+      gdk_device_ungrab (device, time);
     }
 
   g_list_free (devices);

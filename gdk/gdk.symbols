@@ -112,6 +112,7 @@ gdk_set_locale
 
 #if IN_HEADER(__GDK_H__)
 #if IN_FILE(__GDK_DISPLAY_X11_C__)
+gdk_device_ungrab
 gdk_display_list_devices
 gdk_event_send_client_message_for_display
 gdk_flush
@@ -184,6 +185,12 @@ gdk_screen_height_mm G_GNUC_CONST
 #ifndef GDK_MULTIDEVICE_SAFE
 gdk_keyboard_grab
 #endif
+#endif
+#endif
+
+#if IN_HEADER(__GDK_H__)
+#if IN_FILE(__GDK_DEVICE_C__)
+gdk_device_grab
 #endif
 #endif
 
@@ -476,7 +483,6 @@ gdk_display_get_default_screen
 gdk_display_get_name
 gdk_display_get_n_screens
 gdk_display_get_screen
-gdk_display_device_ungrab
 gdk_display_open
 gdk_display_request_selection_notification
 gdk_display_store_clipboard

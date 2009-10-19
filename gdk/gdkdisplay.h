@@ -188,9 +188,6 @@ void        gdk_display_keyboard_ungrab    (GdkDisplay  *display,
 gboolean    gdk_display_pointer_is_grabbed (GdkDisplay  *display);
 #endif /* GDK_MULTIDEVICE_SAFE */
 
-void        gdk_display_device_ungrab      (GdkDisplay  *display,
-                                            GdkDevice   *device,
-                                            guint32      time_);
 gboolean    gdk_display_device_is_grabbed  (GdkDisplay  *display,
                                             GdkDevice   *device);
 void        gdk_display_beep               (GdkDisplay  *display);

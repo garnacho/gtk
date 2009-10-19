@@ -1619,28 +1619,24 @@ device_ungrab_callback (GdkDisplay *display,
   )
 
 /**
- * gdk_display_pointer_ungrab:
- * @display: a #GdkDisplay.
+ * gdk_device_ungrab:
+ * @device: a #GdkDevice
  * @time_: a timestap (e.g. %GDK_CURRENT_TIME).
  *
- * Release any pointer grab.
- *
- * Since: 2.2
+ * Release any grab on @device.
  */
 void
-gdk_display_device_ungrab (GdkDisplay *display,
-                           GdkDevice  *device,
-                           guint32     time_)
+gdk_device_ungrab (GdkDevice  *device,
+                   guint32     time_)
 {
+  GdkDisplay *display;
   Display *xdisplay;
-  GdkDisplayX11 *display_x11;
   GdkDeviceGrabInfo *grab;
   unsigned long serial;
 
-  g_return_if_fail (GDK_IS_DISPLAY (display));
   g_return_if_fail (GDK_IS_DEVICE (device));
 
-  display_x11 = GDK_DISPLAY_X11 (display);
+  display = gdk_device_get_display (device);
   xdisplay = GDK_DISPLAY_XDISPLAY (display);
 
   serial = NextRequest (xdisplay);
