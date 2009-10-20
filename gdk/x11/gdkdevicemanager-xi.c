@@ -220,17 +220,15 @@ create_device (GdkDeviceManager *device_manager,
 
       tmp_name = g_ascii_strdown (info->name, -1);
 
-      if (g_str_has_suffix (tmp_name, "pointer"))
-        input_source = GDK_SOURCE_MOUSE;
-      else if (strcmp (tmp_name, "wacom") == 0 ||
-               strcmp (tmp_name, "pen") == 0)
-        input_source = GDK_SOURCE_PEN;
-      else if (strcmp (tmp_name, "eraser") == 0)
+      if (strstr (tmp_name, "eraser"))
         input_source = GDK_SOURCE_ERASER;
-      else if (strcmp (tmp_name, "cursor") == 0)
+      else if (strstr (tmp_name, "cursor"))
         input_source = GDK_SOURCE_CURSOR;
-      else
+      else if (strstr (tmp_name, "wacom") ||
+               strstr (tmp_name, "pen"))
         input_source = GDK_SOURCE_PEN;
+      else
+        input_source = GDK_SOURCE_MOUSE;
 
       g_free (tmp_name);
     }
@@ -428,8 +426,10 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
       event->button.y_root = (gdouble) xdbe->y_root;
 
       event->button.axes = g_new0 (gdouble, device->num_axes);
+      gdk_device_xi_update_axes (device, xdbe->axes_count,
+                                 xdbe->first_axis, xdbe->axis_data);
       gdk_device_xi_translate_axes (device, window,
-                                    xdbe->axis_data,
+                                    device_xi->axis_data,
                                     event->button.axes,
                                     &event->button.x,
                                     &event->button.y);
@@ -537,8 +537,10 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
       event->motion.y_root = (gdouble) xdme->y_root;
 
       event->motion.axes = g_new0 (gdouble, device->num_axes);
+      gdk_device_xi_update_axes (device, xdme->axes_count,
+                                 xdme->first_axis, xdme->axis_data);
       gdk_device_xi_translate_axes (device, window,
-                                    xdme->axis_data,
+                                    device_xi->axis_data,
                                     event->motion.axes,
                                     &event->motion.x,
                                     &event->motion.y);
@@ -597,7 +599,30 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
 	gdk_x11_window_set_user_time (gdk_window_get_toplevel (window),
 				      gdk_event_get_time (event));
       return TRUE;
-  }
+    }
+
+  if (xevent->type == device_xi->state_notify_type)
+    {
+      XDeviceStateNotifyEvent *xdse = (XDeviceStateNotifyEvent *) xevent;
+      XInputClass *input_class = (XInputClass *) xdse->data;
+      int i;
+
+      for (i = 0; i < xdse->num_classes; i++)
+        {
+          if (input_class->class == ValuatorClass)
+            gdk_device_xi_update_axes (device, device->num_axes, 0,
+                                       ((XValuatorState *)input_class)->valuators);
+
+          input_class = (XInputClass *)(((char *)input_class)+input_class->length);
+        }
+
+      GDK_NOTE (EVENTS,
+                g_print ("device state notify:\t\twindow: %ld  device: %ld\n",
+                         xdse->window,
+                         xdse->deviceid));
+
+      return FALSE;
+    }
 
   return FALSE;
 }

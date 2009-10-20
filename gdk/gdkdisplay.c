@@ -807,7 +807,7 @@ gdk_display_real_get_window_at_device_position (GdkDisplay *display,
   GdkWindow *window;
   gint x, y;
 
-  window = _gdk_windowing_window_at_device_position (display, device, &x, &y, NULL);
+  window = _gdk_windowing_window_at_device_position (display, device, &x, &y, NULL, FALSE);
 
   /* This might need corrections, as the native window returned
      may contain client side children */
@@ -1288,11 +1288,10 @@ get_current_toplevel (GdkDisplay      *display,
 		      GdkModifierType *state_out)
 {
   GdkWindow *pointer_window;
-  GdkWindowObject *w;
   int x, y;
   GdkModifierType state;
 
-  pointer_window = _gdk_windowing_window_at_device_position (display, device, &x, &y, &state);
+  pointer_window = _gdk_windowing_window_at_device_position (display, device, &x, &y, &state, TRUE);
 
   if (pointer_window != NULL &&
       (GDK_WINDOW_DESTROYED (pointer_window) ||
@@ -1300,23 +1299,10 @@ get_current_toplevel (GdkDisplay      *display,
        GDK_WINDOW_TYPE (pointer_window) == GDK_WINDOW_FOREIGN))
     pointer_window = NULL;
 
-  w = (GdkWindowObject *)pointer_window;
-  if (w)
-    {
-      /* Convert to toplevel */
-      while (w->parent != NULL &&
-	     w->parent->window_type != GDK_WINDOW_ROOT)
-	{
-	  x += w->x;
-	  y += w->y;
-	  w = w->parent;
-	}
-    }
-
   *x_out = x;
   *y_out = y;
   *state_out = state;
-  return (GdkWindow *)w;
+  return pointer_window;
 }
 
 static void
@@ -1437,11 +1423,9 @@ _gdk_display_device_grab_update (GdkDisplay *display,
       current_grab = grabs->data;
 
       if (current_grab->serial_start > current_serial)
-        return; /* Hasn't started yet */
+	return; /* Hasn't started yet */
 
-      if (current_grab->serial_end > current_serial ||
-	  (current_grab->serial_end == current_serial &&
-	   current_grab->grab_one_pointer_release_event))
+      if (current_grab->serial_end > current_serial)
 	{
 	  /* This one hasn't ended yet.
 	     its the currently active one or scheduled to be active */

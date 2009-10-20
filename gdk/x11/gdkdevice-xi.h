@@ -49,12 +49,12 @@ struct _GdkDeviceXI
   gint motion_notify_type;
   gint proximity_in_type;
   gint proximity_out_type;
+  gint state_notify_type;
 
   /* minimum key code for device */
   gint min_keycode;
 
-  /* Mask of buttons (used for button grabs) */
-  gint button_state;
+  gint *axis_data;
 
   guint in_proximity : 1;
 };
@@ -68,6 +68,10 @@ GType gdk_device_xi_get_type (void) G_GNUC_CONST;
 
 void     gdk_device_xi_update_window_info (GdkWindow *window);
 
+void     gdk_device_xi_update_axes (GdkDevice *device,
+                                    gint       axes_count,
+                                    gint       first_axis,
+                                    gint      *axis_data);
 void     gdk_device_xi_translate_axes     (GdkDevice *device,
                                            GdkWindow *window,
                                            gint      *axis_data,

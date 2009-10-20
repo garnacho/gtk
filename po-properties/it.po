@@ -2,9 +2,9 @@
 # Copyright (C) 1998-2009 Free Software Foundation, Inc.
 # Tristan Tarrant <ttarrant@etnoteam.it>, 1999.
 # Christopher Gabriel <cgabriel@gnu.org>, 2000.
-# Alessio Dessì <alessiodessi@tiscali.it>, 2003-2007.
-# Luca Ferretti <elle.uca@libero.it>, 2007.
-# Milo Casagrande <milo@ubuntu.com>, 2009
+# Alessio Dessì <alessiodessi@tiscali.it>, 2003, 2004, 2005, 2006, 2007.
+# Milo Casagrande <milo@ubuntu.com>, 2009.
+# Luca Ferretti <elle.uca@libero.it>, 2007, 2008, 2009
 #
 # ### Annotazione sulle gtk-properties ###
 #
@@ -34,23 +34,23 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gtk+-properties\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-09-04 23:29-0400\n"
-"PO-Revision-Date: 2009-03-07 18:10+0100\n"
-"Last-Translator: Milo Casagrande <milo@ubuntu.com>\n"
+"POT-Creation-Date: 2009-10-05 17:17-0400\n"
+"PO-Revision-Date: 2009-09-21 22:41+0200\n"
+"Last-Translator: Luca Ferretti <elle.uca@libero.it>\n"
 "Language-Team: Italian <tp@lists.linux.it>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+# NEW
 #: gdk-pixbuf/gdk-pixbuf-simple-anim.c:165
-#, fuzzy
 msgid "Loop"
-msgstr "Logo"
+msgstr "Loop"
 
+# NEW
 #: gdk-pixbuf/gdk-pixbuf-simple-anim.c:166
-#, fuzzy
 msgid "Whether the animation should loop when it reaches the end"
-msgstr "Indica se la selezione deve seguire il puntatore"
+msgstr "Indica se l'animazione va reiterata una volta che raggiunge la fine"
 
 #: gdk-pixbuf/gdk-pixbuf.c:89
 msgid "Number of Channels"
@@ -172,10 +172,10 @@ msgstr "Risoluzione tipo carattere"
 msgid "The resolution for fonts on the screen"
 msgstr "La risoluzione per i tipi di carattere sullo schermo"
 
-#: gdk/gdkwindow.c:471 gdk/gdkwindow.c:472
-#, fuzzy
+# NEW
+#: gdk/gdkwindow.c:472 gdk/gdkwindow.c:473
 msgid "Cursor"
-msgstr "Cursore lampeggiante"
+msgstr "Cursore"
 
 # GTK-2-12
 #: gtk/gtkaboutdialog.c:239
@@ -512,23 +512,26 @@ msgstr "Indica se il gruppo di azioni è abilitato."
 msgid "Whether the action group is visible."
 msgstr "Indica se il gruppo di azioni è visibile."
 
+# NEW
 #: gtk/gtkactivatable.c:304
-#, fuzzy
 msgid "Related Action"
-msgstr "Azione"
+msgstr "Azione correlata"
 
+# NEW
 #: gtk/gtkactivatable.c:305
 msgid "The action this activatable will activate and receive updates from"
 msgstr ""
+"L'azione che questo attivabile attiverà e da cui riceverà aggiornamenti"
 
+# NEW
 #: gtk/gtkactivatable.c:327
 msgid "Use Action Appearance"
-msgstr ""
+msgstr "Usa aspetto azione"
 
+# NEW
 #: gtk/gtkactivatable.c:328
-#, fuzzy
 msgid "Whether to use the related actions appearance properties"
-msgstr "Indica se usare l'etichetta di testo per creare un elemento menù stock"
+msgstr "Indica se usare la proprietà di aspetto azione correlata"
 
 #: gtk/gtkadjustment.c:93 gtk/gtkcellrendererprogress.c:128
 #: gtk/gtkscalebutton.c:206 gtk/gtkspinbutton.c:269
@@ -986,7 +989,7 @@ msgstr ""
 "Se impostato, l'etichetta non sarà visualizzata, ma sarà usata per "
 "selezionare un oggetto nello stock"
 
-#: gtk/gtkbutton.c:243 gtk/gtkcombobox.c:789 gtk/gtkfilechooserbutton.c:393
+#: gtk/gtkbutton.c:243 gtk/gtkcombobox.c:791 gtk/gtkfilechooserbutton.c:393
 msgid "Focus on click"
 msgstr "Focus al clic"
 
@@ -1739,7 +1742,7 @@ msgstr ""
 "Indica come spezzare la stringa su più righe, se la cella di visualizzazione "
 "non ha spazio sufficiente per mostrare l'intera stringa"
 
-#: gtk/gtkcellrenderertext.c:470 gtk/gtkcombobox.c:678
+#: gtk/gtkcellrenderertext.c:470 gtk/gtkcombobox.c:680
 msgid "Wrap width"
 msgstr "Adatta larghezza"
 
@@ -1982,7 +1985,7 @@ msgid "Whether or not to give the color an alpha value"
 msgstr "Indica se dare o meno un valore alfa al colore"
 
 #: gtk/gtkcolorbutton.c:186 gtk/gtkfilechooserbutton.c:407
-#: gtk/gtkfontbutton.c:142 gtk/gtkprintjob.c:116 gtk/gtkstatusicon.c:420
+#: gtk/gtkfontbutton.c:142 gtk/gtkprintjob.c:116 gtk/gtkstatusicon.c:424
 #: gtk/gtktreeviewcolumn.c:265
 msgid "Title"
 msgstr "Titolo"
@@ -2125,71 +2128,71 @@ msgstr "Valore nella lista"
 msgid "Whether entered values must already be present in the list"
 msgstr "Indica se il valore inserito dev'essere già presente nella lista"
 
-#: gtk/gtkcombobox.c:661
+#: gtk/gtkcombobox.c:663
 msgid "ComboBox model"
 msgstr "Modello ComboBox"
 
-#: gtk/gtkcombobox.c:662
+#: gtk/gtkcombobox.c:664
 msgid "The model for the combo box"
 msgstr "Il modello per il combo box"
 
-#: gtk/gtkcombobox.c:679
+#: gtk/gtkcombobox.c:681
 msgid "Wrap width for laying out the items in a grid"
 msgstr ""
 "Adatta la larghezza per la visualizzazione degli elementi su una griglia"
 
-#: gtk/gtkcombobox.c:701
+#: gtk/gtkcombobox.c:703
 msgid "Row span column"
 msgstr "Spaziatura riga-colonna"
 
-#: gtk/gtkcombobox.c:702
+#: gtk/gtkcombobox.c:704
 msgid "TreeModel column containing the row span values"
 msgstr "Colonna di TreeModel contenente i valori di spaziatura della riga"
 
-#: gtk/gtkcombobox.c:723
+#: gtk/gtkcombobox.c:725
 msgid "Column span column"
 msgstr "Spaziatura colonna-colonna"
 
-#: gtk/gtkcombobox.c:724
+#: gtk/gtkcombobox.c:726
 msgid "TreeModel column containing the column span values"
 msgstr "Colonna di TreeModel contenente i valori di spaziatura della colonna"
 
-#: gtk/gtkcombobox.c:745
+#: gtk/gtkcombobox.c:747
 msgid "Active item"
 msgstr "Elemento attivo"
 
-#: gtk/gtkcombobox.c:746
+#: gtk/gtkcombobox.c:748
 msgid "The item which is currently active"
 msgstr "L'elemento attivo in questo momento"
 
-#: gtk/gtkcombobox.c:765 gtk/gtkuimanager.c:222
+#: gtk/gtkcombobox.c:767 gtk/gtkuimanager.c:222
 msgid "Add tearoffs to menus"
 msgstr "Aggiunge gli elementi per staccare i menu"
 
-#: gtk/gtkcombobox.c:766
+#: gtk/gtkcombobox.c:768
 msgid "Whether dropdowns should have a tearoff menu item"
 msgstr ""
 "Indica se i menu a discesa devono avere un elemento per il distaccamento del "
 "menu"
 
-#: gtk/gtkcombobox.c:781 gtk/gtkentry.c:681
+#: gtk/gtkcombobox.c:783 gtk/gtkentry.c:681
 msgid "Has Frame"
 msgstr "Con bordo"
 
-#: gtk/gtkcombobox.c:782
+#: gtk/gtkcombobox.c:784
 msgid "Whether the combo box draws a frame around the child"
 msgstr "Indica se il combo box disegna una cornice attorno al figlio"
 
-#: gtk/gtkcombobox.c:790
+#: gtk/gtkcombobox.c:792
 msgid "Whether the combo box grabs focus when it is clicked with the mouse"
 msgstr ""
 "Indica se il combo box riceve il focus quando viene cliccato con il mouse"
 
-#: gtk/gtkcombobox.c:805 gtk/gtkmenu.c:556
+#: gtk/gtkcombobox.c:807 gtk/gtkmenu.c:556
 msgid "Tearoff Title"
 msgstr "Nome del menu staccato"
 
-#: gtk/gtkcombobox.c:806
+#: gtk/gtkcombobox.c:808
 msgid ""
 "A title that may be displayed by the window manager when the popup is torn-"
 "off"
@@ -2197,53 +2200,53 @@ msgstr ""
 "Titolo che può essere visualizzato dal gestore di finestre se il menu viene "
 "staccato"
 
-#: gtk/gtkcombobox.c:823
+#: gtk/gtkcombobox.c:825
 msgid "Popup shown"
 msgstr "Popup visualizzato"
 
-#: gtk/gtkcombobox.c:824
+#: gtk/gtkcombobox.c:826
 msgid "Whether the combo's dropdown is shown"
 msgstr "Indica se il menu a cascata del combo viene mostrato"
 
 # GTK-2-14
-#: gtk/gtkcombobox.c:840
+#: gtk/gtkcombobox.c:842
 msgid "Button Sensitivity"
 msgstr "Sensibilità pulsante"
 
-#: gtk/gtkcombobox.c:841
+#: gtk/gtkcombobox.c:843
 msgid "Whether the dropdown button is sensitive when the model is empty"
 msgstr ""
 "Indica se il pulsante dell'elenco a discesa è sensibile quando il modello è "
 "vuoto"
 
-#: gtk/gtkcombobox.c:848
+#: gtk/gtkcombobox.c:850
 msgid "Appears as list"
 msgstr "Appare come una lista"
 
-#: gtk/gtkcombobox.c:849
+#: gtk/gtkcombobox.c:851
 msgid "Whether dropdowns should look like lists rather than menus"
 msgstr ""
 "Indica se i menu a discesa assomigliano a delle liste piuttosto che a dei "
 "menu"
 
 # GTK-2-12
-#: gtk/gtkcombobox.c:865
+#: gtk/gtkcombobox.c:867
 msgid "Arrow Size"
 msgstr "Dimensione freccia"
 
 # GTK-2-12
-#: gtk/gtkcombobox.c:866
+#: gtk/gtkcombobox.c:868
 msgid "The minimum size of the arrow in the combo box"
 msgstr "La dimensione minima della freccia nella casella combinata"
 
-#: gtk/gtkcombobox.c:881 gtk/gtkentry.c:781 gtk/gtkhandlebox.c:174
+#: gtk/gtkcombobox.c:883 gtk/gtkentry.c:781 gtk/gtkhandlebox.c:174
 #: gtk/gtkmenubar.c:194 gtk/gtkstatusbar.c:186 gtk/gtktoolbar.c:623
 #: gtk/gtkviewport.c:122
 msgid "Shadow type"
 msgstr "Tipo di ombra"
 
 # GTK-2-12
-#: gtk/gtkcombobox.c:882
+#: gtk/gtkcombobox.c:884
 msgid "Which kind of shadow to draw around the combo box"
 msgstr "Indica il tipo di ombra da disegnare intorno alla casella combinata"
 
@@ -2356,14 +2359,16 @@ msgstr ""
 "Larghezza del bordo intorno al pulsante nella parte bassa della finestra di "
 "dialogo"
 
+# NEW
 #: gtk/gtkentry.c:628
-#, fuzzy
 msgid "Text Buffer"
-msgstr "Buffer"
+msgstr "Buffer di testo"
 
+# NEW
 #: gtk/gtkentry.c:629
 msgid "Text buffer object which actually stores entry text"
 msgstr ""
+"L'oggetto buffer di testo che effettivamente memorizza il testo della casella"
 
 #: gtk/gtkentry.c:636 gtk/gtklabel.c:591
 msgid "Cursor Position"
@@ -2740,16 +2745,15 @@ msgstr ""
 "Indica per quanto tempo mostrare l'ultimo carattere immesso nei campi con "
 "caratteri nascosti"
 
+# NEW
 #: gtk/gtkentrybuffer.c:354
-#, fuzzy
 msgid "The contents of the buffer"
-msgstr "Il contenuto del campo"
+msgstr "Il contenuto del buffer"
 
-# GTK-2-14
+# NEW
 #: gtk/gtkentrybuffer.c:369
-#, fuzzy
 msgid "Length of the text currently in the buffer"
-msgstr "Lunghezza del testo attualmente nel campo"
+msgstr "Lunghezza del testo attualmente nel buffer"
 
 #: gtk/gtkentrycompletion.c:279
 msgid "Completion Model"
@@ -2990,32 +2994,34 @@ msgstr ""
 "presentare una finestra di dialogo di conferma alla sovrascrittura quando "
 "necessario."
 
+# NEW
 #: gtk/gtkfilechooser.c:283
-#, fuzzy
 msgid "Allow folders creation"
-msgstr "Mostra operazioni eseguibili sul file"
+msgstr "Consente creazione cartelle"
 
+# NEW
 #: gtk/gtkfilechooser.c:284
-#, fuzzy
 msgid ""
 "Whether a file chooser not in open mode will offer the user to create new "
 "folders."
 msgstr ""
-"Indica se una finestra di selezione file in modalità salvataggio debba "
-"presentare una finestra di dialogo di conferma alla sovrascrittura quando "
-"necessario."
+"Indica se un selettore di file non in modalità apertura permetta all'utente "
+"di creare nuove cartelle."
 
+# NEW
 #: gtk/gtkfilechooserbutton.c:376
 msgid "Dialog"
-msgstr "Finestra di dialogo"
+msgstr "Dialogo"
 
+# NEW
 #: gtk/gtkfilechooserbutton.c:377
 msgid "The file chooser dialog to use."
-msgstr "La finestra di selezione file da usare."
+msgstr "Il dialogo di selezione file da usare."
 
+# NEW
 #: gtk/gtkfilechooserbutton.c:408
 msgid "The title of the file chooser dialog."
-msgstr "Il titolo della finestra di selezione file."
+msgstr "Il titolo della dialogo di selezione file."
 
 #: gtk/gtkfilechooserbutton.c:422
 msgid "The desired width of the button widget, in characters."
@@ -3320,14 +3326,15 @@ msgid "The column in the model containing the tooltip texts for the items"
 msgstr ""
 "La colonna nel modello contenente i testi dei suggerimenti per gli elementi"
 
+# NEW
 #: gtk/gtkiconview.c:772
-#, fuzzy
 msgid "Item Padding"
-msgstr "Riempimento inferiore"
+msgstr "Riempimento elemento"
 
+# NEW
 #: gtk/gtkiconview.c:773
 msgid "Padding around icon view items"
-msgstr ""
+msgstr "Riempimento attorno agli elementi della vista a icone"
 
 #: gtk/gtkiconview.c:782
 msgid "Selection Box Color"
@@ -3467,24 +3474,20 @@ msgstr "Tipo messaggio"
 msgid "The type of message"
 msgstr "Il tipo di messaggio"
 
-# GTK-2-12
+# NEW
 #: gtk/gtkinfobar.c:440
-#, fuzzy
 msgid "Width of border around the content area"
-msgstr ""
-"Larghezza del bordo intorno all'area principale della finestra di dialogo"
+msgstr "Larghezza del bordo intorno all'area di contenuto"
 
+# NEW
 #: gtk/gtkinfobar.c:457
-#, fuzzy
 msgid "Spacing between elements of the area"
-msgstr "Spaziatura tra gli elementi dell'area principale del dialogo"
+msgstr "Spaziatura tra gli elementi dell'area"
 
-# GTK-2-12
+# NEW
 #: gtk/gtkinfobar.c:489
-#, fuzzy
 msgid "Width of border around the action area"
-msgstr ""
-"Larghezza del bordo intorno all'area principale della finestra di dialogo"
+msgstr "Larghezza del bordo intorno all'area di azione"
 
 #: gtk/gtkinvisible.c:87 gtk/gtkwindow.c:615
 msgid "The screen where this window will be displayed"
@@ -3598,15 +3601,15 @@ msgstr "Larghezza massima in caratteri"
 msgid "The desired maximum width of the label, in characters"
 msgstr "La massima larghezza desiderata dell'etichetta, in caratteri"
 
+# NEW
 #: gtk/gtklabel.c:727
-#, fuzzy
 msgid "Track visited links"
-msgstr "Il colore dei collegamenti visitati"
+msgstr "Traccia collegamenti visitati"
 
+# NEW
 #: gtk/gtklabel.c:728
-#, fuzzy
 msgid "Whether visited links should be tracked"
-msgstr "Indica se devono essere visualizzati gli elementi privati"
+msgstr "Indica se devono essere tracciati i collegamenti visitati"
 
 #: gtk/gtklabel.c:849
 msgid "Whether to select the contents of a selectable label when it is focused"
@@ -3718,16 +3721,18 @@ msgstr "Riempimento verticale"
 msgid "Extra space at the top and bottom of the menu"
 msgstr "Spazio aggiuntivo al di sopra e al di sotto del menù"
 
+# NEW
 #: gtk/gtkmenu.c:616
 msgid "Reserve Toggle Size"
-msgstr ""
+msgstr "Riserva dimensione toggle"
 
+# NEW
 #: gtk/gtkmenu.c:617
-#, fuzzy
 msgid ""
 "A boolean that indicates whether the menu reserves space for toggles and "
 "icons"
-msgstr "Un valore logico che indica se il menù è sganciato"
+msgstr ""
+"Un valore booleano che indica se il menù riserva spazio per toggle e icone"
 
 #: gtk/gtkmenu.c:623
 msgid "Horizontal Padding"
@@ -4636,43 +4641,45 @@ msgstr "Etichetta per la linguetta personalizzata"
 msgid "Label for the tab containing custom widgets."
 msgstr "Etichetta per una linguetta contenente widget personalizzati."
 
-# GTK-2-14
+# NEW
 #: gtk/gtkprintoperation.c:1236 gtk/gtkprintunixdialog.c:345
-#, fuzzy
 msgid "Support Selection"
-msgstr "Selezione colore"
+msgstr "Supporta la selezione"
 
+# NEW
 #: gtk/gtkprintoperation.c:1237
 msgid "TRUE if the print operation will support print of selection."
-msgstr ""
+msgstr "VERO se l'operazione di stampa supporta la stampa della selezione"
 
+# NEW
 #: gtk/gtkprintoperation.c:1253 gtk/gtkprintunixdialog.c:353
-#, fuzzy
 msgid "Has Selection"
-msgstr "È selezionato"
+msgstr "Presenta la sezione"
 
 #: gtk/gtkprintoperation.c:1254
 msgid "TRUE if a selecion exists."
-msgstr ""
+msgstr "VERO se esiste una selezione."
 
+# NEW
 #: gtk/gtkprintoperation.c:1269 gtk/gtkprintunixdialog.c:361
-#, fuzzy
 msgid "Embed Page Setup"
-msgstr "Impostazione pagina"
+msgstr "Incorpora impostazione pagina"
 
+# NEW
 #: gtk/gtkprintoperation.c:1270
 msgid "TRUE if page setup combos are embedded in GtkPrintDialog"
 msgstr ""
+"VERO se le combo di impostazione pagine sono incorporate in GtkPrintDialog"
 
+# NEW
 #: gtk/gtkprintoperation.c:1291
-#, fuzzy
 msgid "Number of Pages To Print"
-msgstr "Numero di pagine"
+msgstr "Numero di pagine da stampare"
 
+# NEW
 #: gtk/gtkprintoperation.c:1292
-#, fuzzy
 msgid "The number of pages that will be printed."
-msgstr "Il numero di pagine nel documento."
+msgstr "Il numero di pagine che verranno stampate."
 
 #: gtk/gtkprintunixdialog.c:303
 msgid "The GtkPageSetup to use"
@@ -4686,29 +4693,32 @@ msgstr "Stampante selezionata"
 msgid "The GtkPrinter which is selected"
 msgstr "Il GtkPrinter selezionato"
 
+# NEW
 #: gtk/gtkprintunixdialog.c:336
 msgid "Manual Capabilites"
-msgstr ""
+msgstr "Facoltà manuali"
 
+# NEW
 #: gtk/gtkprintunixdialog.c:337
 msgid "Capabilities the application can handle"
-msgstr ""
+msgstr "Facoltà che l'applicazione può gestire"
 
+# NEW
 #: gtk/gtkprintunixdialog.c:346
-#, fuzzy
 msgid "Whether the dialog supports selection"
-msgstr ""
-"Indica se l'etichetta è visualizzata utilizzando il tipo di carattere "
-"selezionato"
+msgstr "Indica se il dialogo supporta la selezione"
 
+# NEW
 #: gtk/gtkprintunixdialog.c:354
-#, fuzzy
 msgid "Whether the application has a selection"
-msgstr "Indica se l'azione è abilitata."
+msgstr "Indica se l'applicazione presenta una selezione"
 
+# NEW
 #: gtk/gtkprintunixdialog.c:362
 msgid "TRUE if page setup combos are embedded in GtkPrintUnixDialog"
 msgstr ""
+"VERO se le combo di impostazione pagine sono incorporate in "
+"GtkPrintUnixDialog"
 
 #: gtk/gtkprogress.c:102
 msgid "Activity mode"
@@ -6107,29 +6117,32 @@ msgid "Whether this tray icon has a tooltip"
 msgstr "Indica se questa icona ha un suggerimento"
 
 # GTK-2-12
-#: gtk/gtkstatusicon.c:378 gtk/gtkwidget.c:655
+#: gtk/gtkstatusicon.c:382 gtk/gtkwidget.c:655
 msgid "Tooltip Text"
 msgstr "Testo suggerimento"
 
 # GTK-2-12
-#: gtk/gtkstatusicon.c:379 gtk/gtkwidget.c:656 gtk/gtkwidget.c:677
+#: gtk/gtkstatusicon.c:383 gtk/gtkwidget.c:656 gtk/gtkwidget.c:677
 msgid "The contents of the tooltip for this widget"
 msgstr "Il contenuto del suggerimento per questo widget"
 
 # GTK-2-12
-#: gtk/gtkstatusicon.c:402 gtk/gtkwidget.c:676
+#: gtk/gtkstatusicon.c:406 gtk/gtkwidget.c:676
 msgid "Tooltip markup"
 msgstr "Markup suggerimento"
 
 # GTK-2-12
-#: gtk/gtkstatusicon.c:403
+#: gtk/gtkstatusicon.c:407
 msgid "The contents of the tooltip for this tray icon"
 msgstr "Il contenuto del suggerimento per questa icona"
 
-#: gtk/gtkstatusicon.c:421
-#, fuzzy
+# NEW
+#
+# messo di stato in vista del nuovo sistema di notifiche (e di icone tray)
+# di GNOME Shell
+#: gtk/gtkstatusicon.c:425
 msgid "The title of this tray icon"
-msgstr "La dimensione dell'icona"
+msgstr "Il titolo di questa icona di stato"
 
 #: gtk/gtktable.c:129
 msgid "Rows"
@@ -6910,11 +6923,11 @@ msgstr ""
 "VERO, i pulsanti della barra strumenti mostrano il testo nella modalità "
 "GTK_TOOLBAR_BOTH_HORIZ"
 
-#: gtk/gtktreemodelsort.c:274
+#: gtk/gtktreemodelsort.c:278
 msgid "TreeModelSort Model"
 msgstr "Modello TreeModelSort"
 
-#: gtk/gtktreemodelsort.c:275
+#: gtk/gtktreemodelsort.c:279
 msgid "The model for the TreeModelSort to sort"
 msgstr "Modello per l'ordinamento di TreeModelSort"
 
@@ -7261,14 +7274,20 @@ msgstr "Direzione ordinamento"
 msgid "Sort direction the sort indicator should indicate"
 msgstr "Direzione di ordinamento che l'indicatore deve mostrare"
 
+# NEW
 #: gtk/gtktreeviewcolumn.c:341
-#, fuzzy
 msgid "Sort column ID"
-msgstr "Colonna di testo"
+msgstr "ID colonna ordinamento"
 
+# NEW
+#
+# oppure _della colonna di ordinamento logico_
+# by Milo
 #: gtk/gtktreeviewcolumn.c:342
 msgid "Logical sort column ID this column sorts on when selected for sorting"
 msgstr ""
+"ID della colonna logica di ordinamento su cui questa colonna viene ordinata "
+"quando selezionata per tale azione"
 
 #: gtk/gtkuimanager.c:223
 msgid "Whether tearoff menu items should be added to menus"
@@ -7469,16 +7488,15 @@ msgstr "Finestra"
 msgid "The widget's window if it is realized"
 msgstr "La finestra del widget se è creata"
 
+# NEW
 #: gtk/gtkwidget.c:706
-#, fuzzy
 msgid "Double Buffered"
-msgstr "Buffer"
+msgstr "Con doppio buffer"
 
-# GTK-2-12
+# NEW
 #: gtk/gtkwidget.c:707
-#, fuzzy
 msgid "Whether or not the widget is double buffered"
-msgstr "Indica se il plug è incassato oppure no"
+msgstr "Indica se il widget ha oppure no il doppio buffer"
 
 #: gtk/gtkwidget.c:2229
 msgid "Interior Focus"

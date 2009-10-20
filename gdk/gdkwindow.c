@@ -469,10 +469,11 @@ gdk_window_class_init (GdkWindowObjectClass *klass)
   /* Properties */
   g_object_class_install_property (object_class,
                                    PROP_CURSOR,
-                                   g_param_spec_pointer ("cursor",
-                                                         P_("Cursor"),
-                                                         P_("Cursor"),
-                                                         G_PARAM_READWRITE));
+                                   g_param_spec_boxed ("cursor",
+                                                       P_("Cursor"),
+                                                       P_("Cursor"),
+                                                       GDK_TYPE_CURSOR,
+                                                       G_PARAM_READWRITE));
 
   /**
    * GdkWindow::pick-embedded-child:
@@ -642,7 +643,7 @@ gdk_window_set_property (GObject      *object,
   switch (prop_id)
     {
     case PROP_CURSOR:
-      gdk_window_set_cursor (window, g_value_get_pointer (value));
+      gdk_window_set_cursor (window, g_value_get_boxed (value));
       break;
 
     default:
@@ -662,7 +663,7 @@ gdk_window_get_property (GObject    *object,
   switch (prop_id)
     {
     case PROP_CURSOR:
-      g_value_set_pointer (value, gdk_window_get_cursor (window));
+      g_value_set_boxed (value, gdk_window_get_cursor (window));
       break;
 
     default:
@@ -1200,26 +1201,62 @@ get_native_device_event_mask (GdkWindowObject *private,
     return event_mask;
   else
     {
-      return
-	/* We need thse for all native window so we can emulate
-	   events on children: */
+      GdkEventMask mask;
+
+      /* Do whatever the app asks to, since the app
+       * may be asking for weird things for native windows,
+       * but filter out things that override the special
+       * requests below. */
+      mask = private->event_mask &
+	~(GDK_POINTER_MOTION_HINT_MASK |
+	  GDK_BUTTON_MOTION_MASK |
+	  GDK_BUTTON1_MOTION_MASK |
+	  GDK_BUTTON2_MOTION_MASK |
+	  GDK_BUTTON3_MOTION_MASK);
+
+      /* We need thse for all native windows so we can
+	 emulate events on children: */
+      mask |=
 	GDK_EXPOSURE_MASK |
 	GDK_VISIBILITY_NOTIFY_MASK |
-	GDK_POINTER_MOTION_MASK |
-	GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
-	GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK |
-	GDK_SCROLL_MASK |
-	/* Then do whatever the app asks to, since the app
-	 * may be asking for weird things for native windows,
-	 * but filter out things that override the above
-	 * requests somehow. */
-	(event_mask &
-	 ~(GDK_POINTER_MOTION_HINT_MASK |
-	   GDK_BUTTON_MOTION_MASK |
-	   GDK_BUTTON1_MOTION_MASK |
-	   GDK_BUTTON2_MOTION_MASK |
-	   GDK_BUTTON3_MOTION_MASK));
+	GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK;
+
+      /* Additionally we select for pointer and button events
+       * for toplevels as we need to get these to emulate
+       * them for non-native subwindows. Even though we don't
+       * select on them for all native windows we will get them
+       * as the events are propagated out to the first window
+       * that select for them.
+       * Not selecting for button press on all windows is an
+       * important thing, because in X only one client can do
+       * so, and we don't want to unexpectedly prevent another
+       * client from doing it.
+       */
+      if (gdk_window_is_toplevel (private))
+	mask |=
+	  GDK_POINTER_MOTION_MASK |
+	  GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
+	  GDK_SCROLL_MASK;
+
+      return mask;
     }
+}
+
+static GdkEventMask
+get_native_grab_event_mask (GdkEventMask grab_mask)
+{
+  /* Similar to the above but for pointer events only */
+  return
+    GDK_POINTER_MOTION_MASK |
+    GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
+    GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK |
+    GDK_SCROLL_MASK |
+    (grab_mask &
+     ~(GDK_POINTER_MOTION_HINT_MASK |
+       GDK_BUTTON_MOTION_MASK |
+       GDK_BUTTON1_MOTION_MASK |
+       GDK_BUTTON2_MOTION_MASK |
+       GDK_BUTTON3_MOTION_MASK));
 }
 
 static GdkEventMask
@@ -2655,6 +2692,8 @@ gdk_window_end_implicit_paint (GdkWindow *window)
       /* Reset clip region of the cached GdkGC */
       gdk_gc_set_clip_region (tmp_gc, NULL);
     }
+  else
+    gdk_region_destroy (paint->region);
 
   g_object_unref (paint->pixmap);
   g_free (paint);
@@ -5089,11 +5128,16 @@ _gdk_window_process_updates_recurse (GdkWindow *window,
 
 	  g_object_unref (window);
 	}
-      else if (private->bg_pixmap != GDK_NO_BG)
+      else if (private->bg_pixmap != GDK_NO_BG &&
+	       private->window_type != GDK_WINDOW_FOREIGN)
 	{
 	  /* No exposure mask set, so nothing will be drawn, the
 	   * app relies on the background being what it specified
 	   * for the window. So, we need to clear this manually.
+	   *
+	   * For foreign windows if expose is not set that generally
+	   * means some other client paints them, so don't clear
+	   * there.
 	   *
 	   * We use begin/end_paint around the clear so that we can
 	   * piggyback on the implicit paint */
@@ -5132,8 +5176,7 @@ gdk_window_process_updates_internal (GdkWindow *window)
       GdkRegion *update_area = private->update_area;
       private->update_area = NULL;
 
-      if (_gdk_event_func && gdk_window_is_viewable (window)  &&
-	  private->window_type != GDK_WINDOW_FOREIGN)
+      if (_gdk_event_func && gdk_window_is_viewable (window))
 	{
 	  GdkRegion *expose_region;
 	  gboolean end_implicit;
@@ -6837,7 +6880,7 @@ gdk_window_hide (GdkWindow *window)
                                             _gdk_windowing_window_get_next_serial (display),
                                             window,
                                             TRUE))
-            gdk_display_device_ungrab (display, device, GDK_CURRENT_TIME);
+            gdk_device_ungrab (device, GDK_CURRENT_TIME);
         }
 
       private->state = GDK_WINDOW_STATE_WITHDRAWN;
@@ -9954,7 +9997,7 @@ gdk_pointer_grab (GdkWindow *	  window,
                                         window,
                                         native,
                                         owner_events,
-                                        event_mask,
+                                        get_native_grab_event_mask (event_mask),
                                         confine_to,
                                         cursor,
                                         time);
@@ -10455,6 +10498,7 @@ proxy_button_event (GdkEvent *source_event,
 						       &toplevel_x, &toplevel_y);
 
   if (type == GDK_BUTTON_PRESS &&
+      !source_event->any.send_event &&
       _gdk_display_has_device_grab (display, device, serial) == NULL)
     {
       pointer_window =
@@ -10677,6 +10721,7 @@ _gdk_windowing_got_event (GdkDisplay *display,
   if (_gdk_native_windows)
     {
       if (event->type == GDK_BUTTON_PRESS &&
+	  !event->any.send_event &&
 	  _gdk_display_has_device_grab (display, device, serial) == NULL)
 	{
 	  _gdk_display_add_device_grab  (display,
@@ -10691,7 +10736,8 @@ _gdk_windowing_got_event (GdkDisplay *display,
                                          TRUE);
 	  _gdk_display_device_grab_update (display, device, serial);
 	}
-      if (event->type == GDK_BUTTON_RELEASE)
+      if (event->type == GDK_BUTTON_RELEASE &&
+	  !event->any.send_event)
 	{
 	  button_release_grab =
             _gdk_display_has_device_grab (display, device, serial);
@@ -10811,7 +10857,8 @@ _gdk_windowing_got_event (GdkDisplay *display,
     unlink_event = proxy_button_event (event,
 				       serial);
 
-  if (event->type == GDK_BUTTON_RELEASE)
+  if (event->type == GDK_BUTTON_RELEASE &&
+      !event->any.send_event)
     {
       button_release_grab =
 	_gdk_display_has_device_grab (display, device, serial);

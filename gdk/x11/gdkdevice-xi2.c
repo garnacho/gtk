@@ -75,7 +75,8 @@ static void          gdk_device_xi2_ungrab (GdkDevice     *device,
 static GdkWindow * gdk_device_xi2_window_at_position (GdkDevice       *device,
                                                       gint            *win_x,
                                                       gint            *win_y,
-                                                      GdkModifierType *mask);
+                                                      GdkModifierType *mask,
+                                                      gboolean         get_toplevel);
 static void  gdk_device_xi2_select_window_events (GdkDevice    *device,
                                                   GdkWindow    *window,
                                                   GdkEventMask  event_mask);
@@ -359,7 +360,8 @@ static GdkWindow *
 gdk_device_xi2_window_at_position (GdkDevice       *device,
                                    gint            *win_x,
                                    gint            *win_y,
-                                   GdkModifierType *mask)
+                                   GdkModifierType *mask,
+                                   gboolean         get_toplevel)
 {
   GdkDeviceXI2Private *priv;
   GdkDisplay *display;
@@ -413,6 +415,11 @@ gdk_device_xi2_window_at_position (GdkDevice       *device,
                       &button_state,
                       &mod_state,
                       &group_state);
+
+      if (get_toplevel &&
+          (window = gdk_window_lookup_for_display (display, last)) != NULL &&
+          GDK_WINDOW_TYPE (window) != GDK_WINDOW_FOREIGN)
+        break;
     }
 
   gdk_x11_display_ungrab (display);

@@ -1231,7 +1231,7 @@ gtk_entry_class_init (GtkEntryClass *class)
                                                                  GTK_PARAM_READABLE));
 
   /**
-   * GtkEntry::progress-border:
+   * GtkEntry:progress-border:
    *
    * The border around the progress bar in the entry.
    *
@@ -1245,7 +1245,7 @@ gtk_entry_class_init (GtkEntryClass *class)
                                                                GTK_PARAM_READABLE));
   
   /**
-   * GtkEntry::invisible-char:
+   * GtkEntry:invisible-char:
    *
    * The invisible character is used when masking entry contents (in
    * \"password mode\")"). When it is not explicitly set with the
@@ -1256,7 +1256,7 @@ gtk_entry_class_init (GtkEntryClass *class)
    * This style property allows the theme to prepend a character
    * to the list of candidates.
    *
-   * Since: 2.22
+   * Since: 2.18
    */
   gtk_widget_class_install_style_property (widget_class,
                                            g_param_spec_unichar ("invisible-char",
@@ -8114,6 +8114,8 @@ gtk_entry_get_icon_at_pos (GtkEntry *entry,
  * #GtkWidget::drag-begin signal to set a different icon. Note that you 
  * have to use g_signal_connect_after() to ensure that your signal handler
  * gets executed after the default handler.
+ *
+ * Since: 2.16
  */
 void
 gtk_entry_set_icon_drag_source (GtkEntry             *entry,
@@ -8153,6 +8155,8 @@ gtk_entry_set_icon_drag_source (GtkEntry             *entry,
  *
  * Returns: index of the icon which is the source of the current
  *          DND operation, or -1.
+ *
+ * Since: 2.16
  */
 gint
 gtk_entry_get_current_icon_drag_source (GtkEntry *entry)

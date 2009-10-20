@@ -2077,7 +2077,8 @@ GdkWindow *
 _gdk_windowing_window_at_pointer (GdkDisplay *display,
                                   gint       *win_x,
 				  gint       *win_y,
-                                  GdkModifierType *mask)
+                                  GdkModifierType *mask,
+                                  gboolean get_toplevel)
 {
   GdkWindow *retval;
   gint       wx, wy;
@@ -2099,6 +2100,26 @@ _gdk_windowing_window_at_pointer (GdkDisplay *display,
   if (win_y)
     *win_y = wy;
 
+  if (get_toplevel)
+    {
+      GdkWindowObject *w = (GdkWindowObject *)retval;
+      /* Requested toplevel, find it. */
+      /* TODO: This can be implemented more efficient by never
+	 recursing into children in the first place */
+      if (w)
+	{
+	  /* Convert to toplevel */
+	  while (w->parent != NULL &&
+		 w->parent->window_type != GDK_WINDOW_ROOT)
+	    {
+	      *win_x += w->x;
+	      *win_y += w->y;
+	      w = w->parent;
+	    }
+	  retval = (GdkWindow *)w;
+	}
+    }
+
   return retval;
 }
 
@@ -2117,7 +2138,8 @@ _gdk_windowing_get_pointer (GdkDisplay       *display,
   gdk_directfb_window_get_pointer (_gdk_windowing_window_at_pointer (display,
                                                                      NULL,
                                                                      NULL,
-                                                                     NULL),
+                                                                     NULL,
+                                                                     FALSE),
                                    x, y, mask);
 }
 

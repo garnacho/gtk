@@ -160,8 +160,6 @@ struct _GtkIconViewPrivate
 
   gint tooltip_column;
 
-  guint draw_focus : 1;
-
   /* Drag-and-drop. */
   GdkModifierType start_button_mask;
   gint pressed_button;
@@ -186,7 +184,9 @@ struct _GtkIconViewPrivate
   guint empty_view_drop :1;
 
   guint ctrl_pressed : 1;
-  guint shift_pressed : 1;  
+  guint shift_pressed : 1;
+
+  guint draw_focus : 1;
 };
 
 /* Signals */
@@ -3469,6 +3469,9 @@ gtk_icon_view_get_item_at_coords (GtkIconView          *icon_view,
   GList *items, *l;
   GdkRectangle box;
 
+  if (cell_at_pos)
+    *cell_at_pos = NULL;
+
   for (items = icon_view->priv->items; items; items = items->next)
     {
       GtkIconViewItem *item = items->data;
@@ -3483,12 +3486,12 @@ gtk_icon_view_get_item_at_coords (GtkIconView          *icon_view,
 	      for (l = icon_view->priv->cell_list; l; l = l->next)
 		{
 		  GtkIconViewCellInfo *info = (GtkIconViewCellInfo *)l->data;
-		  
+
 		  if (!info->cell->visible)
 		    continue;
-		  
+
 		  gtk_icon_view_get_cell_box (icon_view, item, info, &box);
-		  
+
 		  if ((x >= box.x && x <= box.x + box.width &&
 		       y >= box.y && y <= box.y + box.height) ||
 		      (x >= box.x  &&
@@ -3498,13 +3501,10 @@ gtk_icon_view_get_item_at_coords (GtkIconView          *icon_view,
 		    {
 		      if (cell_at_pos)
 			*cell_at_pos = info;
-		      
+
 		      return item;
 		    }
 		}
-
-	      if (cell_at_pos)
-		*cell_at_pos = NULL;
 
 	      if (only_in_cell)
 		return NULL;

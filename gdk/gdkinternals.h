@@ -186,7 +186,6 @@ typedef struct
 
   guint activated : 1;
   guint implicit_ungrab : 1;
-  guint grab_one_pointer_release_event : 1;
 } GdkDeviceGrabInfo;
 
 typedef struct _GdkInputWindow GdkInputWindow;
@@ -477,7 +476,8 @@ GdkWindow* _gdk_windowing_window_at_device_position  (GdkDisplay       *display,
                                                       GdkDevice        *device,
                                                       gint             *win_x,
                                                       gint             *win_y,
-                                                      GdkModifierType  *mask);
+                                                      GdkModifierType  *mask,
+                                                      gboolean          get_toplevel);
 GdkGrabStatus _gdk_windowing_device_grab     (GdkDevice        *device,
                                               GdkWindow        *window,
 					      GdkWindow        *native,

@@ -1,3 +1,133 @@
+Overview of Changes from GTK+ 2.18.1 to 2.18.2
+==============================================
+
+* GTK+ now ignores SIGPIPE in gtk_init(). Previously
+  this was done deep in the lpr printbackend.
+
+* Fix compilation of the DirectFB backend.
+
+* Bugs fixed:
+ 597386 Cannot click buttons more than once...
+ 588059 sometimes notification icons are not visible with csw
+
+* Updated translations:
+ Italian
+ Japanese
+ Serbian
+
+
+Overview of Changes from GTK+ 2.18.0 to 2.18.1
+==============================================
+
+* Client-side Windows:
+ - Fix a problem with the F-Spot screensaver
+ - Request native events that are necessary for grab emulation
+ - Fixes for input device and extended input event handling
+ - Allow up to 255 buttons in extended input events
+
+* OS X:
+ - Improve handling of multi-monitor setups
+ - Basic DND works
+ - Other improvements
+
+* Filechooser:
+ - Support Tracker 0.7 in the search code
+
+* Bugs fixed:
+ 596423 Landscape pages are the wrong way around
+ 588449 DnD doesn't work on GDK/Quartz
+ 596080 Mention "gtk-tooltip" in gtk_widget_set_tooltip_window
+ 596580 Blank rows in entry autocompletion
+ 588649 extended input events sent to widgets that didn't...
+ 596081 Update tracker support for version 0.7
+ 596345 clicking empty space in backgrounds...
+ 596494 New property "cursor" in 2.18's GdkWindow with wrong...
+ 596012 popup menu position is horribly off on gdk quartz...
+ 596250 Gdkcursor-quartz.c doesn't implement GDK_BLANK_CURSOR
+ 586207 Printing dialog with a CUPS printer connected...
+
+* Translation updates:
+ Assamese
+ British English
+ Czech
+ Estonian
+ French
+ Galician
+ German
+ Hungarian
+ Slovenian
+ Spanish
+ Swedish
+
+
+Overview of Changes from GTK+ 2.17.11 to 2.18.0
+===============================================
+
+* Add GtkTreeModelFilter testsuite and fix multiple bugs
+
+* Client-side windows:
+ - Fix issues around recursion and gdk_window_process_updates
+ - Fix issues with grabs and cursors
+ - Handle window hierarchy and geometry changes in expose handlers
+ - New function, gdk_window_flush, that may be needed in certain
+   situations
+ - Automatically flush windows when doing non-double-buffered exposes
+
+* Quartz backend:
+ - Fix various 'stuck UI' issues
+ - Fix the size of the root window
+
+* Bugs fixed:
+ 588455 run application broken when setting background color...
+ 346800 Rework sort/filter models to use indices to parents
+ 593678 select "Manage Custom Sizes" from print dialog hangs gedit
+ 594652 gtk printer dialog does not understand boolean printer options
+ 594668 Add new Xorg keysyms
+ 591583 Padre (a wxPerl+Gtk IDE) hangs when editing Perl code...
+ 594600 Windows only allows 64-character system-tray tooltips
+ 594679 Fix warning in testwindows.c
+ 594880 Drawing issues in ExoIconView
+ 593507 AbiWord's main drawing area not exposed properly
+ 594913 is_composited race ...
+ 594738 Windows often do not respond to events on dual-head
+ 503776 crash when trying to print to non-existent lpr printer
+ 595599 Don't focus unmapped radio buttons
+ 595790 Segfault in gtkiconfactory.c on NULL GError
+ 588649 extended input events sent to widgets that didn't...
+ 550939 GtkFileChooser listbox does not refresh selection
+
+* New deprecation:
+ gdk_event_get_graphics_exposes has been deprecated
+
+* Updated translations:
+ Afrikaans
+ Assamese
+ Bengali India
+ Brazilian Portuguese
+ British English
+ Catalan
+ Danish
+ Dutch
+ German
+ Greek
+ Gujarati
+ Hindi
+ Italian
+ Japanese
+ Lithuanian
+ Maithili
+ Malayalam
+ Marathi
+ Norwegian bokmål
+ Oriya
+ Polish
+ Romanian
+ Simplified Chinese
+ Slovenian
+ Traditional Chinese
+ Ukrainian
+
+
 Overview of Changes from GTK+ 2.17.10 to 2.17.11
 ================================================
 

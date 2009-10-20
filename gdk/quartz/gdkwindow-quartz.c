@@ -348,11 +348,29 @@ gdk_window_impl_quartz_end_paint (GdkPaintable *paintable)
 }
 
 void
+_gdk_quartz_window_set_needs_display_in_rect (GdkWindow    *window,
+                                              GdkRectangle *rect)
+{
+  GdkWindowObject *private;
+  GdkWindowImplQuartz *impl;
+
+  private = GDK_WINDOW_OBJECT (window);
+  impl = GDK_WINDOW_IMPL_QUARTZ (private->impl);
+
+  if (!impl->needs_display_region)
+    impl->needs_display_region = gdk_region_new ();
+
+  gdk_region_union_with_rect (impl->needs_display_region, rect);
+
+  [impl->view setNeedsDisplayInRect:NSMakeRect (rect->x, rect->y,
+                                                rect->width, rect->height)];
+
+}
+
+void
 _gdk_windowing_window_process_updates_recurse (GdkWindow *window,
                                                GdkRegion *region)
 {
-  GdkWindowObject *private = (GdkWindowObject *)window;
-  GdkWindowImplQuartz *impl = (GdkWindowImplQuartz *)private->impl;
   int i, n_rects;
   GdkRectangle *rects;
 
@@ -389,10 +407,7 @@ _gdk_windowing_window_process_updates_recurse (GdkWindow *window,
   gdk_region_get_rectangles (region, &rects, &n_rects);
 
   for (i = 0; i < n_rects; i++)
-    {
-      [impl->view setNeedsDisplayInRect:NSMakeRect (rects[i].x, rects[i].y,
-                                                    rects[i].width, rects[i].height)];
-    }
+    _gdk_quartz_window_set_needs_display_in_rect (window, &rects[i]);
 
   g_free (rects);
 
@@ -639,9 +654,16 @@ _gdk_quartz_window_is_ancestor (GdkWindow *ancestor,
 gint 
 _gdk_quartz_window_get_inverted_screen_y (gint y)
 {
-  NSRect rect = [[NSScreen mainScreen] frame];
+  int index;
+  GdkRectangle gdk_rect;
+  NSScreen *main_screen = [NSScreen mainScreen];
+  NSRect rect = [main_screen frame];
 
-  return rect.size.height - y;
+  index = [[NSScreen screens] indexOfObject:main_screen];
+
+  gdk_screen_get_monitor_geometry (_gdk_screen, index, &gdk_rect);
+
+  return gdk_rect.height - y + rect.origin.y + gdk_rect.y;
 }
 
 static GdkWindow *
@@ -732,13 +754,76 @@ _gdk_quartz_window_find_child (GdkWindow *window,
   return NULL;
 }
 
+
+static void
+generate_motion_event (GdkWindow *window)
+{
+  NSPoint point;
+  NSPoint screen_point;
+  NSWindow *nswindow;
+  GdkQuartzView *view;
+  GdkWindowObject *private;
+  GdkEvent *event;
+  gint x, y, x_root, y_root;
+  gdouble xx, yy;
+  GList *node;
+  GdkWindow *pointer_window;
+
+  event = gdk_event_new (GDK_MOTION_NOTIFY);
+  event->any.window = NULL;
+  event->any.send_event = TRUE;
+
+  private = (GdkWindowObject *)window;
+  nswindow = ((GdkWindowImplQuartz *)private->impl)->toplevel;
+  view = (GdkQuartzView *)[nswindow contentView];
+
+  screen_point = [NSEvent mouseLocation];
+
+  x_root = screen_point.x;
+  y_root = _gdk_quartz_window_get_inverted_screen_y (screen_point.y);
+
+  point = [nswindow convertScreenToBase:screen_point];
+
+  x = point.x;
+  y = private->height - point.y;
+
+  pointer_window = _gdk_window_find_descendant_at (window, x, y,
+                                                   &xx, &yy);
+
+  event->any.type = GDK_MOTION_NOTIFY;
+  event->motion.window = window;
+  event->motion.time = GDK_CURRENT_TIME;
+  event->motion.x = x;
+  event->motion.y = y;
+  event->motion.x_root = x_root;
+  event->motion.y_root = y_root;
+  /* FIXME event->axes */
+  event->motion.state = 0;
+  event->motion.is_hint = FALSE;
+  event->motion.device = _gdk_display->core_pointer;
+
+  if (event->any.window)
+    g_object_ref (event->any.window);
+
+  node = _gdk_event_queue_append (gdk_display_get_default (), event);
+  _gdk_windowing_got_event (gdk_display_get_default (), node, event, 0);
+}
+
 void
 _gdk_quartz_window_did_become_main (GdkWindow *window)
 {
   main_window_stack = g_slist_remove (main_window_stack, window);
 
   if (GDK_WINDOW_OBJECT (window)->window_type != GDK_WINDOW_TEMP)
-    main_window_stack = g_slist_prepend (main_window_stack, window);
+    {
+      main_window_stack = g_slist_prepend (main_window_stack, window);
+
+      /* We just became the active window, send a motion-notify
+       * event so things like highlights get set up correctly.
+       * This motion-notify is sent to the key window.
+       */
+      generate_motion_event (window);
+    }
 
   clear_toplevel_order ();
 }
@@ -945,7 +1030,6 @@ _gdk_windowing_window_init (void)
   GdkWindowObject *private;
   GdkWindowImplQuartz *impl;
   GdkDrawableImplQuartz *drawable_impl;
-  NSRect rect;
 
   g_assert (_gdk_root == NULL);
 
@@ -1294,12 +1378,7 @@ move_resize_window_internal (GdkWindow *window,
               gdk_region_get_rectangles (expose_region, &rects, &n_rects);
 
               for (n = 0; n < n_rects; ++n)
-                {
-                  [impl->view setNeedsDisplayInRect:NSMakeRect (rects[n].x,
-                                                                rects[n].y,
-                                                                rects[n].width,
-                                                                rects[n].height)];
-                }
+                _gdk_quartz_window_set_needs_display_in_rect (window, &rects[n]);
 
               g_free (rects);
             }
@@ -1859,7 +1938,8 @@ GdkWindow *
 _gdk_windowing_window_at_pointer (GdkDisplay      *display,
 				  gint            *win_x,
 				  gint            *win_y,
-                                  GdkModifierType *mask)
+                                  GdkModifierType *mask,
+				  gboolean         get_toplevel)
 {
   GdkWindow *found_window;
   gint x, y;
@@ -1896,6 +1976,26 @@ _gdk_windowing_window_at_pointer (GdkDisplay      *display,
 
   if (mask)
     *mask = tmp_mask;
+
+  if (get_toplevel)
+    {
+      GdkWindowObject *w = (GdkWindowObject *)found_window;
+      /* Requested toplevel, find it. */
+      /* TODO: This can be implemented more efficient by never
+	 recursing into children in the first place */
+      if (w)
+	{
+	  /* Convert to toplevel */
+	  while (w->parent != NULL &&
+		 w->parent->window_type != GDK_WINDOW_ROOT)
+	    {
+	      *win_x += w->x;
+	      *win_y += w->y;
+	      w = w->parent;
+	    }
+	  found_window = (GdkWindow *)w;
+	}
+    }
 
   return found_window;
 }

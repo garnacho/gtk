@@ -35,6 +35,8 @@ typedef struct
 } GdkWindowInputInfo;
 
 static void gdk_device_xi_constructed  (GObject *object);
+static void gdk_device_xi_dispose      (GObject *object);
+
 static void gdk_device_xi_set_property (GObject      *object,
                                         guint         prop_id,
                                         const GValue *value,
@@ -84,7 +86,8 @@ static void          gdk_device_xi_ungrab   (GdkDevice    *device,
 static GdkWindow* gdk_device_xi_window_at_position (GdkDevice       *device,
                                                     gint            *win_x,
                                                     gint            *win_y,
-                                                    GdkModifierType *mask);
+                                                    GdkModifierType *mask,
+                                                    gboolean         get_toplevel);
 
 static void gdk_device_xi_select_window_events (GdkDevice    *device,
                                                 GdkWindow    *window,
@@ -206,6 +209,12 @@ gdk_device_xi_dispose (GObject *object)
     {
       XCloseDevice (GDK_DISPLAY_XDISPLAY (display), device_xi->xdevice);
       device_xi->xdevice = NULL;
+    }
+
+  if (device_xi->axis_data)
+    {
+      g_free (device_xi->axis_data);
+      device_xi->axis_data = NULL;
     }
 
   G_OBJECT_CLASS (gdk_device_xi_parent_class)->dispose (object);
@@ -354,56 +363,17 @@ find_events (GdkDevice    *device,
         classes[i++] = class;
     }
 
-  if (mask & GDK_POINTER_MOTION_MASK)
-    {
-      DeviceMotionNotify (device_xi->xdevice, device_xi->motion_notify_type, class);
-      if (class != 0)
-        classes[i++] = class;
-    }
-  else if (mask & (GDK_BUTTON1_MOTION_MASK | GDK_BUTTON2_MOTION_MASK |
-                   GDK_BUTTON3_MOTION_MASK | GDK_BUTTON_MOTION_MASK |
-                   GDK_POINTER_MOTION_HINT_MASK))
+  if (mask & (GDK_POINTER_MOTION_MASK |
+              GDK_BUTTON1_MOTION_MASK | GDK_BUTTON2_MOTION_MASK |
+              GDK_BUTTON3_MOTION_MASK | GDK_BUTTON_MOTION_MASK))
     {
       /* Make sure device->motionnotify_type is set */
       DeviceMotionNotify (device_xi->xdevice, device_xi->motion_notify_type, class);
-    }
-
-  if (mask & GDK_BUTTON1_MOTION_MASK)
-    {
-      DeviceButton1Motion (device_xi->xdevice, 0, class);
       if (class != 0)
-        classes[i++] = class;
-    }
-
-  if (mask & GDK_BUTTON2_MOTION_MASK)
-    {
-      DeviceButton2Motion (device_xi->xdevice, 0, class);
+	  classes[i++] = class;
+      DeviceStateNotify (device_xi->xdevice, device_xi->state_notify_type, class);
       if (class != 0)
-        classes[i++] = class;
-    }
-
-  if (mask & GDK_BUTTON3_MOTION_MASK)
-    {
-      DeviceButton3Motion (device_xi->xdevice, 0, class);
-      if (class != 0)
-        classes[i++] = class;
-    }
-
-  if (mask & GDK_BUTTON_MOTION_MASK)
-    {
-      DeviceButtonMotion (device_xi->xdevice, 0, class);
-      if (class != 0)
-        classes[i++] = class;
-    }
-
-  if (mask & GDK_POINTER_MOTION_HINT_MASK)
-    {
-      /* We'll get into trouble if the macros change, but at
-       * least we'll know about it, and we avoid warnings now
-       */
-      DevicePointerMotionHint (device_xi->xdevice, 0, class);
-      if (class != 0)
-        classes[i++] = class;
+	  classes[i++] = class;
     }
 
   if (mask & GDK_KEY_PRESS_MASK)
@@ -497,7 +467,8 @@ static GdkWindow*
 gdk_device_xi_window_at_position (GdkDevice       *device,
                                   gint            *win_x,
                                   gint            *win_y,
-                                  GdkModifierType *mask)
+                                  GdkModifierType *mask,
+                                  gboolean         get_toplevel)
 {
   return NULL;
 }
@@ -573,6 +544,25 @@ gdk_device_xi_get_window_info (GdkWindow *window,
 }
 
 void
+gdk_device_xi_update_axes (GdkDevice *device,
+                           gint       axes_count,
+                           gint       first_axis,
+                           gint      *axis_data)
+{
+  GdkDeviceXI *device_xi;
+  int i;
+
+  device_xi = GDK_DEVICE_XI (device);
+  g_return_if_fail (first_axis >= 0 && first_axis + axes_count <= device->num_axes);
+
+  if (!device_xi->axis_data)
+    device_xi->axis_data = g_new0 (gint, device->num_axes);
+
+  for (i = 0; i < axes_count; i++)
+    device_xi->axis_data[first_axis + i] = axis_data[i];
+}
+
+void
 gdk_device_xi_translate_axes (GdkDevice *device,
                               GdkWindow *window,
                               gint      *axis_data,
@@ -580,11 +570,13 @@ gdk_device_xi_translate_axes (GdkDevice *device,
                               gdouble   *x,
                               gdouble   *y)
 {
+  GdkDeviceXI *device_xi;
   GdkWindow *impl_window;
   gdouble root_x, root_y;
   gdouble temp_x, temp_y;
   gint i;
 
+  device_xi = GDK_DEVICE_XI (device);
   impl_window = _gdk_window_get_impl_window (window);
   temp_x = temp_y = 0;
 

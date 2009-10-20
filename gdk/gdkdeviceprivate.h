@@ -81,7 +81,8 @@ struct _GdkDeviceClass
   GdkWindow * (* window_at_position) (GdkDevice       *device,
                                       gint            *win_x,
                                       gint            *win_y,
-                                      GdkModifierType *mask);
+                                      GdkModifierType *mask,
+                                      gboolean         get_toplevel);
   void (* select_window_events)      (GdkDevice       *device,
                                       GdkWindow       *window,
                                       GdkEventMask     event_mask);

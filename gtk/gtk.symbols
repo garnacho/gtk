@@ -670,6 +670,13 @@ gtk_cell_renderer_spin_new
 #endif
 #endif
 
+#if IN_HEADER(__GTK_CELL_RENDERER_SPINNER_H__)
+#if IN_FILE(__GTK_CELL_RENDERER_SPINNER_C__)
+gtk_cell_renderer_spinner_get_type G_GNUC_CONST
+gtk_cell_renderer_spinner_new
+#endif
+#endif
+
 #if IN_HEADER(__GTK_CELL_RENDERER_PROGRESS_H__)
 #if IN_FILE(__GTK_CELL_RENDERER_PROGRESS_C__)
 gtk_cell_renderer_progress_get_type G_GNUC_CONST
@@ -1126,6 +1133,7 @@ gtk_dialog_add_buttons G_GNUC_NULL_TERMINATED
 gtk_dialog_get_action_area
 gtk_dialog_get_content_area
 gtk_dialog_get_has_separator
+gtk_dialog_get_widget_for_response
 gtk_dialog_get_response_for_widget
 gtk_dialog_get_type G_GNUC_CONST
 gtk_dialog_new
@@ -1276,6 +1284,7 @@ gtk_paint_resize_grip
 gtk_paint_shadow
 gtk_paint_shadow_gap
 gtk_paint_slider
+gtk_paint_spinner
 gtk_paint_tab
 gtk_paint_vline
 gtk_border_new G_GNUC_MALLOC
@@ -2420,8 +2429,10 @@ gtk_main_quit
 
 #if IN_HEADER(__GTK_INPUTDIALOG_H__)
 #if IN_FILE(__GTK_INPUTDIALOG_C__)
+#ifndef GTK_DISABLE_DEPRECATED
 gtk_input_dialog_get_type G_GNUC_CONST
 gtk_input_dialog_new
+#endif
 #endif
 #endif
 
@@ -3802,6 +3813,15 @@ gtk_spin_button_update
 #endif
 #endif
 
+#if IN_HEADER(__GTK_SPINNER_H__)
+#if IN_FILE(__GTK_SPINNER_C__)
+gtk_spinner_get_type G_GNUC_CONST
+gtk_spinner_new
+gtk_spinner_start
+gtk_spinner_stop
+#endif
+#endif
+
 #if IN_HEADER(__GTK_STATUSBAR_H__)
 #if IN_FILE(__GTK_STATUSBAR_C__)
 gtk_statusbar_get_context_id
@@ -4408,6 +4428,7 @@ gtk_tooltip_set_custom
 gtk_tooltip_set_icon
 gtk_tooltip_set_icon_from_stock
 gtk_tooltip_set_icon_from_icon_name
+gtk_tooltip_set_icon_from_gicon
 gtk_tooltip_set_markup
 gtk_tooltip_set_text
 gtk_tooltip_set_tip_area

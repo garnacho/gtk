@@ -3585,6 +3585,24 @@ gtk_spin_button_get_type
 </SECTION>
 
 <SECTION>
+<FILE>gtkspinner</FILE>
+<TITLE>GtkSpinner</TITLE>
+GtkSpinner
+gtk_spinner_new
+gtk_spinner_start
+gtk_spinner_stop
+<SUBSECTION Standard>
+GTK_SPINNER
+GTK_IS_SPINNER
+GTK_TYPE_SPINNER
+GTK_SPINNER_CLASS
+GTK_IS_SPINER_CLASS
+GTK_SPINNER_GET_CLASS
+<SUBSECTION Private>
+gtk_spinner_get_type
+</SECTION>
+
+<SECTION>
 <FILE>gtkstatusbar</FILE>
 <TITLE>GtkStatusbar</TITLE>
 GtkStatusbar
@@ -4445,6 +4463,7 @@ gtk_tooltip_set_text
 gtk_tooltip_set_icon
 gtk_tooltip_set_icon_from_stock
 gtk_tooltip_set_icon_from_icon_name
+gtk_tooltip_set_icon_from_gicon
 gtk_tooltip_set_custom
 gtk_tooltip_trigger_tooltip_query
 gtk_tooltip_set_tip_area
@@ -5103,6 +5122,23 @@ GTK_CELL_RENDERER_SPIN_GET_CLASS
 <SUBSECTION Private>
 GtkCellRendererSpinPrivate
 gtk_cell_renderer_spin_get_type
+</SECTION>
+
+<SECTION>
+<FILE>gtkcellrendererspinner</FILE>
+<TITLE>GtkCellRendererSpinner</TITLE>
+GtkCellRendererSpinner
+gtk_cell_renderer_spinner_new
+<SUBSECTION Standard>
+GTK_TYPE_CELL_RENDERER_SPINNER
+GTK_CELL_RENDERER_SPINNER
+GTK_CELL_RENDERER_SPINNER_CLASS
+GTK_IS_CELL_RENDERER_SPINNER
+GTK_IS_CELL_RENDERER_SPINNER_CLASS
+GTK_CELL_RENDERER_SPINNER_GET_CLASS
+<SUBSECTION Private>
+GtkCellRendererSpinnerPrivate
+gtk_cell_renderer_spinner_get_type
 </SECTION>
 
 <SECTION>
@@ -5928,6 +5964,7 @@ gtk_paint_polygon
 gtk_paint_shadow
 gtk_paint_shadow_gap
 gtk_paint_slider
+gtk_paint_spinner
 gtk_paint_string
 gtk_paint_tab
 gtk_paint_vline

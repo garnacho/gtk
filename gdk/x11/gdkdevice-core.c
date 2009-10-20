@@ -60,7 +60,8 @@ static void          gdk_device_core_ungrab (GdkDevice     *device,
 static GdkWindow * gdk_device_core_window_at_position (GdkDevice       *device,
                                                        gint            *win_x,
                                                        gint            *win_y,
-                                                       GdkModifierType *mask);
+                                                       GdkModifierType *mask,
+                                                       gboolean         get_toplevel);
 static void      gdk_device_core_select_window_events (GdkDevice       *device,
                                                        GdkWindow       *window,
                                                        GdkEventMask     event_mask);
@@ -377,7 +378,8 @@ static GdkWindow *
 gdk_device_core_window_at_position (GdkDevice       *device,
                                     gint            *win_x,
                                     gint            *win_y,
-                                    GdkModifierType *mask)
+                                    GdkModifierType *mask,
+                                    gboolean         get_toplevel)
 {
   GdkDisplay *display;
   GdkScreen *screen;
@@ -420,6 +422,11 @@ gdk_device_core_window_at_position (GdkDevice       *device,
                      &xroot_x, &xroot_y,
                      &xwin_x, &xwin_y,
                      &xmask);
+
+      if (get_toplevel &&
+          (window = gdk_window_lookup_for_display (display, last)) != NULL &&
+          GDK_WINDOW_TYPE (window) != GDK_WINDOW_FOREIGN)
+        break;
     }
 
   gdk_x11_display_ungrab (display);

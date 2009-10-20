@@ -653,7 +653,7 @@ gdk_device_get_axis (GdkDevice  *device,
  *         can be used if the time isn't known.
  *
  * Grabs the device so that all events coming from this device are passed to
- * this application until the device is ungrabbed with gdk_display_device_ungrab(),
+ * this application until the device is ungrabbed with gdk_device_ungrab(),
  * or the window becomes unviewable. This overrides any previous grab on the device
  * by this client.
  *
@@ -867,6 +867,7 @@ _gdk_device_translate_window_coord (GdkDevice *device,
   gdouble device_width, device_height;
   gdouble x_offset, y_offset;
   gdouble x_scale, y_scale;
+  gdouble x_min, y_min;
   gdouble x_resolution, y_resolution;
   gdouble device_aspect;
   gint window_width, window_height;
@@ -896,6 +897,22 @@ _gdk_device_translate_window_coord (GdkDevice *device,
 
   device_width = axis_info_x->max_value - axis_info_x->min_value;
   device_height = axis_info_y->max_value - axis_info_y->min_value;
+
+  if (device_width > 0)
+    x_min = axis_info_x->min_value;
+  else
+    {
+      device_width = gdk_screen_get_width (gdk_drawable_get_screen (window));
+      x_min = 0;
+    }
+
+  if (device_height > 0)
+    y_min = axis_info_y->min_value;
+  else
+    {
+      device_height = gdk_screen_get_height (gdk_drawable_get_screen (window));
+      y_min = 0;
+    }
 
   window_private = (GdkWindowObject *) window;
   gdk_drawable_get_size (window, &window_width, &window_height);
@@ -944,9 +961,9 @@ _gdk_device_translate_window_coord (GdkDevice *device,
   if (axis_value)
     {
       if (axis_info.use == GDK_AXIS_X)
-        *axis_value = x_offset + x_scale * (value - axis_info.min_value);
+        *axis_value = x_offset + x_scale * (value - x_min);
       else
-        *axis_value = y_offset + y_scale * (value - axis_info.min_value);
+        *axis_value = y_offset + y_scale * (value - y_min);
     }
 
   return TRUE;
