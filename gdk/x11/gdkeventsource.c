@@ -151,13 +151,14 @@ gdk_event_source_translate_event (GdkEventSource *event_source,
     }
 
   filter_window = gdk_event_source_get_filter_window (event_source, xevent);
-  event->any.window = g_object_ref (filter_window);
 
   if (filter_window)
     {
       /* Apply per-window filters */
       GdkWindowObject *filter_private = (GdkWindowObject *) filter_window;
       GdkFilterReturn result;
+
+      event->any.window = g_object_ref (filter_window);
 
       if (filter_private->filters)
 	{
