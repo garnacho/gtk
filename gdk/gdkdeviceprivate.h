@@ -88,8 +88,8 @@ struct _GdkDeviceClass
                                       GdkEventMask     event_mask);
 };
 
-void  _gdk_device_set_relative (GdkDevice *device,
-                                GdkDevice *relative);
+void  _gdk_device_set_associated_device (GdkDevice *device,
+                                         GdkDevice *relative);
 
 void  _gdk_device_reset_axes (GdkDevice   *device);
 guint _gdk_device_add_axis   (GdkDevice   *device,

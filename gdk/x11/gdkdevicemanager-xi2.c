@@ -306,8 +306,8 @@ relate_devices (gpointer key,
   device = g_hash_table_lookup (device_manager->id_table, key);
   relative = g_hash_table_lookup (device_manager->id_table, value);
 
-  _gdk_device_set_relative (device, relative);
-  _gdk_device_set_relative (relative, device);
+  _gdk_device_set_associated_device (device, relative);
+  _gdk_device_set_associated_device (relative, device);
 }
 
 static void

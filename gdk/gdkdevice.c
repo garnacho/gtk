@@ -45,7 +45,7 @@ struct _GdkDevicePrivate
 {
   GdkDeviceManager *device_manager;
   GdkDisplay *display;
-  GdkDevice *relative;
+  GdkDevice *associated;
   GdkDeviceType type;
   GArray *axes;
 };
@@ -68,7 +68,7 @@ enum {
   PROP_DISPLAY,
   PROP_DEVICE_MANAGER,
   PROP_NAME,
-  PROP_RELATIVE,
+  PROP_ASSOCIATED_DEVICE,
   PROP_TYPE,
   PROP_INPUT_SOURCE,
   PROP_INPUT_MODE,
@@ -116,10 +116,10 @@ gdk_device_class_init (GdkDeviceClass *klass)
                                                       GDK_DEVICE_TYPE_MASTER,
                                                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
   g_object_class_install_property (object_class,
-				   PROP_RELATIVE,
-				   g_param_spec_object ("relative",
-                                                        P_("Relative device"),
-                                                        P_("Corresponding pointer or keyboard to this device"),
+				   PROP_ASSOCIATED_DEVICE,
+				   g_param_spec_object ("associated-device",
+                                                        P_("Associated device"),
+                                                        P_("Associated pointer or keyboard to this device"),
                                                         GDK_TYPE_DEVICE,
                                                         G_PARAM_READABLE));
   g_object_class_install_property (object_class,
@@ -174,11 +174,11 @@ gdk_device_dispose (GObject *object)
   device = GDK_DEVICE (object);
   priv = GDK_DEVICE_GET_PRIVATE (device);
 
-  if (priv->relative)
+  if (priv->associated)
     {
-      _gdk_device_set_relative (priv->relative, NULL);
-      g_object_unref (priv->relative);
-      priv->relative = NULL;
+      _gdk_device_set_associated_device (priv->associated, NULL);
+      g_object_unref (priv->associated);
+      priv->associated = NULL;
     }
 
   if (priv->axes)
@@ -256,8 +256,8 @@ gdk_device_get_property (GObject    *object,
     case PROP_DEVICE_MANAGER:
       g_value_set_object (value, priv->device_manager);
       break;
-    case PROP_RELATIVE:
-      g_value_set_object (value, priv->relative);
+    case PROP_ASSOCIATED_DEVICE:
+      g_value_set_object (value, priv->associated);
       break;
     case PROP_NAME:
       g_value_set_string (value,
@@ -464,8 +464,24 @@ gdk_device_get_display (GdkDevice *device)
   return priv->display;
 }
 
+/**
+ * gdk_device_get_associated_device:
+ * @device: a #GdkDevice
+ *
+ * Returns the associated device to @device, if @device is of type
+ * %GDK_DEVICE_TYPE_MASTER, it will return the paired pointer or
+ * keyboard.
+ *
+ * If @device is of type %GDK_DEVICE_TYPE_SLAVE, it will return
+ * the master device to which @device is attached to.
+ *
+ * If @device is of type %GDK_DEVICE_TYPE_FLOATING, %NULL will be
+ * returned, as there is no associated device.
+ *
+ * Returns: The associated device, or %NULL
+ **/
 GdkDevice *
-gdk_device_get_relative (GdkDevice *device)
+gdk_device_get_associated_device (GdkDevice *device)
 {
   GdkDevicePrivate *priv;
 
@@ -473,31 +489,31 @@ gdk_device_get_relative (GdkDevice *device)
 
   priv = GDK_DEVICE_GET_PRIVATE (device);
 
-  return priv->relative;
+  return priv->associated;
 }
 
 void
-_gdk_device_set_relative (GdkDevice *device,
-                          GdkDevice *relative)
+_gdk_device_set_associated_device (GdkDevice *device,
+                                   GdkDevice *associated)
 {
   GdkDevicePrivate *priv;
 
   g_return_if_fail (GDK_IS_DEVICE (device));
-  g_return_if_fail (GDK_IS_DEVICE (relative));
+  g_return_if_fail (GDK_IS_DEVICE (associated));
 
   priv = GDK_DEVICE_GET_PRIVATE (device);
 
-  if (priv->relative == relative)
+  if (priv->associated == associated)
     return;
 
-  if (priv->relative)
+  if (priv->associated)
     {
-      g_object_unref (priv->relative);
-      priv->relative = NULL;
+      g_object_unref (priv->associated);
+      priv->associated = NULL;
     }
 
-  if (relative)
-    priv->relative = g_object_ref (relative);
+  if (associated)
+    priv->associated = g_object_ref (associated);
 }
 
 /**
