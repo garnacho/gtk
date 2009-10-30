@@ -22,7 +22,6 @@
 #include "gdkintl.h"
 #include "gdkx.h"
 
-#define BIT_IS_ON(ptr, bit) (((unsigned char *) (ptr))[(bit)>>3] & (1 << ((bit) & 7)))
 #define GDK_DEVICE_XI2_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), GDK_TYPE_DEVICE_XI2, GdkDeviceXI2Private))
 
 typedef struct GdkDeviceXI2Private GdkDeviceXI2Private;
@@ -532,7 +531,7 @@ gdk_device_xi2_translate_state (XIModifierState *mods_state,
 
       for (i = 0; i < len; i++)
         {
-          if (!BIT_IS_ON (buttons_state->mask, i))
+          if (!XIMaskIsSet (buttons_state->mask, i))
             continue;
 
           switch (i)
