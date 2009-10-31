@@ -64,11 +64,10 @@ libgdk_x11_la_SOURCES =    	\
 	xsettings-common.h	\
 	xsettings-common.c
 
-if XINPUT_2
-libgdk_x11_la_SOURCES += gdkdevicemanager-xi2.c gdkdevice-xi2.c
-else
 if XINPUT_XFREE
 libgdk_x11_la_SOURCES += gdkdevicemanager-xi.c gdkdevice-xi.c
+if XINPUT_2
+libgdk_x11_la_SOURCES += gdkdevicemanager-xi2.c gdkdevice-xi2.c
 endif
 endif
 

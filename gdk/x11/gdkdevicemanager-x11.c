@@ -21,31 +21,30 @@
 #include "gdkx.h"
 #include "gdkdevicemanager-core.h"
 
+#ifdef XINPUT_XFREE
+#include "gdkdevicemanager-xi.h"
 #ifdef XINPUT_2
-#  include "gdkdevicemanager-xi2.h"
-#else
-#  ifdef XINPUT_XFREE
-#    include "gdkdevicemanager-xi.h"
-#  endif
+#include "gdkdevicemanager-xi2.h"
+#endif
 #endif
 
 GdkDeviceManager *
 _gdk_device_manager_new (GdkDisplay *display)
 {
-  GdkDeviceManager *device_manager;
-  int opcode, firstevent, firsterror;
-  int major, minor;
-  Display *xdisplay;
-
   if (G_UNLIKELY (!g_getenv ("GDK_CORE_DEVICE_EVENTS")))
     {
 #if defined (XINPUT_2) || defined (XINPUT_XFREE)
+      int opcode, firstevent, firsterror;
+      Display *xdisplay;
+
       xdisplay = GDK_DISPLAY_XDISPLAY (display);
 
       if (XQueryExtension (xdisplay, "XInputExtension",
                            &opcode, &firstevent, &firsterror))
         {
-#if defined (XINPUT_2)
+#ifdef XINPUT_2
+          int major, minor;
+
           major = 2;
           minor = 0;
 
@@ -53,21 +52,19 @@ _gdk_device_manager_new (GdkDisplay *display)
             {
               GdkDeviceManagerXI2 *device_manager_xi2;
 
-              device_manager = g_object_new (GDK_TYPE_DEVICE_MANAGER_XI2,
-                                             "display", display,
-                                             NULL);
-
-              device_manager_xi2 = GDK_DEVICE_MANAGER_XI2 (device_manager);
+              device_manager_xi2 = g_object_new (GDK_TYPE_DEVICE_MANAGER_XI2,
+                                                 "display", display,
+                                                 NULL);
               device_manager_xi2->opcode = opcode;
 
-              return device_manager;
+              return GDK_DEVICE_MANAGER (device_manager_xi2);
             }
-#else
-          return g_object_new (GDK_TYPE_DEVICE_MANAGER_XI,
-                               "display", display,
-                               "event-base", firstevent,
-                               NULL);
-#endif
+          else
+#endif /* XINPUT_2 */
+            return g_object_new (GDK_TYPE_DEVICE_MANAGER_XI,
+                                 "display", display,
+                                 "event-base", firstevent,
+                                 NULL);
         }
 #endif /* XINPUT_2 || XINPUT_XFREE */
     }
