@@ -191,7 +191,6 @@ gtk_public_h_sources =          \
 	gtkcombobox.h		\
 	gtkcomboboxentry.h	\
 	gtkcontainer.h		\
-	gtkcurve.h		\
 	gtkdebug.h              \
 	gtkdevicegroup.h	\
 	gtkdialog.h		\
@@ -213,7 +212,6 @@ gtk_public_h_sources =          \
 	gtkfontbutton.h		\
 	gtkfontsel.h		\
 	gtkframe.h		\
-	gtkgamma.h		\
 	gtkgc.h			\
 	gtkhandlebox.h		\
 	gtkhbbox.h		\
@@ -447,7 +445,6 @@ gtk_base_c_sources =            \
 	gtkcombobox.c		\
 	gtkcomboboxentry.c	\
 	gtkcontainer.c		\
-	gtkcurve.c		\
 	gtkdevicegroup.c	\
 	gtkdialog.c		\
 	gtkdrawingarea.c	\
@@ -473,7 +470,6 @@ gtk_base_c_sources =            \
 	gtkfontbutton.c         \
 	gtkfontsel.c            \
 	gtkframe.c		\
-	gtkgamma.c		\
 	gtkgc.c			\
 	gtkhandlebox.c		\
 	gtkhbbox.c		\
@@ -635,7 +631,9 @@ gtk_public_h_sources += \
 	gtkclist.h		\
 	gtkcombo.h		\
 	gtkctree.h		\
+ 	gtkcurve.h		\
 	gtkfilesel.h		\
+ 	gtkgamma.h		\
 	gtkinputdialog.h	\
 	gtkitemfactory.h	\
 	gtklist.h		\
@@ -652,7 +650,9 @@ gtk_base_c_sources += \
 	gtkclist.c		\
 	gtkcombo.c		\
 	gtkctree.c		\
+	gtkcurve.c		\
 	gtkfilesel.c		\
+	gtkgamma.c		\
 	gtkitemfactory.c	\
 	gtklist.c		\
 	gtklistitem.c		\
@@ -917,8 +917,19 @@ if DISABLE_EXPLICIT_DEPS
 	$(SHELL) $(top_srcdir)/sanitize-la.sh $(DESTDIR)$(libdir)/$(gtktargetlib)
 endif
 
+if USE_QUARTZ
+install-mac-key-theme:
+	$(mkinstalldirs) $(DESTDIR)$(datadir)/themes/Mac/gtk-2.0-key
+	$(INSTALL_DATA) $(srcdir)/gtkrc.key.mac $(DESTDIR)$(datadir)/themes/Mac/gtk-2.0-key/gtkrc
+uninstall-mac-key-theme:
+	rm -f $(DESTDIR)$(datadir)/themes/Mac/gtk-2.0-key/gtkrc
+else
+install-mac-key-theme:
+uninstall-mac-key-theme:
+endif
+
 # Install a RC file for the default GTK+ theme, and key themes
-install-data-local: install-ms-lib install-def-file
+install-data-local: install-ms-lib install-def-file install-mac-key-theme
 	$(mkinstalldirs) $(DESTDIR)$(datadir)/themes/Raleigh/gtk-2.0
 	$(INSTALL_DATA) $(srcdir)/gtkrc.default $(DESTDIR)$(datadir)/themes/Raleigh/gtk-2.0/gtkrc
 	$(mkinstalldirs) $(DESTDIR)$(datadir)/themes/Default/gtk-2.0-key
@@ -926,7 +937,7 @@ install-data-local: install-ms-lib install-def-file
 	$(mkinstalldirs) $(DESTDIR)$(datadir)/themes/Emacs/gtk-2.0-key
 	$(INSTALL_DATA) $(srcdir)/gtkrc.key.emacs $(DESTDIR)$(datadir)/themes/Emacs/gtk-2.0-key/gtkrc
 
-uninstall-local: uninstall-ms-lib uninstall-def-file
+uninstall-local: uninstall-ms-lib uninstall-def-file uninstall-mac-key-theme
 	rm -f $(DESTDIR)$(datadir)/themes/Raleigh/gtk-2.0/gtkrc
 	rm -f $(DESTDIR)$(datadir)/themes/Default/gtk-2.0-key/gtkrc
 	rm -f $(DESTDIR)$(datadir)/themes/Emacs/gtk-2.0-key/gtkrc
@@ -1334,6 +1345,7 @@ EXTRA_DIST +=                   \
 	gtkrc.default		\
 	gtkrc.key.default	\
 	gtkrc.key.emacs		\
+	gtkrc.key.mac		\
 	makefile.msc		\
 	makefile.msc.in		\
 	makegtkalias.pl		\

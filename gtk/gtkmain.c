@@ -717,7 +717,6 @@ do_post_parse_initialization (int    *argc,
 
   /* do what the call to gtk_type_init() used to do */
   g_type_init ();
-  gtk_object_get_type ();
 
   _gtk_accel_map_init ();
   _gtk_rc_init ();
@@ -849,9 +848,9 @@ gtk_get_option_group (gboolean open_default_display)
 gboolean
 gtk_init_with_args (int            *argc,
 		    char         ***argv,
-		    char           *parameter_string,  
+		    const char     *parameter_string,
 		    GOptionEntry   *entries,
-		    char           *translation_domain,
+		    const char     *translation_domain,
 		    GError        **error)
 {
   GOptionContext *context;

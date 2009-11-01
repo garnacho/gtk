@@ -541,7 +541,9 @@ gtk_button_box_set_layout
 #if IN_HEADER(__GTK_BUTTON_H__)
 #if IN_FILE(__GTK_BUTTON_C__)
 gtk_button_clicked
+#ifndef GTK_DISABLE_DEPRECATED
 gtk_button_enter
+#endif
 gtk_button_get_alignment
 gtk_button_get_focus_on_click
 gtk_button_get_image
@@ -551,13 +553,17 @@ gtk_button_get_relief
 gtk_button_get_type G_GNUC_CONST
 gtk_button_get_use_stock
 gtk_button_get_use_underline
+#ifndef GTK_DISABLE_DEPRECATED
 gtk_button_leave
+#endif
 gtk_button_new
 gtk_button_new_from_stock
 gtk_button_new_with_label
 gtk_button_new_with_mnemonic
+#ifndef GTK_DISABLE_DEPRECATED
 gtk_button_pressed
 gtk_button_released
+#endif
 gtk_button_set_alignment
 gtk_button_set_focus_on_click
 gtk_button_set_image
@@ -1105,6 +1111,7 @@ gtk_ctree_unselect_recursive
 
 #if IN_HEADER(__GTK_CURVE_H__)
 #if IN_FILE(__GTK_CURVE_C__)
+#ifndef GTK_DISABLE_DEPRECATED
 gtk_curve_get_type G_GNUC_CONST
 gtk_curve_get_vector
 gtk_curve_new
@@ -1113,6 +1120,7 @@ gtk_curve_set_curve_type
 gtk_curve_set_gamma
 gtk_curve_set_range
 gtk_curve_set_vector
+#endif
 #endif
 #endif
 
@@ -1773,8 +1781,10 @@ gtk_frame_set_shadow_type
 
 #if IN_HEADER(__GTK_GAMMA_CURVE_H__)
 #if IN_FILE(__GTK_GAMMA_CURVE_C__)
+#ifndef GTK_DISABLE_DEPRECATED
 gtk_gamma_curve_get_type G_GNUC_CONST
 gtk_gamma_curve_new
+#endif
 #endif
 #endif
 
@@ -2631,7 +2641,9 @@ gtk_notebook_popup_enable
 gtk_notebook_prepend_page
 gtk_notebook_prepend_page_menu
 gtk_notebook_prev_page
+#ifndef GTK_DISABLE_DEPRECATED
 gtk_notebook_query_tab_label_packing
+#endif
 gtk_notebook_remove_page
 gtk_notebook_reorder_child
 gtk_notebook_set_current_page
@@ -2647,7 +2659,9 @@ gtk_notebook_set_scrollable
 gtk_notebook_set_show_border
 gtk_notebook_set_show_tabs
 gtk_notebook_set_tab_label
+#ifndef GTK_DISABLE_DEPRECATED
 gtk_notebook_set_tab_label_packing
+#endif
 gtk_notebook_set_tab_label_text
 gtk_notebook_set_tab_pos
 gtk_notebook_set_window_creation_hook
@@ -4910,6 +4924,7 @@ gtk_viewport_get_hadjustment
 gtk_viewport_get_shadow_type
 gtk_viewport_get_type G_GNUC_CONST
 gtk_viewport_get_vadjustment
+gtk_viewport_get_bin_window
 gtk_viewport_new
 gtk_viewport_set_hadjustment
 gtk_viewport_set_shadow_type

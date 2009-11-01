@@ -2414,7 +2414,7 @@ gtk_window_set_type_hint (GtkWindow           *window,
   GtkWindowPrivate *priv;
 
   g_return_if_fail (GTK_IS_WINDOW (window));
-  g_return_if_fail (!GTK_WIDGET_VISIBLE (window));
+  g_return_if_fail (!GTK_WIDGET_MAPPED (window));
 
   priv = GTK_WINDOW_GET_PRIVATE (window);
 
@@ -5753,7 +5753,7 @@ clamp_window_to_rectangle (gint               *x,
                            const GdkRectangle *rect)
 {
 #ifdef DEBUGGING_OUTPUT
-  g_print ("%s: %+d%+d %dx%d: %+d%+d: %dx%d", __FUNCTION__, rect->x, rect->y, rect->width, rect->height, *x, *y, w, h);
+  g_print ("%s: %+d%+d %dx%d: %+d%+d: %dx%d", G_STRFUNC, rect->x, rect->y, rect->width, rect->height, *x, *y, w, h);
 #endif
 
   /* If it is too large, center it. If it fits on the monitor but is
