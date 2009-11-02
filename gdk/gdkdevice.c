@@ -1018,12 +1018,20 @@ _gdk_device_translate_screen_coord (GdkDevice *device,
 
   if (axis_info.use == GDK_AXIS_X)
     {
-      scale = gdk_screen_get_width (gdk_drawable_get_screen (window)) / axis_width;
+      if (axis_width > 0)
+        scale = gdk_screen_get_width (gdk_drawable_get_screen (window)) / axis_width;
+      else
+        scale = 1;
+
       offset = - window_root_x - window_private->abs_x;
     }
   else
     {
-      scale = gdk_screen_get_height (gdk_drawable_get_screen (window)) / axis_width;
+      if (axis_width > 0)
+        scale = gdk_screen_get_height (gdk_drawable_get_screen (window)) / axis_width;
+      else
+        scale = 1;
+
       offset = - window_root_y - window_private->abs_y;
     }
 
