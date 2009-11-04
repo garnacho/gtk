@@ -170,14 +170,67 @@ gdk_device_xi2_get_state (GdkDevice       *device,
                           gdouble         *axes,
                           GdkModifierType *mask)
 {
-  /* FIXME: Axes are not being translated, there doesn't
-   * seem to be any function to get valuators state in XI2.
-   */
-  gdk_device_xi2_query_state (device, window,
-                              NULL, NULL,
-                              NULL, NULL,
-                              NULL, NULL,
-                              mask);
+  GdkDeviceXI2Private *priv;
+  GdkDisplay *display;
+  XIDeviceInfo *info;
+  gint i, j, ndevices;
+
+  priv = GDK_DEVICE_XI2_GET_PRIVATE (device);
+  display = gdk_device_get_display (device);
+
+  if (axes)
+    {
+      info = XIQueryDevice(GDK_DISPLAY_XDISPLAY (display),
+                           priv->device_id, &ndevices);
+
+      for (i = 0, j = 0; i < info->num_classes; i++)
+        {
+          XIAnyClassInfo *class_info = info->classes[i];
+          GdkAxisUse use;
+          gdouble value;
+
+          if (class_info->type != XIValuatorClass)
+            continue;
+
+          value = ((XIValuatorClassInfo *) class_info)->value;
+          use = _gdk_device_get_axis_use (device, j);
+
+          switch (use)
+            {
+            case GDK_AXIS_X:
+            case GDK_AXIS_Y:
+            case GDK_AXIS_IGNORE:
+              if (device->mode == GDK_MODE_WINDOW)
+                _gdk_device_translate_window_coord (device, window, j, value, &axes[j]);
+              else
+                {
+                  gint root_x, root_y;
+
+                  /* FIXME: Maybe root coords chaching should happen here */
+                  gdk_window_get_origin (window, &root_x, &root_y);
+                  _gdk_device_translate_screen_coord (device, window,
+                                                      root_x, root_y,
+                                                      j, value,
+                                                      &axes[j]);
+                }
+              break;
+            default:
+              _gdk_device_translate_axis (device, j, value, &axes[j]);
+              break;
+            }
+
+          j++;
+        }
+
+      XIFreeDeviceInfo (info);
+    }
+
+  if (mask)
+    gdk_device_xi2_query_state (device, window,
+                                NULL, NULL,
+                                NULL, NULL,
+                                NULL, NULL,
+                                mask);
 }
 
 static void
