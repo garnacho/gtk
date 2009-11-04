@@ -966,6 +966,27 @@ gdk_display_x11_translate_event (GdkEventTranslator *translator,
 	}
       else
 #endif
+#ifdef HAVE_XKB
+      if (xevent->type == display_x11->xkb_event_type)
+	{
+	  XkbEvent *xkb_event = (XkbEvent *) xevent;
+
+	  switch (xkb_event->any.xkb_type)
+	    {
+	    case XkbNewKeyboardNotify:
+	    case XkbMapNotify:
+	      _gdk_keymap_keys_changed (display);
+
+	      return_val = FALSE;
+	      break;
+
+	    case XkbStateNotify:
+	      _gdk_keymap_state_changed (display, xevent);
+	      break;
+	    }
+	}
+      else
+#endif
         return_val = FALSE;
     }
 
