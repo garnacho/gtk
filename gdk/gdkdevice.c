@@ -428,17 +428,17 @@ gdk_device_set_axis_use (GdkDevice   *device,
     {
     case GDK_AXIS_X:
     case GDK_AXIS_Y:
-      device->axes[index].min = info->min_value = 0;
-      device->axes[index].max = info->max_value = 0;
+      device->axes[index].min = info->min_axis = 0;
+      device->axes[index].max = info->max_axis = 0;
       break;
     case GDK_AXIS_XTILT:
     case GDK_AXIS_YTILT:
-      device->axes[index].min = info->min_value = -1;
-      device->axes[index].max = info->max_value = 1;
+      device->axes[index].min = info->min_axis = -1;
+      device->axes[index].max = info->max_axis = 1;
       break;
     default:
-      device->axes[index].min = info->min_value = 0;
-      device->axes[index].max = info->max_value = 1;
+      device->axes[index].min = info->min_axis = 0;
+      device->axes[index].max = info->max_axis = 1;
       break;
     }
 }
@@ -797,17 +797,17 @@ _gdk_device_add_axis (GdkDevice   *device,
     {
     case GDK_AXIS_X:
     case GDK_AXIS_Y:
-      axis_info.min_axis = 0.;
-      axis_info.max_axis = 0.;
+      axis_info.min_axis = 0;
+      axis_info.max_axis = 0;
       break;
     case GDK_AXIS_XTILT:
     case GDK_AXIS_YTILT:
-      axis_info.min_axis = -1.;
-      axis_info.max_axis = 1.;
+      axis_info.min_axis = -1;
+      axis_info.max_axis = 1;
       break;
     default:
-      axis_info.min_axis = 0.;
-      axis_info.max_axis = 1.;
+      axis_info.min_axis = 0;
+      axis_info.max_axis = 1;
       break;
     }
 
