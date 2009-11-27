@@ -52,9 +52,9 @@ static GSourceFuncs event_funcs = {
 static GList *event_sources = NULL;
 
 static gint
-gdk_event_apply_filters (XEvent *xevent,
+gdk_event_apply_filters (XEvent   *xevent,
 			 GdkEvent *event,
-			 GList *filters)
+			 GList    *filters)
 {
   GList *tmp_list;
   GdkFilterReturn result;
@@ -68,7 +68,7 @@ gdk_event_apply_filters (XEvent *xevent,
       tmp_list = tmp_list->next;
       result = filter->function (xevent, event, filter->data);
 
-      if (result !=  GDK_FILTER_CONTINUE)
+      if (result != GDK_FILTER_CONTINUE)
 	return result;
     }
 
@@ -255,7 +255,7 @@ _gdk_events_queue (GdkDisplay *display)
   display_x11 = GDK_DISPLAY_X11 (display);
   event_source = (GdkEventSource *) display_x11->event_source;
 
-  while (!_gdk_event_queue_find_first(display) && XPending (xdisplay))
+  while (!_gdk_event_queue_find_first (display) && XPending (xdisplay))
     {
       XNextEvent (xdisplay, &xevent);
 
@@ -372,7 +372,7 @@ gdk_event_source_select_events (GdkEventSource *source,
       if (mask != 0)
         {
           gdk_event_translator_select_window_events (translator, window, mask);
-          event_mask &= ~(mask);
+          event_mask &= ~mask;
         }
 
       list = list->next;
