@@ -346,7 +346,7 @@ gdk_event_source_add_translator (GdkEventSource     *source,
 {
   g_return_if_fail (GDK_IS_EVENT_TRANSLATOR (translator));
 
-  source->translators = g_list_prepend (source->translators, translator);
+  source->translators = g_list_append (source->translators, translator);
 }
 
 void
