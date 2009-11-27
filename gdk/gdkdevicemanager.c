@@ -215,7 +215,8 @@ gdk_device_manager_get_display (GdkDeviceManager *device_manager)
  * @device_manager.
  *
  * Returns: a list of #GdkDevice<!-- -->s. The returned list must be
- *          freed with g_list_free ().
+ *          freed with g_list_free (). The list elements are owned by
+ *          GTK+ and must not be freed or unreffed.
  **/
 GList *
 gdk_device_manager_get_devices (GdkDeviceManager *device_manager,
