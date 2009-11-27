@@ -17,6 +17,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
+#include "config.h"
 #include "gdkdevice.h"
 #include "gdkdeviceprivate.h"
 #include "gdkintl.h"
