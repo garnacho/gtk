@@ -38,8 +38,8 @@
 static void    gdk_device_manager_core_finalize    (GObject *object);
 static void    gdk_device_manager_core_constructed (GObject *object);
 
-static GList * gdk_device_manager_core_get_devices (GdkDeviceManager *device_manager,
-                                                    GdkDeviceType     type);
+static GList * gdk_device_manager_core_list_devices (GdkDeviceManager *device_manager,
+                                                     GdkDeviceType     type);
 
 static void     gdk_device_manager_event_translator_init (GdkEventTranslatorIface *iface);
 
@@ -61,7 +61,7 @@ gdk_device_manager_core_class_init (GdkDeviceManagerCoreClass *klass)
 
   object_class->finalize = gdk_device_manager_core_finalize;
   object_class->constructed = gdk_device_manager_core_constructed;
-  device_manager_class->get_devices = gdk_device_manager_core_get_devices;
+  device_manager_class->list_devices = gdk_device_manager_core_list_devices;
 }
 
 static void
@@ -877,8 +877,8 @@ gdk_device_manager_core_translate_event (GdkEventTranslator *translator,
 }
 
 static GList *
-gdk_device_manager_core_get_devices (GdkDeviceManager *device_manager,
-                                     GdkDeviceType     type)
+gdk_device_manager_core_list_devices (GdkDeviceManager *device_manager,
+                                      GdkDeviceType     type)
 {
   GdkDeviceManagerCore *device_manager_core;
   GList *devices = NULL;

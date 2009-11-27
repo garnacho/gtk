@@ -34,8 +34,8 @@
 static void    gdk_device_manager_xi2_constructed (GObject *object);
 static void    gdk_device_manager_xi2_finalize    (GObject *object);
 
-static GList * gdk_device_manager_xi2_get_devices (GdkDeviceManager *device_manager,
-                                                   GdkDeviceType     type);
+static GList * gdk_device_manager_xi2_list_devices (GdkDeviceManager *device_manager,
+                                                    GdkDeviceType     type);
 
 static void     gdk_device_manager_xi2_event_translator_init (GdkEventTranslatorIface *iface);
 
@@ -63,7 +63,7 @@ gdk_device_manager_xi2_class_init (GdkDeviceManagerXI2Class *klass)
   object_class->constructed = gdk_device_manager_xi2_constructed;
   object_class->finalize = gdk_device_manager_xi2_finalize;
 
-  device_manager_class->get_devices = gdk_device_manager_xi2_get_devices;
+  device_manager_class->list_devices = gdk_device_manager_xi2_list_devices;
 }
 
 static void
@@ -391,8 +391,8 @@ gdk_device_manager_xi2_finalize (GObject *object)
 }
 
 static GList *
-gdk_device_manager_xi2_get_devices (GdkDeviceManager *device_manager,
-                                    GdkDeviceType     type)
+gdk_device_manager_xi2_list_devices (GdkDeviceManager *device_manager,
+                                     GdkDeviceType     type)
 {
   GdkDeviceManagerXI2 *device_manager_xi2;
   GList *list = NULL;

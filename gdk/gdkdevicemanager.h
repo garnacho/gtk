@@ -57,14 +57,14 @@ struct _GdkDeviceManagerClass
                            GdkDevice        *device);
 
   /* VMethods */
-  GList * (* get_devices) (GdkDeviceManager *device_manager,
-                           GdkDeviceType     type);
+  GList * (* list_devices) (GdkDeviceManager *device_manager,
+                            GdkDeviceType     type);
 };
 
 GType gdk_device_manager_get_type (void) G_GNUC_CONST;
 
 GdkDisplay *             gdk_device_manager_get_display      (GdkDeviceManager *device_manager);
-GList *                  gdk_device_manager_get_devices      (GdkDeviceManager *device_manager,
+GList *                  gdk_device_manager_list_devices     (GdkDeviceManager *device_manager,
                                                               GdkDeviceType     type);
 
 G_END_DECLS

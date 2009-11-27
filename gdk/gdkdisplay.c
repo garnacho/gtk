@@ -426,7 +426,7 @@ gdk_display_pointer_ungrab (GdkDisplay *display,
   g_return_if_fail (GDK_IS_DISPLAY (display));
 
   device_manager = gdk_display_get_device_manager (display);
-  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+  devices = gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
 
   /* FIXME: Should this be generic to all backends? */
   /* FIXME: What happens with extended devices? */
@@ -494,7 +494,7 @@ gdk_display_keyboard_ungrab (GdkDisplay *display,
   g_return_if_fail (GDK_IS_DISPLAY (display));
 
   device_manager = gdk_display_get_device_manager (display);
-  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+  devices = gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
 
   /* FIXME: Should this be generic to all backends? */
   /* FIXME: What happens with extended devices? */
@@ -1699,7 +1699,7 @@ gdk_display_pointer_is_grabbed (GdkDisplay *display)
   g_return_val_if_fail (GDK_IS_DISPLAY (display), TRUE);
 
   device_manager = gdk_display_get_device_manager (display);
-  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+  devices = gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
 
   for (dev = devices; dev; dev = dev->next)
     {

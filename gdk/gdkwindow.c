@@ -6868,9 +6868,9 @@ gdk_window_hide (GdkWindow *window)
       device_manager = gdk_display_get_device_manager (display);
 
       /* Get all devices */
-      devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
-      devices = g_list_concat (devices, gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_SLAVE));
-      devices = g_list_concat (devices, gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_FLOATING));
+      devices = gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+      devices = g_list_concat (devices, gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_SLAVE));
+      devices = g_list_concat (devices, gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_FLOATING));
 
       for (d = devices; d; d = d->next)
         {
@@ -9982,7 +9982,7 @@ gdk_pointer_grab (GdkWindow *	  window,
 
   serial = _gdk_windowing_window_get_next_serial (display);
   device_manager = gdk_display_get_device_manager (display);
-  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+  devices = gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
 
   /* FIXME: Should this be generic to all backends? */
   /* FIXME: What happens with extended devices? */
@@ -10063,7 +10063,7 @@ gdk_keyboard_grab (GdkWindow *window,
 
   serial = _gdk_windowing_window_get_next_serial (display);
   device_manager = gdk_display_get_device_manager (display);
-  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+  devices = gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
 
   /* FIXME: Should this be generic to all backends? */
   /* FIXME: What happens with extended devices? */

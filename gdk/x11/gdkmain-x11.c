@@ -208,9 +208,9 @@ _gdk_xgrab_check_unmap (GdkWindow *window,
   device_manager = gdk_display_get_device_manager (display);
 
   /* Get all devices */
-  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
-  devices = g_list_concat (devices, gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_SLAVE));
-  devices = g_list_concat (devices, gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_FLOATING));
+  devices = gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+  devices = g_list_concat (devices, gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_SLAVE));
+  devices = g_list_concat (devices, gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_FLOATING));
 
   /* End all grabs on the newly hidden window */
   for (d = devices; d; d = d->next)
@@ -237,9 +237,9 @@ _gdk_xgrab_check_destroy (GdkWindow *window)
   device_manager = gdk_display_get_device_manager (display);
 
   /* Get all devices */
-  devices = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
-  devices = g_list_concat (devices, gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_SLAVE));
-  devices = g_list_concat (devices, gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_FLOATING));
+  devices = gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+  devices = g_list_concat (devices, gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_SLAVE));
+  devices = g_list_concat (devices, gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_FLOATING));
 
   for (d = devices; d; d = d->next)
     {

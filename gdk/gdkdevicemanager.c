@@ -209,7 +209,7 @@ gdk_device_manager_get_display (GdkDeviceManager *device_manager)
 }
 
 /**
- * gdk_device_manager_get_devices:
+ * gdk_device_manager_list_devices:
  * @device_manager: a #GdkDeviceManager
  * @type: device type to get.
  *
@@ -221,12 +221,12 @@ gdk_device_manager_get_display (GdkDeviceManager *device_manager)
  *          GTK+ and must not be freed or unreffed.
  **/
 GList *
-gdk_device_manager_get_devices (GdkDeviceManager *device_manager,
-                                GdkDeviceType     type)
+gdk_device_manager_list_devices (GdkDeviceManager *device_manager,
+                                 GdkDeviceType     type)
 {
   g_return_val_if_fail (GDK_IS_DEVICE_MANAGER (device_manager), NULL);
 
-  return GDK_DEVICE_MANAGER_GET_CLASS (device_manager)->get_devices (device_manager, type);
+  return GDK_DEVICE_MANAGER_GET_CLASS (device_manager)->list_devices (device_manager, type);
 }
 
 #define __GDK_DEVICE_MANAGER_C__

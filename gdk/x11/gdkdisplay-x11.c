@@ -1128,7 +1128,7 @@ _gdk_input_init (GdkDisplay *display)
   /* For backwards compatibility, just add
    * floating devices that are not keyboards.
    */
-  list = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_FLOATING);
+  list = gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_FLOATING);
 
   for (l = list; l; l = l->next)
     {
@@ -1145,7 +1145,7 @@ _gdk_input_init (GdkDisplay *display)
   /* Now set "core" pointer to the first
    * master device that is a pointer.
    */
-  list = gdk_device_manager_get_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+  list = gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
 
   for (l = list; l; l = l->next)
     {

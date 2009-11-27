@@ -55,8 +55,8 @@ static gboolean gdk_device_manager_xi_translate_event (GdkEventTranslator *trans
                                                        GdkDisplay         *display,
                                                        GdkEvent           *event,
                                                        XEvent             *xevent);
-static GList *  gdk_device_manager_xi_get_devices     (GdkDeviceManager  *device_manager,
-                                                       GdkDeviceType      type);
+static GList *  gdk_device_manager_xi_list_devices     (GdkDeviceManager  *device_manager,
+                                                        GdkDeviceType      type);
 
 
 G_DEFINE_TYPE_WITH_CODE (GdkDeviceManagerXI, gdk_device_manager_xi, GDK_TYPE_DEVICE_MANAGER_CORE,
@@ -79,7 +79,7 @@ gdk_device_manager_xi_class_init (GdkDeviceManagerXIClass *klass)
   object_class->set_property = gdk_device_manager_xi_set_property;
   object_class->get_property = gdk_device_manager_xi_get_property;
 
-  device_manager_class->get_devices = gdk_device_manager_xi_get_devices;
+  device_manager_class->list_devices = gdk_device_manager_xi_list_devices;
 
   g_object_class_install_property (object_class,
 				   PROP_EVENT_BASE,
@@ -630,13 +630,13 @@ gdk_device_manager_xi_translate_event (GdkEventTranslator *translator,
 }
 
 static GList *
-gdk_device_manager_xi_get_devices (GdkDeviceManager *device_manager,
-                                   GdkDeviceType     type)
+gdk_device_manager_xi_list_devices (GdkDeviceManager *device_manager,
+                                    GdkDeviceType     type)
 {
   GdkDeviceManagerXIPrivate *priv;
 
   if (type == GDK_DEVICE_TYPE_MASTER)
-    return GDK_DEVICE_MANAGER_CLASS (gdk_device_manager_xi_parent_class)->get_devices (device_manager, type);
+    return GDK_DEVICE_MANAGER_CLASS (gdk_device_manager_xi_parent_class)->list_devices (device_manager, type);
   else if (type == GDK_DEVICE_TYPE_FLOATING)
     {
       priv = GDK_DEVICE_MANAGER_XI_GET_PRIVATE (device_manager);
