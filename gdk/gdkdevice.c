@@ -92,21 +92,24 @@ gdk_device_class_init (GdkDeviceClass *klass)
                                                         P_("Device Display"),
                                                         P_("Display to which the device belongs to"),
                                                         GDK_TYPE_DISPLAY,
-                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+                                                        G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (object_class,
 				   PROP_DEVICE_MANAGER,
 				   g_param_spec_object ("device-manager",
                                                         P_("Device manager"),
                                                         P_("Device manager to which the device belongs to"),
                                                         GDK_TYPE_DEVICE_MANAGER,
-                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+                                                        G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (object_class,
 				   PROP_NAME,
 				   g_param_spec_string ("name",
                                                         P_("Device name"),
                                                         P_("Device name"),
                                                         NULL,
-                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+                                                        G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (object_class,
                                    PROP_TYPE,
                                    g_param_spec_enum ("type",
@@ -114,14 +117,15 @@ gdk_device_class_init (GdkDeviceClass *klass)
                                                       P_("Device role in the device manager"),
                                                       GDK_TYPE_DEVICE_TYPE,
                                                       GDK_DEVICE_TYPE_MASTER,
-                                                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+                                                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+                                                      G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (object_class,
 				   PROP_ASSOCIATED_DEVICE,
 				   g_param_spec_object ("associated-device",
                                                         P_("Associated device"),
                                                         P_("Associated pointer or keyboard to this device"),
                                                         GDK_TYPE_DEVICE,
-                                                        G_PARAM_READABLE));
+                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (object_class,
 				   PROP_INPUT_SOURCE,
 				   g_param_spec_enum ("input-source",
@@ -129,7 +133,8 @@ gdk_device_class_init (GdkDeviceClass *klass)
                                                       P_("Source type for the device"),
                                                       GDK_TYPE_INPUT_SOURCE,
                                                       GDK_SOURCE_MOUSE,
-                                                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+                                                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+                                                      G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (object_class,
                                    PROP_INPUT_MODE,
 				   g_param_spec_enum ("input-mode",
@@ -137,21 +142,22 @@ gdk_device_class_init (GdkDeviceClass *klass)
                                                       P_("Input mode for the device"),
                                                       GDK_TYPE_INPUT_MODE,
                                                       GDK_MODE_DISABLED,
-                                                      G_PARAM_READWRITE));
+                                                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (object_class,
 				   PROP_HAS_CURSOR,
 				   g_param_spec_boolean ("has-cursor",
                                                          P_("Whether the device has cursor"),
                                                          P_("Whether there is a visible cursor following device motion"),
                                                          FALSE,
-                                                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+                                                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+                                                         G_PARAM_STATIC_STRINGS));
   g_object_class_install_property (object_class,
 				   PROP_N_AXES,
 				   g_param_spec_uint ("n-axes",
                                                       P_("Number of axes in the device"),
                                                       P_("Number of axes in the device"),
                                                       0, G_MAXUINT, 0,
-                                                      G_PARAM_READABLE));
+                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   g_type_class_add_private (object_class, sizeof (GdkDevicePrivate));
 }

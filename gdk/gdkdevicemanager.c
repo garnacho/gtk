@@ -67,12 +67,13 @@ gdk_device_manager_class_init (GdkDeviceManagerClass *klass)
   object_class->get_property = gdk_device_manager_get_property;
 
   g_object_class_install_property (object_class,
-				   PROP_DISPLAY,
-				   g_param_spec_object ("display",
- 							P_("Display"),
- 							P_("Display for the device manager"),
-							GDK_TYPE_DISPLAY,
- 							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+                                   PROP_DISPLAY,
+                                   g_param_spec_object ("display",
+                                                        P_("Display"),
+                                                        P_("Display for the device manager"),
+                                                        GDK_TYPE_DISPLAY,
+                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY |
+                                                        G_PARAM_STATIC_STRINGS));
 
   /**
    * GdkDeviceManager::device-added:
