@@ -1009,21 +1009,27 @@ gtk_scale_popup (GtkWidget *widget,
       /* Move the dock, but set is_moved so we
        * don't forward the first click later on,
        * as it could make the scale go to the bottom */
-      if (y < rect.y) {
-	y = rect.y;
-	is_moved = TRUE;
-      } else if (y + d->allocation.height > rect.height + rect.y) {
-	y = rect.y + rect.height - d->allocation.height;
-	is_moved = TRUE;
-      }
+      if (y < rect.y)
+        {
+          y = rect.y;
+          is_moved = TRUE;
+        }
+      else if (y + d->allocation.height > rect.height + rect.y)
+        {
+          y = rect.y + rect.height - d->allocation.height;
+          is_moved = TRUE;
+        }
 
-      if (x < rect.x) {
-	x = rect.x;
-	is_moved = TRUE;
-      } else if (x + d->allocation.width > rect.width + rect.x) {
-	x = rect.x + rect.width - d->allocation.width;
-	is_moved = TRUE;
-      }
+      if (x < rect.x)
+        {
+          x = rect.x;
+          is_moved = TRUE;
+        }
+      else if (x + d->allocation.width > rect.width + rect.x)
+        {
+          x = rect.x + rect.width - d->allocation.width;
+          is_moved = TRUE;
+        }
     }
 
   gtk_window_move (GTK_WINDOW (priv->dock), x, y);
