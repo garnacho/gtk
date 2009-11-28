@@ -144,6 +144,7 @@ struct _GdkWindowImplIface
   void         (* destroy)              (GdkWindow       *window,
 					 gboolean         recursing,
 					 gboolean         foreign_destroy);
+  gboolean     supports_native_bg;
 };
 
 /* Interface Functions */

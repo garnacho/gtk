@@ -6272,14 +6272,14 @@ gtk_icon_view_get_margin (GtkIconView *icon_view)
 /**
  * gtk_icon_view_set_item_padding:
  * @icon_view: a #GtkIconView
- * @column_spacing: the item padding
- * 
- * Sets the ::item-padding property which specifies the padding 
+ * @item_padding: the item padding
+ *
+ * Sets the #GtkIconView:item-padding property which specifies the padding
  * around each of the icon view's items.
  *
  * Since: 2.18
  */
-void 
+void
 gtk_icon_view_set_item_padding (GtkIconView *icon_view,
 				gint         item_padding)
 {
@@ -8768,25 +8768,25 @@ gtk_icon_view_item_accessible_get_type (void)
         NULL /* value table */
       };
 
-      static const GInterfaceInfo atk_component_info =
+      const GInterfaceInfo atk_component_info =
       {
         (GInterfaceInitFunc) atk_component_item_interface_init,
         (GInterfaceFinalizeFunc) NULL,
         NULL
       };
-      static const GInterfaceInfo atk_action_info =
+      const GInterfaceInfo atk_action_info =
       {
         (GInterfaceInitFunc) atk_action_item_interface_init,
         (GInterfaceFinalizeFunc) NULL,
         NULL
       };
-      static const GInterfaceInfo atk_image_info =
+      const GInterfaceInfo atk_image_info =
       {
         (GInterfaceInitFunc) atk_image_item_interface_init,
         (GInterfaceFinalizeFunc) NULL,
         NULL
       };
-      static const GInterfaceInfo atk_text_info =
+      const GInterfaceInfo atk_text_info =
       {
         (GInterfaceInitFunc) atk_text_item_interface_init,
         (GInterfaceFinalizeFunc) NULL,
@@ -9711,7 +9711,7 @@ gtk_icon_view_accessible_get_type (void)
 
   if (!type)
     {
-      static GTypeInfo tinfo =
+      GTypeInfo tinfo =
       {
         0, /* class size */
         (GBaseInitFunc) NULL, /* base init */
@@ -9724,13 +9724,13 @@ gtk_icon_view_accessible_get_type (void)
         (GInstanceInitFunc) NULL, /* instance init */
         NULL /* value table */
       };
-      static const GInterfaceInfo atk_component_info =
+      const GInterfaceInfo atk_component_info =
       {
         (GInterfaceInitFunc) atk_component_interface_init,
         (GInterfaceFinalizeFunc) NULL,
         NULL
       };
-      static const GInterfaceInfo atk_selection_info = 
+      const GInterfaceInfo atk_selection_info =
       {
         (GInterfaceInitFunc) gtk_icon_view_accessible_selection_interface_init,
         (GInterfaceFinalizeFunc) NULL,

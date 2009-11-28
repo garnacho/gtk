@@ -192,6 +192,8 @@ gtk_action_block_activate
 gtk_action_unblock_activate
 gtk_action_block_activate_from
 gtk_action_unblock_activate_from
+gtk_action_get_always_show_image
+gtk_action_set_always_show_image
 gtk_action_get_accel_path
 gtk_action_set_accel_path
 gtk_action_get_accel_closure
@@ -2732,6 +2734,8 @@ gtk_notebook_set_group_id
 gtk_notebook_get_group_id
 gtk_notebook_set_group
 gtk_notebook_get_group
+gtk_notebook_set_action_widget
+gtk_notebook_get_action_widget
 GtkNotebookWindowCreationFunc
 gtk_notebook_set_window_creation_hook
 <SUBSECTION Standard>
@@ -4184,11 +4188,15 @@ gtk_toggle_button_get_type
 <TITLE>GtkToolShell</TITLE>
 GtkToolShell
 GtkToolShellIface
+gtk_tool_shell_get_ellipsize_mode
 gtk_tool_shell_get_icon_size
 gtk_tool_shell_get_orientation
 gtk_tool_shell_get_relief_style
 gtk_tool_shell_get_style
+gtk_tool_shell_get_text_alignment
+gtk_tool_shell_get_text_orientation
 gtk_tool_shell_rebuild_menu
+gtk_tool_shell_get_text_size_group
 
 <SUBSECTION Standard>
 GTK_IS_TOOL_SHELL
@@ -4275,10 +4283,13 @@ gtk_tool_item_set_visible_vertical
 gtk_tool_item_get_visible_vertical
 gtk_tool_item_set_is_important
 gtk_tool_item_get_is_important
+gtk_tool_item_get_ellipsize_mode
 gtk_tool_item_get_icon_size
 gtk_tool_item_get_orientation
 gtk_tool_item_get_toolbar_style
 gtk_tool_item_get_relief_style
+gtk_tool_item_get_text_alignment
+gtk_tool_item_get_text_orientation
 gtk_tool_item_retrieve_proxy_menu_item
 gtk_tool_item_get_proxy_menu_item
 gtk_tool_item_set_proxy_menu_item
@@ -4446,6 +4457,79 @@ GTK_IS_TOOLTIPS_CLASS
 GTK_TOOLTIPS_GET_CLASS
 <SUBSECTION Private>
 gtk_tooltips_get_type
+</SECTION>
+
+<SECTION>
+<FILE>gtktoolitemgroup</FILE>
+<TITLE>GtkToolItemGroup</TITLE>
+GtkToolItemGroup
+gtk_tool_item_group_get_collapsed
+gtk_tool_item_group_get_drop_item
+gtk_tool_item_group_get_ellipsize
+gtk_tool_item_group_get_item_position
+gtk_tool_item_group_get_n_items
+gtk_tool_item_group_get_label
+gtk_tool_item_group_get_label_widget
+gtk_tool_item_group_get_nth_item
+gtk_tool_item_group_get_header_relief
+gtk_tool_item_group_insert
+gtk_tool_item_group_new
+gtk_tool_item_group_set_collapsed
+gtk_tool_item_group_set_ellipsize
+gtk_tool_item_group_set_item_position
+gtk_tool_item_group_set_label
+gtk_tool_item_group_set_label_widget
+gtk_tool_item_group_set_header_relief
+<SUBSECTION Standard>
+GtkToolItemGroupClass
+GTK_TOOL_ITEM_GROUP
+GTK_IS_TOOL_ITEM_GROUP
+GTK_TYPE_TOOL_ITEM_GROUP
+GTK_TOOL_ITEM_GROUP_CLASS
+GTK_IS_TOOL_ITEM_GROUP_CLASS
+GTK_TOOL_ITEM_GROUP_GET_CLASS
+<SUBSECTION Private>
+gtk_tool_item_group_get_type
+</SECTION>
+
+<SECTION>
+<FILE>gtktoolpalette</FILE>
+<TITLE>GtkToolPalette</TITLE>
+GtkToolPalette
+gtk_tool_palette_new
+gtk_tool_palette_get_exclusive
+gtk_tool_palette_set_exclusive
+gtk_tool_palette_get_expand
+gtk_tool_palette_set_expand
+gtk_tool_palette_get_group_position
+gtk_tool_palette_set_group_position
+gtk_tool_palette_get_icon_size
+gtk_tool_palette_set_icon_size
+gtk_tool_palette_unset_icon_size
+gtk_tool_palette_get_style
+gtk_tool_palette_set_style
+gtk_tool_palette_unset_style
+gtk_tool_palette_add_drag_dest
+gtk_tool_palette_get_drag_item
+gtk_tool_palette_get_drag_target_group
+gtk_tool_palette_get_drag_target_item
+gtk_tool_palette_get_drop_group
+gtk_tool_palette_get_drop_item
+GtkToolPaletteDragTargets
+gtk_tool_palette_set_drag_source
+gtk_tool_palette_get_hadjustment
+gtk_tool_palette_get_vadjustment
+<SUBSECTION Standard>
+GtkToolPaletteClass
+GTK_TOOL_PALETTE
+GTK_IS_TOOL_PALETTE
+GTK_TYPE_TOOL_PALETTE
+GTK_TOOL_PALETTE_CLASS
+GTK_IS_TOOL_PALETTE_CLASS
+GTK_TOOL_PALETTE_GET_CLASS
+<SUBSECTION Private>
+gtk_tool_palette_get_type
+GtkToolPalettePrivate
 </SECTION>
 
 <SECTION>
@@ -5740,6 +5824,7 @@ gtk_window_get_urgency_hint
 gtk_window_get_accept_focus
 gtk_window_get_focus_on_map
 gtk_window_get_group
+gtk_window_get_window_type
 gtk_window_move
 gtk_window_parse_geometry
 gtk_window_reshow_with_initial_size

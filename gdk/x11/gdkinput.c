@@ -137,10 +137,12 @@ gdk_input_set_extension_events (GdkWindow *window, gint mask,
 				GdkExtensionMode mode)
 {
   GdkWindowObject *window_private;
-  GList *tmp_list;
   GdkWindowObject *impl_window;
   GdkInputWindow *iw;
   GdkDisplayX11 *display_x11;
+#ifndef XINPUT_NONE
+  GList *tmp_list;
+#endif
 
   g_return_if_fail (window != NULL);
   g_return_if_fail (GDK_WINDOW_IS_X11 (window));
@@ -183,11 +185,13 @@ gdk_input_set_extension_events (GdkWindow *window, gint mask,
       unset_extension_events (window);
     }
 
+#ifndef XINPUT_NONE
   for (tmp_list = display_x11->input_devices; tmp_list; tmp_list = tmp_list->next)
     {
       GdkDevice *dev = tmp_list->data;
       _gdk_input_select_device_events (GDK_WINDOW (impl_window), dev);
     }
+#endif /* !XINPUT_NONE */
 }
 
 void

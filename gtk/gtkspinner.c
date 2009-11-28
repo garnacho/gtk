@@ -215,7 +215,8 @@ gtk_spinner_init (GtkSpinner *spinner)
 }
 
 static gboolean
-gtk_spinner_expose (GtkWidget *widget, GdkEventExpose *event)
+gtk_spinner_expose (GtkWidget      *widget,
+                    GdkEventExpose *event)
 {
   GtkStateType state_type;
   GtkSpinnerPrivate *priv;
@@ -236,6 +237,9 @@ gtk_spinner_expose (GtkWidget *widget, GdkEventExpose *event)
   gtk_paint_spinner (widget->style,
                      widget->window,
                      state_type,
+                     &event->area,
+                     widget,
+                     "spinner",
                      priv->current,
                      event->area.x, event->area.y,
                      event->area.width, event->area.height);
@@ -451,8 +455,8 @@ static void
 gtk_spinner_accessible_initialize (AtkObject *accessible,
                                    gpointer   widget)
 {
-  atk_object_set_name (accessible, _("Spinner"));
-  atk_object_set_description (accessible, _("Provides visual status"));
+  atk_object_set_name (accessible, C_("throbbing progress animation widget", "Spinner"));
+  atk_object_set_description (accessible, _("Provides visual indication of progress"));
 
   a11y_parent_class->initialize (accessible, widget);
 }

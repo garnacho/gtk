@@ -390,6 +390,9 @@ static void     remove_expand_collapse_timeout               (GtkTreeView       
 static void     cancel_arrow_animation                       (GtkTreeView        *tree_view);
 static gboolean do_expand_collapse                           (GtkTreeView        *tree_view);
 static void     gtk_tree_view_stop_rubber_band               (GtkTreeView        *tree_view);
+static void     update_prelight                              (GtkTreeView        *tree_view,
+                                                              int                 x,
+                                                              int                 y);
 
 /* interactive search */
 static void     gtk_tree_view_ensure_interactive_directory (GtkTreeView *tree_view);
@@ -1372,6 +1375,9 @@ gtk_tree_view_init (GtkTreeView *tree_view)
   tree_view->priv->tooltip_column = -1;
 
   tree_view->priv->post_validation_flag = FALSE;
+
+  tree_view->priv->last_button_x = -1;
+  tree_view->priv->last_button_y = -1;
 }
 
 
@@ -1608,18 +1614,6 @@ gtk_tree_view_destroy (GtkObject *object)
     {
       gtk_tree_row_reference_free (tree_view->priv->drag_dest_row);
       tree_view->priv->drag_dest_row = NULL;
-    }
-
-  if (tree_view->priv->last_button_press != NULL)
-    {
-      gtk_tree_row_reference_free (tree_view->priv->last_button_press);
-      tree_view->priv->last_button_press = NULL;
-    }
-
-  if (tree_view->priv->last_button_press_2 != NULL)
-    {
-      gtk_tree_row_reference_free (tree_view->priv->last_button_press_2);
-      tree_view->priv->last_button_press_2 = NULL;
     }
 
   if (tree_view->priv->top_row != NULL)
@@ -2447,6 +2441,11 @@ gtk_tree_view_size_allocate (GtkWidget     *widget,
       /* This little hack only works if we have an LTR locale, and no column has the  */
       if (width_changed)
 	{
+          if (tree_view->priv->tree)
+            update_prelight (tree_view,
+                             tree_view->priv->event_last_x,
+                             tree_view->priv->event_last_y);
+
 	  if (gtk_widget_get_direction (GTK_WIDGET (tree_view)) == GTK_TEXT_DIR_LTR &&
 	      ! has_expand_column)
 	    invalidate_last_column (tree_view);
@@ -2782,41 +2781,39 @@ gtk_tree_view_button_press (GtkWidget      *widget,
         }
 
       /* Test if a double click happened on the same row. */
-      if (event->button == 1)
+      if (event->button == 1 && event->type == GDK_BUTTON_PRESS)
         {
-          /* We also handle triple clicks here, because a user could have done
-           * a first click and a second double click on different rows.
-           */
-          if ((event->type == GDK_2BUTTON_PRESS
-               || event->type == GDK_3BUTTON_PRESS)
-              && tree_view->priv->last_button_press)
+          if (tree_view->priv->last_button_x != -1)
             {
-              GtkTreePath *lsc;
+              int double_click_time, double_click_distance;
 
-              lsc = gtk_tree_row_reference_get_path (tree_view->priv->last_button_press);
+              g_object_get (gtk_settings_get_default (),
+                            "gtk-double-click-time", &double_click_time,
+                            "gtk-double-click-distance", &double_click_distance,
+                            NULL);
 
-              if (lsc)
+              /* Same conditions as _gdk_event_button_generate */
+              if ((event->time < tree_view->priv->last_button_time + double_click_time) &&
+                  (ABS (event->x - tree_view->priv->last_button_x) <= double_click_distance) &&
+                  (ABS (event->y - tree_view->priv->last_button_y) <= double_click_distance))
                 {
-                  row_double_click = !gtk_tree_path_compare (lsc, path);
-                  gtk_tree_path_free (lsc);
+                  /* We do no longer compare paths of this row and the
+                   * row clicked previously.  We use the double click
+                   * distance to decide whether this is a valid click,
+                   * allowing the mouse to slightly move over another row.
+                   */
+                  row_double_click = TRUE;
                 }
-            }
 
-          if (row_double_click)
-            {
-              if (tree_view->priv->last_button_press)
-                gtk_tree_row_reference_free (tree_view->priv->last_button_press);
-              if (tree_view->priv->last_button_press_2)
-                gtk_tree_row_reference_free (tree_view->priv->last_button_press_2);
-              tree_view->priv->last_button_press = NULL;
-              tree_view->priv->last_button_press_2 = NULL;
+              tree_view->priv->last_button_time = 0;
+              tree_view->priv->last_button_x = -1;
+              tree_view->priv->last_button_y = -1;
             }
           else
             {
-              if (tree_view->priv->last_button_press)
-                gtk_tree_row_reference_free (tree_view->priv->last_button_press);
-              tree_view->priv->last_button_press = tree_view->priv->last_button_press_2;
-              tree_view->priv->last_button_press_2 = gtk_tree_row_reference_new_proxy (G_OBJECT (tree_view), tree_view->priv->model, path);
+              tree_view->priv->last_button_time = event->time;
+              tree_view->priv->last_button_x = event->x;
+              tree_view->priv->last_button_y = event->y;
             }
         }
 
@@ -3265,6 +3262,26 @@ prelight_or_select (GtkTreeView *tree_view,
     }
 
     do_prelight (tree_view, tree, node, x, y);
+}
+
+static void
+update_prelight (GtkTreeView *tree_view,
+                 gint         x,
+                 gint         y)
+{
+  int new_y;
+  GtkRBTree *tree;
+  GtkRBNode *node;
+
+  new_y = TREE_WINDOW_Y_TO_RBTREE_Y (tree_view, y);
+  if (new_y < 0)
+    new_y = 0;
+
+  _gtk_rbtree_find_offset (tree_view->priv->tree,
+                           new_y, &tree, &node);
+
+  if (node)
+    prelight_or_select (tree_view, tree, node, x, y);
 }
 
 static void
@@ -4077,6 +4094,9 @@ gtk_tree_view_motion_bin_window (GtkWidget      *widget,
   if ((tree_view->priv->button_pressed_node != NULL) &&
       (tree_view->priv->button_pressed_node != node))
     node = NULL;
+
+  tree_view->priv->event_last_x = event->x;
+  tree_view->priv->event_last_y = event->y;
 
   prelight_or_select (tree_view, tree, node, event->x, event->y);
 
@@ -10503,9 +10523,15 @@ gtk_tree_view_adjustment_changed (GtkAdjustment *adjustment,
 		       - tree_view->priv->hadjustment->value,
 		       0);
       dy = tree_view->priv->dy - (int) tree_view->priv->vadjustment->value;
-      if (dy && tree_view->priv->edited_column)
+      if (dy)
 	{
-	  if (GTK_IS_WIDGET (tree_view->priv->edited_column->editable_widget))
+          if (tree_view->priv->tree)
+            update_prelight (tree_view,
+                             tree_view->priv->event_last_x,
+                             tree_view->priv->event_last_y - dy);
+
+	  if (tree_view->priv->edited_column &&
+              GTK_IS_WIDGET (tree_view->priv->edited_column->editable_widget))
 	    {
 	      GList *list;
 	      GtkWidget *widget;
@@ -10658,10 +10684,6 @@ gtk_tree_view_set_model (GtkTreeView  *tree_view,
       tree_view->priv->anchor = NULL;
       gtk_tree_row_reference_free (tree_view->priv->top_row);
       tree_view->priv->top_row = NULL;
-      gtk_tree_row_reference_free (tree_view->priv->last_button_press);
-      tree_view->priv->last_button_press = NULL;
-      gtk_tree_row_reference_free (tree_view->priv->last_button_press_2);
-      tree_view->priv->last_button_press_2 = NULL;
       gtk_tree_row_reference_free (tree_view->priv->scroll_to_path);
       tree_view->priv->scroll_to_path = NULL;
 
@@ -10673,6 +10695,8 @@ gtk_tree_view_set_model (GtkTreeView  *tree_view,
       tree_view->priv->fixed_height_check = 0;
       tree_view->priv->fixed_height = -1;
       tree_view->priv->dy = tree_view->priv->top_row_dy = 0;
+      tree_view->priv->last_button_x = -1;
+      tree_view->priv->last_button_y = -1;
     }
 
   tree_view->priv->model = model;
@@ -12165,27 +12189,9 @@ gtk_tree_view_real_collapse_row (GtkTreeView *tree_view,
       gtk_tree_path_free (anchor_path);
     }
 
-  if (gtk_tree_row_reference_valid (tree_view->priv->last_button_press))
-    {
-      GtkTreePath *lsc = gtk_tree_row_reference_get_path (tree_view->priv->last_button_press);
-      if (gtk_tree_path_is_ancestor (path, lsc))
-        {
-	  gtk_tree_row_reference_free (tree_view->priv->last_button_press);
-	  tree_view->priv->last_button_press = NULL;
-	}
-      gtk_tree_path_free (lsc);
-    }
-
-  if (gtk_tree_row_reference_valid (tree_view->priv->last_button_press_2))
-    {
-      GtkTreePath *lsc = gtk_tree_row_reference_get_path (tree_view->priv->last_button_press_2);
-      if (gtk_tree_path_is_ancestor (path, lsc))
-        {
-	  gtk_tree_row_reference_free (tree_view->priv->last_button_press_2);
-	  tree_view->priv->last_button_press_2 = NULL;
-	}
-      gtk_tree_path_free (lsc);
-    }
+  /* Stop a pending double click */
+  tree_view->priv->last_button_x = -1;
+  tree_view->priv->last_button_y = -1;
 
   remove_expand_collapse_timeout (tree_view);
 

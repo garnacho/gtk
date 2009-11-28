@@ -140,6 +140,7 @@ translate_key_event (GdkDisplay           *display,
 		     XEvent               *xevent)
 {
   GdkKeymap *keymap = gdk_keymap_get_for_display (display);
+  GdkModifierType consumed, state;
   gunichar c = 0;
   gchar buf[7];
 
@@ -158,9 +159,12 @@ translate_key_event (GdkDisplay           *display,
 				       event->key.state,
 				       event->key.group,
 				       &event->key.keyval,
-				       NULL, NULL, NULL);
+                                       NULL, NULL, &consumed);
 
-  _gdk_keymap_add_virtual_modifiers (keymap, &event->key.state);
+  state = event->key.state & ~consumed;
+  _gdk_keymap_add_virtual_modifiers (keymap, &state);
+  event->key.state |= state;
+
   event->key.is_modifier = _gdk_keymap_key_is_modifier (keymap, event->key.hardware_keycode);
 
   /* Fill in event->string crudely, since various programs

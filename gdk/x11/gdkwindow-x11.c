@@ -5625,6 +5625,7 @@ gdk_window_impl_iface_init (GdkWindowImplIface *iface)
   iface->queue_antiexpose = _gdk_x11_window_queue_antiexpose;
   iface->queue_translation = _gdk_x11_window_queue_translation;
   iface->destroy = _gdk_x11_window_destroy;
+  iface->supports_native_bg = TRUE;
 }
 
 static Bool
