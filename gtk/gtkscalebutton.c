@@ -1113,8 +1113,21 @@ gtk_scale_button_popup (GtkWidget *widget)
 {
   GdkEvent *ev;
 
-  ev = gdk_event_new (GDK_KEY_RELEASE);
-  gtk_scale_popup (widget, ev, GDK_CURRENT_TIME);
+  /* This is a callback for a keybinding signal,
+   * current event should  be the key event that
+   * triggered it.
+   */
+  ev = gtk_get_current_event ();
+
+  if (ev->type != GDK_KEY_PRESS &&
+      ev->type != GDK_KEY_RELEASE)
+    {
+      gdk_event_free (ev);
+      ev = gdk_event_new (GDK_KEY_RELEASE);
+      ev->key.time = GDK_CURRENT_TIME;
+    }
+
+  gtk_scale_popup (widget, ev, ev->key.time);
   gdk_event_free (ev);
 }
 
