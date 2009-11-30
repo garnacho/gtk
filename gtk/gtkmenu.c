@@ -64,6 +64,7 @@
 
 typedef struct _GtkMenuAttachData	GtkMenuAttachData;
 typedef struct _GtkMenuPrivate  	GtkMenuPrivate;
+typedef struct _GtkMenuPopdownData      GtkMenuPopdownData;
 
 struct _GtkMenuAttachData
 {
@@ -98,6 +99,12 @@ struct _GtkMenuPrivate
   guint have_position         : 1;
   guint ignore_button_release : 1;
   guint no_toggle_size        : 1;
+};
+
+struct _GtkMenuPopdownData
+{
+  GtkMenu *menu;
+  GdkDevice *device;
 };
 
 typedef struct
@@ -3273,6 +3280,7 @@ gtk_menu_motion_notify (GtkWidget      *widget,
 	  send_event->crossing.x = event->x;
 	  send_event->crossing.y = event->y;
           send_event->crossing.state = event->state;
+          send_event->crossing.device = event->device;
 
 	  /* We send the event to 'widget', the currently active menu,
 	   * instead of 'menu', the menu that the pointer is in. This
@@ -3947,7 +3955,8 @@ gtk_menu_stop_navigating_submenu (GtkMenu *menu)
 static gboolean
 gtk_menu_stop_navigating_submenu_cb (gpointer user_data)
 {
-  GtkMenu *menu = user_data;
+  GtkMenuPopdownData *popdown_data = user_data;
+  GtkMenu *menu = popdown_data->menu;
   GdkWindow *child_window;
 
   gtk_menu_stop_navigating_submenu (menu);
@@ -3963,6 +3972,7 @@ gtk_menu_stop_navigating_submenu_cb (gpointer user_data)
 	  send_event->crossing.window = g_object_ref (child_window);
 	  send_event->crossing.time = GDK_CURRENT_TIME; /* Bogus */
 	  send_event->crossing.send_event = TRUE;
+          send_event->crossing.device = popdown_data->device;
 
 	  GTK_WIDGET_CLASS (gtk_menu_parent_class)->enter_notify_event (GTK_WIDGET (menu), (GdkEventCrossing *)send_event);
 
@@ -4069,6 +4079,7 @@ gtk_menu_set_submenu_navigation_region (GtkMenu          *menu,
   gint height = 0;
   GdkPoint point[3];
   GtkWidget *event_widget;
+  GtkMenuPopdownData *popdown_data;
 
   g_return_if_fail (menu_item->submenu != NULL);
   g_return_if_fail (event != NULL);
@@ -4143,9 +4154,15 @@ gtk_menu_set_submenu_navigation_region (GtkMenu          *menu,
 		    "gtk-menu-popdown-delay", &popdown_delay,
 		    NULL);
 
-      menu->navigation_timeout = gdk_threads_add_timeout (popdown_delay,
-                                                          gtk_menu_stop_navigating_submenu_cb,
-                                                          menu);
+      popdown_data = g_new (GtkMenuPopdownData, 1);
+      popdown_data->menu = menu;
+      popdown_data->device = event->device;
+
+      menu->navigation_timeout = gdk_threads_add_timeout_full (G_PRIORITY_DEFAULT,
+                                                               popdown_delay,
+                                                               gtk_menu_stop_navigating_submenu_cb,
+                                                               popdown_data,
+                                                               (GDestroyNotify) g_free);
 
 #ifdef DRAW_STAY_UP_TRIANGLE
       draw_stay_up_triangle (gdk_get_default_root_window(),
