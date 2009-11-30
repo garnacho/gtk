@@ -746,6 +746,11 @@ gdk_pointer_grab
 gdk_window_beep
 gdk_window_geometry_changed
 gdk_window_ensure_native
+gdk_window_set_device_events
+gdk_window_get_device_events
+gdk_window_set_device_cursor
+gdk_window_get_device_cursor
+gdk_window_get_device_position
 #endif
 #endif
 
