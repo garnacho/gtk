@@ -11130,7 +11130,7 @@ convert_event_to_motion (GdkEvent *event)
 {
   GdkEventMotion *new_event;
 
-  new_event = gdk_event_new (GDK_MOTION_NOTIFY);
+  new_event = (GdkEventMotion *) gdk_event_new (GDK_MOTION_NOTIFY);
 
   switch (event->type)
     {
