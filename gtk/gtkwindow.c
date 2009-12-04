@@ -5238,27 +5238,53 @@ static void
 do_focus_change (GtkWidget *widget,
 		 gboolean   in)
 {
-  GdkEvent *fevent = gdk_event_new (GDK_FOCUS_CHANGE);
-  
+  GdkDeviceManager *device_manager;
+  GList *devices, *d;
+
   g_object_ref (widget);
-  
+
   if (in)
     GTK_WIDGET_SET_FLAGS (widget, GTK_HAS_FOCUS);
   else
     GTK_WIDGET_UNSET_FLAGS (widget, GTK_HAS_FOCUS);
-  
-  fevent->focus_change.type = GDK_FOCUS_CHANGE;
-  fevent->focus_change.window = widget->window;
-  if (widget->window)
-    g_object_ref (widget->window);
-  fevent->focus_change.in = in;
-  
-  gtk_widget_event (widget, fevent);
-  
+
+  device_manager = gdk_display_get_device_manager (gtk_widget_get_display (widget));
+  devices = gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_MASTER);
+  devices = g_list_concat (devices, gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_SLAVE));
+  devices = g_list_concat (devices, gdk_device_manager_list_devices (device_manager, GDK_DEVICE_TYPE_FLOATING));
+
+  for (d = devices; d; d = d->next)
+    {
+      GdkDevice *dev = d->data;
+      GdkEvent *fevent;
+
+      if (dev->source != GDK_SOURCE_KEYBOARD)
+        continue;
+
+      /* Skip non-master keyboards that haven't
+       * selected for events from this window
+       */
+      if (gdk_device_get_device_type (dev) != GDK_DEVICE_TYPE_MASTER &&
+          !gdk_window_get_device_events (widget->window, dev))
+        continue;
+
+      fevent = gdk_event_new (GDK_FOCUS_CHANGE);
+
+      fevent->focus_change.type = GDK_FOCUS_CHANGE;
+      fevent->focus_change.window = widget->window;
+      if (widget->window)
+        g_object_ref (widget->window);
+      fevent->focus_change.in = in;
+      fevent->focus_change.device = dev;
+
+      gtk_widget_event (widget, fevent);
+
+      gdk_event_free (fevent);
+    }
+
   g_object_notify (G_OBJECT (widget), "has-focus");
 
   g_object_unref (widget);
-  gdk_event_free (fevent);
 }
 
 static gint
