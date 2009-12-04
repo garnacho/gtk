@@ -8790,14 +8790,15 @@ _gtk_widget_list_devices (GtkWidget *widget)
 }
 
 static void
-synth_crossing (GtkWidget      *widget,
-		GdkEventType    type,
-		GdkWindow      *window,
-		GdkCrossingMode mode,
-		GdkNotifyType   detail)
+synth_crossing (GtkWidget       *widget,
+                GdkEventType     type,
+                GdkWindow       *window,
+                GdkDevice       *device,
+                GdkCrossingMode  mode,
+                GdkNotifyType    detail)
 {
   GdkEvent *event;
-  
+
   event = gdk_event_new (type);
 
   event->crossing.window = g_object_ref (window);
@@ -8810,6 +8811,7 @@ synth_crossing (GtkWidget      *widget,
   event->crossing.detail = detail;
   event->crossing.focus = FALSE;
   event->crossing.state = 0;
+  event->crossing.device = device;
 
   if (!widget)
     widget = gtk_get_event_widget (event);
@@ -8893,11 +8895,11 @@ _gtk_widget_synthesize_crossing (GtkWidget       *from,
 	}
 
       synth_crossing (from, GDK_LEAVE_NOTIFY, from_window,
-		      mode, GDK_NOTIFY_ANCESTOR);
+		      device, mode, GDK_NOTIFY_ANCESTOR);
       for (list = g_list_last (from_ancestors); list; list = list->prev)
 	{
 	  synth_crossing (NULL, GDK_LEAVE_NOTIFY, (GdkWindow *) list->data,
-			  mode, GDK_NOTIFY_VIRTUAL);
+			  device, mode, GDK_NOTIFY_VIRTUAL);
 	}
 
       /* XXX: enter/inferior on root window? */
@@ -8922,10 +8924,10 @@ _gtk_widget_synthesize_crossing (GtkWidget       *from,
       for (list = to_ancestors; list; list = list->next)
 	{
 	  synth_crossing (NULL, GDK_ENTER_NOTIFY, (GdkWindow *) list->data,
-			  mode, GDK_NOTIFY_VIRTUAL);
+			  device, mode, GDK_NOTIFY_VIRTUAL);
 	}
       synth_crossing (to, GDK_ENTER_NOTIFY, to_window,
-		      mode, GDK_NOTIFY_ANCESTOR);
+		      device, mode, GDK_NOTIFY_ANCESTOR);
 
       g_list_free (to_ancestors);
     }
@@ -8959,25 +8961,25 @@ _gtk_widget_synthesize_crossing (GtkWidget       *from,
 	{
 	  if (mode != GDK_CROSSING_GTK_UNGRAB)
 	    synth_crossing (from, GDK_LEAVE_NOTIFY, from_window,
-			    mode, GDK_NOTIFY_INFERIOR);
+			    device, mode, GDK_NOTIFY_INFERIOR);
 	  for (list = to_ancestors; list; list = list->next)
 	    synth_crossing (NULL, GDK_ENTER_NOTIFY, (GdkWindow *) list->data, 
-			    mode, GDK_NOTIFY_VIRTUAL);
+			    device, mode, GDK_NOTIFY_VIRTUAL);
 	  synth_crossing (to, GDK_ENTER_NOTIFY, to_window,
-			  mode, GDK_NOTIFY_ANCESTOR);
+			  device, mode, GDK_NOTIFY_ANCESTOR);
 	}
       else if (from_ancestor == to_window)
 	{
 	  synth_crossing (from, GDK_LEAVE_NOTIFY, from_window,
-			  mode, GDK_NOTIFY_ANCESTOR);
+			  device, mode, GDK_NOTIFY_ANCESTOR);
 	  for (list = g_list_last (from_ancestors); list; list = list->prev)
 	    {
 	      synth_crossing (NULL, GDK_LEAVE_NOTIFY, (GdkWindow *) list->data,
-			      mode, GDK_NOTIFY_VIRTUAL);
+			      device, mode, GDK_NOTIFY_VIRTUAL);
 	    }
 	  if (mode != GDK_CROSSING_GTK_GRAB)
 	    synth_crossing (to, GDK_ENTER_NOTIFY, to_window,
-			    mode, GDK_NOTIFY_INFERIOR);
+			    device, mode, GDK_NOTIFY_INFERIOR);
 	}
       else
 	{
@@ -8990,20 +8992,20 @@ _gtk_widget_synthesize_crossing (GtkWidget       *from,
 	    }
 
 	  synth_crossing (from, GDK_LEAVE_NOTIFY, from_window,
-			  mode, GDK_NOTIFY_NONLINEAR);
+			  device, mode, GDK_NOTIFY_NONLINEAR);
 
 	  for (list = g_list_last (from_ancestors); list; list = list->prev)
 	    {
 	      synth_crossing (NULL, GDK_LEAVE_NOTIFY, (GdkWindow *) list->data,
-			      mode, GDK_NOTIFY_NONLINEAR_VIRTUAL);
+			      device, mode, GDK_NOTIFY_NONLINEAR_VIRTUAL);
 	    }
 	  for (list = to_ancestors; list; list = list->next)
 	    {
 	      synth_crossing (NULL, GDK_ENTER_NOTIFY, (GdkWindow *) list->data,
-			      mode, GDK_NOTIFY_NONLINEAR_VIRTUAL);
+			      device, mode, GDK_NOTIFY_NONLINEAR_VIRTUAL);
 	    }
 	  synth_crossing (to, GDK_ENTER_NOTIFY, to_window,
-			  mode, GDK_NOTIFY_NONLINEAR);
+			  device, mode, GDK_NOTIFY_NONLINEAR);
 	}
       g_list_free (from_ancestors);
       g_list_free (to_ancestors);
@@ -11150,7 +11152,7 @@ convert_event_to_motion (GdkEvent *event)
 
       new_event->state = 0; /* FIXME */
       new_event->is_hint = FALSE;
-      new_event->device = g_object_ref (event->button.device);
+      new_event->device = event->button.device;
       new_event->x_root = event->button.x_root;
       new_event->y_root = event->button.y_root;
       break;
@@ -11164,7 +11166,7 @@ convert_event_to_motion (GdkEvent *event)
       new_event->axes = NULL; /* FIXME: not ideal for non-mice */
       new_event->state = 0; /* FIXME */
       new_event->is_hint = FALSE;
-      new_event->device = g_object_ref (event->crossing.device);
+      new_event->device = event->crossing.device;
       new_event->x_root = event->crossing.x_root;
       new_event->y_root = event->crossing.y_root;
       break;
