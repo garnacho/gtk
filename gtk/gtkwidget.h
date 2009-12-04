@@ -906,12 +906,16 @@ void              _gtk_widget_propagate_screen_changed    (GtkWidget    *widget,
 							   GdkScreen    *previous_screen);
 void		  _gtk_widget_propagate_composited_changed (GtkWidget    *widget);
 
-void	   _gtk_widget_set_pointer_window  (GtkWidget      *widget,
+void	   _gtk_widget_set_device_window   (GtkWidget      *widget,
+                                            GdkDevice      *device,
 					    GdkWindow      *pointer_window);
-GdkWindow *_gtk_widget_get_pointer_window  (GtkWidget      *widget);
-gboolean   _gtk_widget_is_pointer_widget   (GtkWidget      *widget);
+GdkWindow *_gtk_widget_get_device_window   (GtkWidget      *widget,
+                                            GdkDevice      *device);
+GList *    _gtk_widget_list_devices        (GtkWidget      *widget);
+
 void       _gtk_widget_synthesize_crossing (GtkWidget      *from,
 					    GtkWidget      *to,
+                                            GdkDevice      *device,
 					    GdkCrossingMode mode);
 
 GdkColormap* _gtk_widget_peek_colormap (void);
