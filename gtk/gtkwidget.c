@@ -9069,20 +9069,37 @@ gtk_widget_propagate_state (GtkWidget           *widget,
 
       if (!GTK_WIDGET_SHADOWED (widget))
         {
+          GList *event_windows = NULL;
           GList *devices, *d;
 
           devices = _gtk_widget_list_devices (widget);
 
           for (d = devices; d; d = d->next)
             {
+              GdkWindow *window;
+              GdkDevice *device;
+
+              device = d->data;
+              window = _gtk_widget_get_device_window (widget, device);
+
+              /* Do not propagate more than once to the
+               * same window if non-multidevice aware.
+               */
+              if (!gdk_window_get_support_multidevice (window) &&
+                  g_list_find (event_windows, window))
+                continue;
+
               if (!GTK_WIDGET_IS_SENSITIVE (widget))
                 _gtk_widget_synthesize_crossing (widget, NULL, d->data,
                                                  GDK_CROSSING_STATE_CHANGED);
               else if (old_state == GTK_STATE_INSENSITIVE)
                 _gtk_widget_synthesize_crossing (NULL, widget, d->data,
                                                  GDK_CROSSING_STATE_CHANGED);
+
+              event_windows = g_list_prepend (event_windows, window);
             }
 
+          g_list_free (event_windows);
           g_list_free (devices);
         }
 
