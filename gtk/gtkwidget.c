@@ -3371,6 +3371,9 @@ gtk_widget_realize (GtkWidget *widget)
       mode = gtk_widget_get_extension_events (widget);
       if (mode != GDK_EXTENSION_EVENTS_NONE)
         gtk_widget_set_extension_events_internal (widget, mode, NULL);
+
+      if ((GTK_WIDGET_FLAGS (widget) & GTK_MULTIDEVICE) != 0)
+        gdk_window_set_support_multidevice (widget->window, TRUE);
     }
 }
 
@@ -11142,6 +11145,9 @@ gtk_widget_set_support_multidevice (GtkWidget *widget,
       GTK_WIDGET_UNSET_FLAGS (widget, GTK_MULTIDEVICE);
       gtk_widget_set_extension_events (widget, GDK_EXTENSION_EVENTS_NONE);
     }
+
+  if (GTK_WIDGET_REALIZED (widget))
+    gdk_window_set_support_multidevice (widget->window, support_multidevice);
 }
 
 static GdkEventMotion *
