@@ -4235,7 +4235,6 @@ gtk_label_motion (GtkWidget      *widget,
   GtkLabel *label = GTK_LABEL (widget);
   GtkLabelSelectionInfo *info = label->select_info;
   gint index;
-  gint x, y;
 
   if (info == NULL)
     return FALSE;
@@ -4248,8 +4247,7 @@ gtk_label_motion (GtkWidget      *widget,
 
       if (info->selection_anchor == info->selection_end)
         {
-          gdk_window_get_pointer (event->window, &x, &y, NULL);
-          if (get_layout_index (label, x, y, &index))
+          if (get_layout_index (label, event->x, event->y, &index))
             {
               for (l = info->links; l != NULL; l = l->next)
                 {
@@ -4291,8 +4289,6 @@ gtk_label_motion (GtkWidget      *widget,
   if ((event->state & GDK_BUTTON1_MASK) == 0)
     return FALSE;
 
-  gdk_window_get_pointer (info->window, &x, &y, NULL);
- 
   if (info->in_drag)
     {
       if (gtk_drag_check_threshold (widget,
@@ -4317,6 +4313,9 @@ gtk_label_motion (GtkWidget      *widget,
     }
   else
     {
+      gint x, y;
+
+      gdk_window_get_device_position (info->window, event->device, &x, &y, NULL);
       get_layout_index (label, x, y, &index);
 
       if (info->select_words)
