@@ -2246,10 +2246,11 @@ gtk_range_button_release (GtkWidget      *widget,
     }
   else
     {
-      gdk_window_get_pointer (range->event_window,
-			      &range->layout->mouse_x,
-			      &range->layout->mouse_y,
-			      NULL);
+      gdk_window_get_device_position (range->event_window,
+                                      event->device,
+                                      &range->layout->mouse_x,
+                                      &range->layout->mouse_y,
+                                      NULL);
     }
   
   if (range->layout->grab_button == event->button)
