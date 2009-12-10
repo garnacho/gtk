@@ -87,9 +87,9 @@ struct _GtkButtonPrivate
   GtkWidget      *image;
   guint           align_set             : 1;
   guint           image_is_stock        : 1;
-  guint           has_grab              : 1;
   guint           use_action_appearance : 1;
   guint32         grab_time;
+  GdkDevice      *grab_keyboard;
   GtkPositionType image_position;
   GtkAction      *action;
 };
@@ -1732,17 +1732,23 @@ gtk_real_button_activate (GtkButton *button)
 {
   GtkWidget *widget = GTK_WIDGET (button);
   GtkButtonPrivate *priv;
+  GdkDevice *device;
   guint32 time;
 
   priv = GTK_BUTTON_GET_PRIVATE (button);
 
   if (GTK_WIDGET_REALIZED (button) && !button->activate_timeout)
     {
+      device = gtk_get_current_event_device ();
       time = gtk_get_current_event_time ();
-      if (gdk_keyboard_grab (button->event_window, TRUE, time) == 
-	  GDK_GRAB_SUCCESS)
-	{
-	  priv->has_grab = TRUE;
+
+      if (device &&
+          gdk_device_grab (device, button->event_window,
+                           GDK_OWNERSHIP_WINDOW, TRUE,
+                           GDK_KEY_PRESS | GDK_KEY_RELEASE,
+                           NULL, time) == GDK_GRAB_SUCCESS)
+        {
+	  priv->grab_keyboard = device;
 	  priv->grab_time = time;
 	}
 
@@ -1769,10 +1775,10 @@ gtk_button_finish_activate (GtkButton *button,
   g_source_remove (button->activate_timeout);
   button->activate_timeout = 0;
 
-  if (priv->has_grab)
+  if (priv->grab_keyboard)
     {
-      gdk_display_keyboard_ungrab (gtk_widget_get_display (widget),
-				   priv->grab_time);
+      gdk_device_ungrab (priv->grab_keyboard, priv->grab_time);
+      priv->grab_keyboard = NULL;
     }
   gtk_grab_remove (widget);
 
