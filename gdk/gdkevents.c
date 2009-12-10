@@ -930,6 +930,8 @@ gdk_event_get_axis (const GdkEvent *event,
 GdkDevice *
 gdk_event_get_device (const GdkEvent *event)
 {
+  g_return_val_if_fail (event != NULL, NULL);
+
   switch (event->type)
     {
     case GDK_MOTION_NOTIFY:
