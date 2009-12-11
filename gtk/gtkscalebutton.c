@@ -103,6 +103,9 @@ struct _GtkScaleButtonPrivate
 
   gchar **icon_list;
 
+  GdkDevice *grab_pointer;
+  GdkDevice *grab_keyboard;
+
   GtkAdjustment *adjustment; /* needed because it must be settable in init() */
 };
 
@@ -928,6 +931,7 @@ gtk_scale_popup (GtkWidget *widget,
   GdkDisplay *display;
   GdkScreen *screen;
   gboolean is_moved;
+  GdkDevice *device, *keyboard, *pointer;
 
   is_moved = FALSE;
   button = GTK_SCALE_BUTTON (widget);
@@ -1037,28 +1041,46 @@ gtk_scale_popup (GtkWidget *widget,
   if (event->type == GDK_BUTTON_PRESS)
     GTK_WIDGET_CLASS (gtk_scale_button_parent_class)->button_press_event (widget, (GdkEventButton *) event);
 
+  device = gdk_event_get_device (event);
+
+  if (device->source == GDK_SOURCE_KEYBOARD)
+    {
+      keyboard = device;
+      pointer = gdk_device_get_associated_device (device);
+    }
+  else
+    {
+      pointer = device;
+      keyboard = gdk_device_get_associated_device (device);
+    }
+
   /* grab focus */
   gtk_grab_add (priv->dock);
 
-  if (gdk_pointer_grab (priv->dock->window, TRUE,
-			GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
-			GDK_POINTER_MOTION_MASK, NULL, NULL, time)
-      != GDK_GRAB_SUCCESS)
+  if (gdk_device_grab (pointer, priv->dock->window,
+                       GDK_OWNERSHIP_WINDOW, TRUE,
+                       GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
+                       GDK_POINTER_MOTION_MASK, NULL, time) != GDK_GRAB_SUCCESS)
     {
       gtk_grab_remove (priv->dock);
       gtk_widget_hide (priv->dock);
       return FALSE;
     }
 
-  if (gdk_keyboard_grab (priv->dock->window, TRUE, time) != GDK_GRAB_SUCCESS)
+  if (gdk_device_grab (keyboard, priv->dock->window,
+                       GDK_OWNERSHIP_WINDOW, TRUE,
+                       GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK,
+                       NULL, time) != GDK_GRAB_SUCCESS)
     {
-      gdk_display_pointer_ungrab (display, time);
+      gdk_device_ungrab (pointer, time);
       gtk_grab_remove (priv->dock);
       gtk_widget_hide (priv->dock);
       return FALSE;
     }
 
   gtk_widget_grab_focus (priv->dock);
+  priv->grab_keyboard = keyboard;
+  priv->grab_pointer = pointer;
 
   if (event->type == GDK_BUTTON_PRESS && !is_moved)
     {
@@ -1159,9 +1181,12 @@ gtk_scale_button_grab_notify (GtkScaleButton *button,
     return;
 
   display = gtk_widget_get_display (priv->dock);
-  gdk_display_keyboard_ungrab (display, GDK_CURRENT_TIME);
-  gdk_display_pointer_ungrab (display, GDK_CURRENT_TIME);
+  gdk_device_ungrab (priv->grab_keyboard, GDK_CURRENT_TIME);
+  gdk_device_ungrab (priv->grab_pointer, GDK_CURRENT_TIME);
   gtk_grab_remove (priv->dock);
+
+  priv->grab_keyboard = NULL;
+  priv->grab_pointer = NULL;
 
   /* hide again */
   gtk_widget_hide (priv->dock);
@@ -1273,7 +1298,7 @@ cb_dock_grab_notify (GtkWidget *widget,
 
 static gboolean
 cb_dock_grab_broken_event (GtkWidget *widget,
-			   gboolean   was_grabbed,
+                           gboolean   was_grabbed,
 			   gpointer   user_data)
 {
   GtkScaleButton *button = (GtkScaleButton *) user_data;
@@ -1299,9 +1324,12 @@ gtk_scale_button_release_grab (GtkScaleButton *button,
 
   /* ungrab focus */
   display = gtk_widget_get_display (GTK_WIDGET (button));
-  gdk_display_keyboard_ungrab (display, event->time);
-  gdk_display_pointer_ungrab (display, event->time);
+  gdk_device_ungrab (priv->grab_keyboard, event->time);
+  gdk_device_ungrab (priv->grab_pointer, event->time);
   gtk_grab_remove (priv->dock);
+
+  priv->grab_keyboard = NULL;
+  priv->grab_pointer = NULL;
 
   /* hide again */
   gtk_widget_hide (priv->dock);
@@ -1343,9 +1371,12 @@ gtk_scale_button_popdown (GtkWidget *widget)
 
   /* ungrab focus */
   display = gtk_widget_get_display (widget);
-  gdk_display_keyboard_ungrab (display, GDK_CURRENT_TIME);
-  gdk_display_pointer_ungrab (display, GDK_CURRENT_TIME);
+  gdk_device_ungrab (priv->grab_keyboard, GDK_CURRENT_TIME);
+  gdk_device_ungrab (priv->grab_pointer, GDK_CURRENT_TIME);
   gtk_grab_remove (priv->dock);
+
+  priv->grab_keyboard = NULL;
+  priv->grab_pointer = NULL;
 
   /* hide again */
   gtk_widget_hide (priv->dock);
