@@ -139,6 +139,8 @@ struct _GtkEntryPrivate
   gint start_y;
 
   gchar *im_module;
+
+  GdkDevice *completion_device;
 };
 
 typedef struct _GtkEntryPasswordHint GtkEntryPasswordHint;
@@ -9141,6 +9143,7 @@ static gint
 gtk_entry_completion_timeout (gpointer data)
 {
   GtkEntryCompletion *completion = GTK_ENTRY_COMPLETION (data);
+  GtkEntryPrivate *priv = GTK_ENTRY_GET_PRIVATE (completion->priv->entry);
 
   completion->priv->completion_timeout = 0;
 
@@ -9170,7 +9173,7 @@ gtk_entry_completion_timeout (gpointer data)
 	  if (GTK_WIDGET_VISIBLE (completion->priv->popup_window))
 	    _gtk_entry_completion_resize_popup (completion);
           else
-	    _gtk_entry_completion_popup (completion);
+	    _gtk_entry_completion_popup (completion, priv->completion_device);
 	}
       else 
 	_gtk_entry_completion_popdown (completion);
@@ -9471,7 +9474,9 @@ static void
 gtk_entry_completion_changed (GtkWidget *entry,
                               gpointer   user_data)
 {
+  GtkEntryPrivate *priv = GTK_ENTRY_GET_PRIVATE (entry);
   GtkEntryCompletion *completion = GTK_ENTRY_COMPLETION (user_data);
+  GdkDevice *device;
 
   /* (re)install completion timeout */
   if (completion->priv->completion_timeout)
@@ -9488,6 +9493,14 @@ gtk_entry_completion_changed (GtkWidget *entry,
         _gtk_entry_completion_popdown (completion);
       return;
     }
+
+  device = gtk_get_current_event_device ();
+
+  if (device && device->source == GDK_SOURCE_KEYBOARD)
+    device = gdk_device_get_associated_device (device);
+
+  if (device)
+    priv->completion_device = device;
 
   completion->priv->completion_timeout =
     gdk_threads_add_timeout (COMPLETION_TIMEOUT,
