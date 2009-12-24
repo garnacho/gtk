@@ -134,6 +134,9 @@ struct _GtkMenuShellPrivate
   GtkMnemonicHash *mnemonic_hash;
   GtkKeyHash *key_hash;
 
+  GdkDevice *grab_keyboard;
+  GdkDevice *grab_pointer;
+
   guint take_focus : 1;
   guint activated_submenu : 1;
 };
@@ -991,11 +994,14 @@ gtk_real_menu_shell_deactivate (GtkMenuShell *menu_shell)
 	}
       if (menu_shell->have_xgrab)
 	{
-	  GdkDisplay *display = gtk_widget_get_display (GTK_WIDGET (menu_shell));
-	  
+          GtkMenuShellPrivate *priv = GTK_MENU_SHELL_GET_PRIVATE (menu_shell);
+
+          gdk_device_ungrab (priv->grab_pointer, GDK_CURRENT_TIME);
+          gdk_device_ungrab (priv->grab_keyboard, GDK_CURRENT_TIME);
+
 	  menu_shell->have_xgrab = FALSE;
-	  gdk_display_pointer_ungrab (display, GDK_CURRENT_TIME);
-	  gdk_display_keyboard_ungrab (display, GDK_CURRENT_TIME);
+          priv->grab_pointer = NULL;
+          priv->grab_keyboard = NULL;
 	}
     }
 }
@@ -1619,6 +1625,39 @@ _gtk_menu_shell_remove_mnemonic (GtkMenuShell *menu_shell,
   _gtk_mnemonic_hash_remove (gtk_menu_shell_get_mnemonic_hash (menu_shell, TRUE),
 			     keyval, target);
   gtk_menu_shell_reset_key_hash (menu_shell);
+}
+
+void
+_gtk_menu_shell_set_grab_devices (GtkMenuShell *menu_shell,
+                                  GdkDevice    *keyboard,
+                                  GdkDevice    *pointer)
+{
+  GtkMenuShellPrivate *priv = GTK_MENU_SHELL_GET_PRIVATE (menu_shell);
+
+  g_return_if_fail (GTK_IS_MENU_SHELL (menu_shell));
+  g_return_if_fail (!keyboard || GDK_IS_DEVICE (keyboard));
+  g_return_if_fail (!pointer || GDK_IS_DEVICE (pointer));
+
+  priv->grab_keyboard = keyboard;
+  priv->grab_pointer = pointer;
+}
+
+gboolean
+_gtk_menu_shell_get_grab_devices (GtkMenuShell  *menu_shell,
+                                  GdkDevice    **keyboard,
+                                  GdkDevice    **pointer)
+{
+  GtkMenuShellPrivate *priv = GTK_MENU_SHELL_GET_PRIVATE (menu_shell);
+
+  g_return_val_if_fail (GTK_IS_MENU_SHELL (menu_shell), FALSE);
+
+  if (keyboard)
+    *keyboard = priv->grab_keyboard;
+
+  if (pointer)
+    *pointer = priv->grab_pointer;
+
+  return TRUE;
 }
 
 /**
