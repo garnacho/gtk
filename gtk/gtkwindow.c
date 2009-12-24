@@ -5712,11 +5712,16 @@ get_monitor_containing_pointer (GtkWindow *window)
   gint monitor_num;
   GdkScreen *window_screen;
   GdkScreen *pointer_screen;
+  GdkDisplay *display;
+  GdkDevice *pointer;
 
   window_screen = gtk_window_check_screen (window);
-  gdk_display_get_pointer (gdk_screen_get_display (window_screen),
-                           &pointer_screen,
-                           &px, &py, NULL);
+  display = gdk_screen_get_display (window_screen);
+  pointer = gdk_display_get_core_pointer (display);
+
+  gdk_display_get_device_state (display, pointer,
+                                &pointer_screen,
+                                &px, &py, NULL);
 
   if (pointer_screen == window_screen)
     monitor_num = gdk_screen_get_monitor_at_point (pointer_screen, px, py);
@@ -5899,12 +5904,16 @@ gtk_window_compute_configure_request (GtkWindow    *window,
             gint screen_height = gdk_screen_get_height (screen);
 	    gint monitor_num;
 	    GdkRectangle monitor;
+            GdkDisplay *display;
+            GdkDevice *pointer;
             GdkScreen *pointer_screen;
             gint px, py;
-            
-            gdk_display_get_pointer (gdk_screen_get_display (screen),
-                                     &pointer_screen,
-                                     &px, &py, NULL);
+
+            display = gdk_screen_get_display (screen);
+            pointer = gdk_display_get_core_pointer (display);
+            gdk_display_get_device_state (display, pointer,
+                                          &pointer_screen,
+                                          &px, &py, NULL);
 
             if (pointer_screen == screen)
               monitor_num = gdk_screen_get_monitor_at_point (screen, px, py);
