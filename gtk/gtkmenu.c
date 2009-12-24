@@ -1524,7 +1524,10 @@ gtk_menu_popup_for_device (GtkMenu             *menu,
   if (xgrab_shell && xgrab_shell != widget)
     {
       if (popup_grab_on_window (xgrab_shell->window, keyboard, pointer, activate_time))
-        GTK_MENU_SHELL (xgrab_shell)->have_xgrab = TRUE;
+        {
+          _gtk_menu_shell_set_grab_devices (GTK_MENU_SHELL (xgrab_shell), keyboard, pointer);
+          GTK_MENU_SHELL (xgrab_shell)->have_xgrab = TRUE;
+        }
     }
   else
     {
@@ -1533,7 +1536,10 @@ gtk_menu_popup_for_device (GtkMenu             *menu,
       xgrab_shell = widget;
       transfer_window = menu_grab_transfer_window_get (menu);
       if (popup_grab_on_window (transfer_window, keyboard, pointer, activate_time))
-        GTK_MENU_SHELL (xgrab_shell)->have_xgrab = TRUE;
+        {
+          _gtk_menu_shell_set_grab_devices (GTK_MENU_SHELL (xgrab_shell), keyboard, pointer);
+          GTK_MENU_SHELL (xgrab_shell)->have_xgrab = TRUE;
+        }
     }
 
   if (!GTK_MENU_SHELL (xgrab_shell)->have_xgrab)
