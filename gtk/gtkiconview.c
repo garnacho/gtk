@@ -124,6 +124,7 @@ struct _GtkIconViewPrivate
   gboolean doing_rubberband;
   gint rubberband_x1, rubberband_y1;
   gint rubberband_x2, rubberband_y2;
+  GdkDevice *rubberband_device;
 
   guint scroll_timeout_id;
   gint scroll_value_diff;
@@ -308,6 +309,7 @@ static void                 gtk_icon_view_set_cursor_item                (GtkIco
 									  GtkIconViewItem        *item,
 									  gint                    cursor_cell);
 static void                 gtk_icon_view_start_rubberbanding            (GtkIconView            *icon_view,
+                                                                          GdkDevice              *device,
 									  gint                    x,
 									  gint                    y);
 static void                 gtk_icon_view_stop_rubberbanding             (GtkIconView            *icon_view);
@@ -2223,7 +2225,7 @@ gtk_icon_view_button_press (GtkWidget      *widget,
 	    }
 	  
 	  if (icon_view->priv->selection_mode == GTK_SELECTION_MULTIPLE)
-	    gtk_icon_view_start_rubberbanding (icon_view, event->x, event->y);
+            gtk_icon_view_start_rubberbanding (icon_view, event->device, event->x, event->y);
 	}
 
       /* don't draw keyboard focus around an clicked-on item */
@@ -2315,7 +2317,9 @@ gtk_icon_view_update_rubberband (gpointer data)
   
   icon_view = GTK_ICON_VIEW (data);
 
-  gdk_window_get_pointer (icon_view->priv->bin_window, &x, &y, NULL);
+  gdk_window_get_device_position (icon_view->priv->bin_window,
+                                  icon_view->priv->rubberband_device,
+                                  &x, &y, NULL);
 
   x = MAX (x, 0);
   y = MAX (y, 0);
@@ -2366,12 +2370,14 @@ gtk_icon_view_update_rubberband (gpointer data)
 
 static void
 gtk_icon_view_start_rubberbanding (GtkIconView  *icon_view,
+                                   GdkDevice    *device,
 				   gint          x,
 				   gint          y)
 {
   GList *items;
 
-  g_assert (!icon_view->priv->doing_rubberband);
+  if (icon_view->priv->rubberband_device)
+    return;
 
   for (items = icon_view->priv->items; items; items = items->next)
     {
@@ -2386,6 +2392,7 @@ gtk_icon_view_start_rubberbanding (GtkIconView  *icon_view,
   icon_view->priv->rubberband_y2 = y;
 
   icon_view->priv->doing_rubberband = TRUE;
+  icon_view->priv->rubberband_device = device;
 
   gtk_grab_add (GTK_WIDGET (icon_view));
 }
@@ -2397,6 +2404,7 @@ gtk_icon_view_stop_rubberbanding (GtkIconView *icon_view)
     return;
 
   icon_view->priv->doing_rubberband = FALSE;
+  icon_view->priv->rubberband_device = NULL;
 
   gtk_grab_remove (GTK_WIDGET (icon_view));
   
