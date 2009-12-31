@@ -32,6 +32,7 @@
 #define __GDK_DND_H__
 
 #include <gdk/gdktypes.h>
+#include <gdk/gdkdevice.h>
 
 G_BEGIN_DECLS
 
@@ -111,6 +112,11 @@ GdkDragContext * gdk_drag_context_new        (void);
 void             gdk_drag_context_ref        (GdkDragContext *context);
 void             gdk_drag_context_unref      (GdkDragContext *context);
 #endif
+
+void             gdk_drag_context_set_device (GdkDragContext *context,
+                                              GdkDevice      *device);
+GdkDevice *      gdk_drag_context_get_device (GdkDragContext *context);
+
 
 /* Destination side */
 

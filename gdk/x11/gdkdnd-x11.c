@@ -89,6 +89,7 @@ struct _GdkDragContextPrivateX11 {
   guint version;                /* Xdnd protocol version */
 
   GSList *window_caches;
+  GdkDevice *device;
 };
 
 #define PRIVATE_DATA(context) ((GdkDragContextPrivateX11 *) GDK_DRAG_CONTEXT (context)->windowing_data)
@@ -243,6 +244,39 @@ gdk_drag_context_unref (GdkDragContext *context)
   g_return_if_fail (GDK_IS_DRAG_CONTEXT (context));
 
   g_object_unref (context);
+}
+
+void
+gdk_drag_context_set_device (GdkDragContext *context,
+                             GdkDevice      *device)
+{
+  GdkDragContextPrivateX11 *private;
+
+  g_return_if_fail (GDK_IS_DRAG_CONTEXT (context));
+  g_return_if_fail (GDK_IS_DEVICE (device));
+
+  private = PRIVATE_DATA (context);
+
+  if (private->device)
+    {
+      g_object_unref (private->device);
+      private->device = NULL;
+    }
+
+  if (device)
+    private->device = g_object_ref (device);
+}
+
+GdkDevice *
+gdk_drag_context_get_device (GdkDragContext *context)
+{
+  GdkDragContextPrivateX11 *private;
+
+  g_return_val_if_fail (GDK_IS_DRAG_CONTEXT (context), NULL);
+
+  private = PRIVATE_DATA (context);
+
+  return private->device;
 }
 
 static GdkDragContext *
@@ -2220,7 +2254,7 @@ xdnd_send_xevent (GdkDragContext *context,
 	      GdkEvent temp_event;
 	      temp_event.any.window = window;
 
-	      if  ((*xdnd_filters[i].func) (event_send, &temp_event, NULL) == GDK_FILTER_TRANSLATE)
+	      if ((*xdnd_filters[i].func) (event_send, &temp_event, NULL) == GDK_FILTER_TRANSLATE)
 		{
 		  gdk_event_put (&temp_event);
 		  g_object_unref (temp_event.dnd.context);
@@ -2994,6 +3028,8 @@ gdk_drag_begin (GdkWindow     *window,
 		GList         *targets)
 {
   GdkDragContext *new_context;
+  GdkDisplay *display;
+  GdkDevice *device;
   
   g_return_val_if_fail (window != NULL, NULL);
   g_return_val_if_fail (GDK_WINDOW_IS_X11 (window), NULL);
@@ -3007,6 +3043,10 @@ gdk_drag_begin (GdkWindow     *window,
   precache_target_list (new_context);
   
   new_context->actions = 0;
+
+  display = gdk_drawable_get_display (GDK_DRAWABLE (window));
+  device = gdk_display_get_core_pointer (display);
+  gdk_drag_context_set_device (new_context, device);
 
   return new_context;
 }
