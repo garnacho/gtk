@@ -31,7 +31,7 @@
 GdkDeviceManager *
 _gdk_device_manager_new (GdkDisplay *display)
 {
-  if (G_UNLIKELY (!g_getenv ("GDK_CORE_DEVICE_EVENTS")))
+  if (!g_getenv ("GDK_CORE_DEVICE_EVENTS"))
     {
 #if defined (XINPUT_2) || defined (XINPUT_XFREE)
       int opcode, firstevent, firsterror;
@@ -48,7 +48,8 @@ _gdk_device_manager_new (GdkDisplay *display)
           major = 2;
           minor = 0;
 
-          if (XIQueryVersion (xdisplay, &major, &minor) != BadRequest)
+          if (_gdk_enable_multidevice &&
+              XIQueryVersion (xdisplay, &major, &minor) != BadRequest)
             {
               GdkDeviceManagerXI2 *device_manager_xi2;
 

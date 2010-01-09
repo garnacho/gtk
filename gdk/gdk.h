@@ -68,6 +68,7 @@ G_BEGIN_DECLS
 /* Initialization, exit and events
  */
 #define	  GDK_PRIORITY_EVENTS		(G_PRIORITY_DEFAULT)
+void      gdk_enable_multidevice        (void);
 void 	  gdk_parse_args	   	(gint	   	*argc,
 					 gchar        ***argv);
 void 	  gdk_init		   	(gint	   	*argc,

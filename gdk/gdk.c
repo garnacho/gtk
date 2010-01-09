@@ -806,5 +806,21 @@ gdk_set_program_class (const char *program_class)
   gdk_progclass = g_strdup (program_class);
 }
 
+/**
+ * gdk_enable_multidevice:
+ *
+ * Enables multidevice support in GDK. Note that individual
+ * #GdkWindow<!-- -->s still need to explicitly enable multidevice
+ * awareness through gdk_window_set_support_multidevice().
+ **/
+void
+gdk_enable_multidevice (void)
+{
+  if (gdk_initialized)
+    return;
+
+  _gdk_enable_multidevice = TRUE;
+}
+
 #define __GDK_C__
 #include "gdkaliasdef.c"
