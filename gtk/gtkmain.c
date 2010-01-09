@@ -1622,6 +1622,7 @@ gtk_main_do_event (GdkEvent *event)
       break;
       
     case GDK_LEAVE_NOTIFY:
+      _gtk_widget_set_device_window (event_widget, event->crossing.device, NULL);
       if (GTK_WIDGET_IS_SENSITIVE (grab_widget))
 	gtk_widget_event (grab_widget, event);
       break;
