@@ -490,6 +490,7 @@ struct _GdkEventDND {
 
   guint32 time;
   gshort x_root, y_root;
+  GdkDevice *device;
 };
 
 union _GdkEvent

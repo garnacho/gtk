@@ -956,6 +956,13 @@ gdk_event_get_device (const GdkEvent *event)
     case GDK_PROXIMITY_IN:
     case GDK_PROXIMITY_OUT:
       return event->proximity.device;
+    case GDK_DRAG_ENTER:
+    case GDK_DRAG_LEAVE:
+    case GDK_DRAG_MOTION:
+    case GDK_DRAG_STATUS:
+    case GDK_DROP_START:
+    case GDK_DROP_FINISHED:
+      return event->dnd.device;
     default:
       return NULL;
     }
