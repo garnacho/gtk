@@ -2025,6 +2025,7 @@ xdnd_status_filter (GdkXEvent *xev,
       event->dnd.send_event = FALSE;
       event->dnd.type = GDK_DRAG_STATUS;
       event->dnd.context = context;
+      event->dnd.device = gdk_drag_context_get_device (context);
       g_object_ref (context);
 
       event->dnd.time = GDK_CURRENT_TIME; /* FIXME? */
@@ -2072,6 +2073,7 @@ xdnd_finished_filter (GdkXEvent *xev,
       
       event->dnd.type = GDK_DROP_FINISHED;
       event->dnd.context = context;
+      event->dnd.device = gdk_drag_context_get_device (context);
       g_object_ref (context);
 
       event->dnd.time = GDK_CURRENT_TIME; /* FIXME? */
@@ -2193,6 +2195,7 @@ send_client_message_async_cb (Window   window,
       temp_event.dnd.send_event = TRUE;
       temp_event.dnd.context = context;
       temp_event.dnd.time = GDK_CURRENT_TIME;
+      temp_event.dnd.device = gdk_drag_context_get_device (context);
 
       gdk_event_put (&temp_event);
     }
@@ -2814,6 +2817,7 @@ xdnd_enter_filter (GdkXEvent *xev,
 
   event->dnd.type = GDK_DRAG_ENTER;
   event->dnd.context = new_context;
+  event->dnd.device = gdk_drag_context_get_device (new_context);
   g_object_ref (new_context);
 
   display_x11->current_dest_drag = new_context;
@@ -2851,6 +2855,7 @@ xdnd_leave_filter (GdkXEvent *xev,
       event->dnd.type = GDK_DRAG_LEAVE;
       /* Pass ownership of context to the event */
       event->dnd.context = display_x11->current_dest_drag;
+      event->dnd.device = gdk_drag_context_get_device (event->dnd.context);
 
       display_x11->current_dest_drag = NULL;
 
@@ -2894,6 +2899,7 @@ xdnd_position_filter (GdkXEvent *xev,
     {
       event->dnd.type = GDK_DRAG_MOTION;
       event->dnd.context = display_x11->current_dest_drag;
+      event->dnd.device = gdk_drag_context_get_device (event->dnd.context);
       g_object_ref (display_x11->current_dest_drag);
 
       event->dnd.time = time;
@@ -2949,6 +2955,7 @@ xdnd_drop_filter (GdkXEvent *xev,
       event->dnd.type = GDK_DROP_START;
 
       event->dnd.context = display_x11->current_dest_drag;
+      event->dnd.device = gdk_drag_context_get_device (event->dnd.context);
       g_object_ref (display_x11->current_dest_drag);
 
       event->dnd.time = time;
@@ -3423,6 +3430,7 @@ gdk_drag_motion (GdkDragContext *context,
 
       temp_event.dnd.context = context;
       temp_event.dnd.time = time;
+      temp_event.dnd.device = gdk_drag_context_get_device (context);
 
       gdk_event_put (&temp_event);
     }
@@ -3473,6 +3481,7 @@ gdk_drag_motion (GdkDragContext *context,
 		temp_event.dnd.send_event = FALSE;
 		temp_event.dnd.context = context;
 		temp_event.dnd.time = time;
+                temp_event.dnd.device = gdk_drag_context_get_device (context);
 
 		gdk_event_put (&temp_event);
 	      }
