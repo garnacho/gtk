@@ -9421,8 +9421,8 @@ gdk_window_beep (GdkWindow *window)
  *
  * This function will enable multidevice features in @window.
  *
- * Multidevice aware windows will need to handle properly some things such
- * as multiple per enter/leave events (one per device) and grab ownerships.
+ * Multidevice aware windows will need to handle properly multiple,
+ * per device enter/leave events and grab ownerships.
  **/
 void
 gdk_window_set_support_multidevice (GdkWindow *window,
