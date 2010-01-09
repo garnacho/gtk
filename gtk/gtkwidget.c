@@ -8682,7 +8682,7 @@ _gtk_widget_set_device_window (GtkWidget *widget,
 
   g_return_if_fail (GTK_IS_WIDGET (widget));
   g_return_if_fail (GDK_IS_DEVICE (device));
-  g_return_if_fail (GDK_IS_WINDOW (window));
+  g_return_if_fail (!window || GDK_IS_WINDOW (window));
 
   if (!GTK_WIDGET_REALIZED (widget))
     return;
@@ -8699,7 +8699,10 @@ _gtk_widget_set_device_window (GtkWidget *widget,
                                (GDestroyNotify) g_hash_table_destroy);
     }
 
-  g_hash_table_insert (device_window, device, window);
+  if (window)
+    g_hash_table_insert (device_window, device, window);
+  else
+    g_hash_table_remove (device_window, device);
 }
 
 /*
