@@ -90,6 +90,8 @@ main (int argc, char *argv[])
       return -1;
     }
 
+  gdk_enable_multidevice ();
+
   gtk_init (&argc, &argv);
 
   dir = g_file_new_for_commandline_arg (argv[1]);

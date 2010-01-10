@@ -28,6 +28,8 @@ main (int argc, char *argv[])
   GtkWidget *window, *widget;
   GList *devices;
 
+  gdk_enable_multidevice ();
+
   gtk_init (&argc, &argv);
 
   window = gtk_window_new (GTK_WINDOW_TOPLEVEL);

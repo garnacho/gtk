@@ -157,6 +157,8 @@ main (int argc, gchar *argv[])
   GList *devices;
   Data data = { 0 };
 
+  gdk_enable_multidevice ();
+
   gtk_init (&argc, &argv);
 
   window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
