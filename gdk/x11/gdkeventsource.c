@@ -114,15 +114,16 @@ handle_focus_change (GdkEventCrossing *event)
 
   if (HAS_FOCUS (toplevel) != had_focus)
     {
-      GdkEvent focus_event;
+      GdkEvent *focus_event;
 
-      focus_event.type = GDK_FOCUS_CHANGE;
-      focus_event.focus_change.window = event->window;
-      focus_event.focus_change.send_event = FALSE;
-      focus_event.focus_change.in = focus_in;
-      focus_event.focus_change.device = event->device;
+      focus_event = gdk_event_new (GDK_FOCUS_CHANGE);
+      focus_event->focus_change.window = g_object_ref (event->window);
+      focus_event->focus_change.send_event = FALSE;
+      focus_event->focus_change.in = focus_in;
+      gdk_event_set_device (focus_event, gdk_event_get_device ((GdkEvent *) event));
 
-      gdk_event_put (&focus_event);
+      gdk_event_put (focus_event);
+      gdk_event_free (focus_event);
     }
 }
 

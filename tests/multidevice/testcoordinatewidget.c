@@ -119,18 +119,20 @@ test_coordinate_widget_enter_notify (GtkWidget        *widget,
                                      GdkEventCrossing *event)
 {
   TestCoordinateWidgetPrivate *priv;
+  GdkDevice *device;
   GdkPoint *point;
 
   priv = TEST_COORDINATE_WIDGET_GET_PRIVATE (widget);
+  device = gdk_event_get_device ((GdkEvent *) event);
 
-  gtk_device_group_add_device (priv->group, event->device);
+  gtk_device_group_add_device (priv->group, device);
 
   point = g_new (GdkPoint, 1);
   point->x = event->x;
   point->y = event->y;
 
   g_hash_table_insert (priv->coordinates,
-                       g_object_ref (event->device),
+                       g_object_ref (device),
                        point);
 
   gtk_widget_queue_draw (widget);
@@ -143,11 +145,13 @@ test_coordinate_widget_leave_notify (GtkWidget        *widget,
                                      GdkEventCrossing *event)
 {
   TestCoordinateWidgetPrivate *priv;
+  GdkDevice *device;
 
   priv = TEST_COORDINATE_WIDGET_GET_PRIVATE (widget);
+  device = gdk_event_get_device ((GdkEvent *) event);
 
-  gtk_device_group_add_device (priv->group, event->device);
-  g_hash_table_remove (priv->coordinates, event->device);
+  gtk_device_group_remove_device (priv->group, device);
+  g_hash_table_remove (priv->coordinates, device);
 
   gtk_widget_queue_draw (widget);
 

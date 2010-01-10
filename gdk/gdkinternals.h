@@ -169,6 +169,7 @@ struct _GdkEventPrivate
   guint      flags;
   GdkScreen *screen;
   gpointer   windowing_data;
+  GdkDevice *device;
 };
 
 /* Tracks information about the pointer grab on this display */

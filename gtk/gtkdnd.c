@@ -4283,7 +4283,7 @@ gtk_drag_key_cb (GtkWidget         *widget,
 
   dx = dy = 0;
   state = event->state & gtk_accelerator_get_default_mod_mask ();
-  pointer = gdk_device_get_associated_device (event->device);
+  pointer = gdk_device_get_associated_device (gdk_event_get_device ((GdkEvent *) event));
 
   if (event->type == GDK_KEY_PRESS)
     {

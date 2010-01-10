@@ -918,6 +918,19 @@ gdk_event_get_axis (const GdkEvent *event,
   return gdk_device_get_axis (device, axes, axis_use, value);
 }
 
+void
+gdk_event_set_device (GdkEvent  *event,
+                      GdkDevice *device)
+{
+  GdkEventPrivate *private;
+  
+  g_return_if_fail (gdk_event_is_allocated (event));
+
+  private = (GdkEventPrivate *) event;
+  
+  private->device = device;
+}
+
 /**
  * gdk_event_get_device:
  * @event: a #GdkEvent.
@@ -932,6 +945,14 @@ gdk_event_get_device (const GdkEvent *event)
 {
   g_return_val_if_fail (event != NULL, NULL);
 
+  if (gdk_event_is_allocated (event))
+    {
+      GdkEventPrivate *private = (GdkEventPrivate *) event;
+
+      if (private->device)
+        return private->device;
+    }
+
   switch (event->type)
     {
     case GDK_MOTION_NOTIFY:
@@ -941,28 +962,11 @@ gdk_event_get_device (const GdkEvent *event)
     case GDK_3BUTTON_PRESS:
     case GDK_BUTTON_RELEASE:
       return event->button.device;
-    case GDK_KEY_PRESS:
-    case GDK_KEY_RELEASE:
-      return event->key.device;
-    case GDK_FOCUS_CHANGE:
-      return event->focus_change.device;
-    case GDK_ENTER_NOTIFY:
-    case GDK_LEAVE_NOTIFY:
-      return event->crossing.device;
     case GDK_SCROLL:
       return event->scroll.device;
-    case GDK_GRAB_BROKEN:
-      return event->grab_broken.device;
     case GDK_PROXIMITY_IN:
     case GDK_PROXIMITY_OUT:
       return event->proximity.device;
-    case GDK_DRAG_ENTER:
-    case GDK_DRAG_LEAVE:
-    case GDK_DRAG_MOTION:
-    case GDK_DRAG_STATUS:
-    case GDK_DROP_START:
-    case GDK_DROP_FINISHED:
-      return event->dnd.device;
     default:
       return NULL;
     }

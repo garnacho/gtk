@@ -3376,7 +3376,7 @@ gtk_menu_motion_notify (GtkWidget      *widget,
 	  send_event->crossing.x = event->x;
 	  send_event->crossing.y = event->y;
           send_event->crossing.state = event->state;
-          send_event->crossing.device = event->device;
+          gdk_event_set_device (send_event, gdk_event_get_device ((GdkEvent *) event));
 
 	  /* We send the event to 'widget', the currently active menu,
 	   * instead of 'menu', the menu that the pointer is in. This
@@ -4070,7 +4070,7 @@ gtk_menu_stop_navigating_submenu_cb (gpointer user_data)
 	  send_event->crossing.window = g_object_ref (child_window);
 	  send_event->crossing.time = GDK_CURRENT_TIME; /* Bogus */
 	  send_event->crossing.send_event = TRUE;
-          send_event->crossing.device = popdown_data->device;
+          gdk_event_set_device (send_event, popdown_data->device);
 
 	  GTK_WIDGET_CLASS (gtk_menu_parent_class)->enter_notify_event (GTK_WIDGET (menu), (GdkEventCrossing *)send_event);
 
@@ -4254,7 +4254,7 @@ gtk_menu_set_submenu_navigation_region (GtkMenu          *menu,
 
       popdown_data = g_new (GtkMenuPopdownData, 1);
       popdown_data->menu = menu;
-      popdown_data->device = event->device;
+      popdown_data->device = gdk_event_get_device ((GdkEvent *) event);
 
       menu->navigation_timeout = gdk_threads_add_timeout_full (G_PRIORITY_DEFAULT,
                                                                popdown_delay,

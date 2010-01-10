@@ -146,7 +146,7 @@ translate_key_event (GdkDisplay           *display,
 
   event->key.type = xevent->xany.type == KeyPress ? GDK_KEY_PRESS : GDK_KEY_RELEASE;
   event->key.time = xevent->xkey.time;
-  event->key.device = device_manager->core_keyboard;
+  gdk_event_set_device (event, device_manager->core_keyboard);
 
   event->key.state = (GdkModifierType) xevent->xkey.state;
   event->key.group = _gdk_x11_get_group_for_state (display, xevent->xkey.state);
@@ -284,15 +284,16 @@ generate_focus_event (GdkDeviceManagerCore *device_manager,
                       GdkWindow            *window,
 		      gboolean              in)
 {
-  GdkEvent event;
+  GdkEvent *event;
 
-  event.type = GDK_FOCUS_CHANGE;
-  event.focus_change.window = window;
-  event.focus_change.send_event = FALSE;
-  event.focus_change.in = in;
-  event.focus_change.device = device_manager->core_keyboard;
+  event = gdk_event_new (GDK_FOCUS_CHANGE);
+  event->focus_change.window = g_object_ref (window);
+  event->focus_change.send_event = FALSE;
+  event->focus_change.in = in;
+  gdk_event_set_device (event, device_manager->core_keyboard);
 
-  gdk_event_put (&event);
+  gdk_event_put (event);
+  gdk_event_free (event);
 }
 
 static gboolean
@@ -670,7 +671,7 @@ gdk_device_manager_core_translate_event (GdkEventTranslator *translator,
 
       event->crossing.type = GDK_ENTER_NOTIFY;
       event->crossing.window = window;
-      event->crossing.device = device_manager->core_pointer;
+      gdk_event_set_device (event, device_manager->core_pointer);
 
       /* If the subwindow field of the XEvent is non-NULL, then
        *  lookup the corresponding GdkWindow.
@@ -714,7 +715,7 @@ gdk_device_manager_core_translate_event (GdkEventTranslator *translator,
 
       event->crossing.type = GDK_LEAVE_NOTIFY;
       event->crossing.window = window;
-      event->crossing.device = device_manager->core_pointer;
+      gdk_event_set_device (event, device_manager->core_pointer);
 
       /* If the subwindow field of the XEvent is non-NULL, then
        *  lookup the corresponding GdkWindow.

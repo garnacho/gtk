@@ -388,7 +388,7 @@ _gtk_plug_windowing_filter_func (GdkXEvent *gdk_xevent,
                                          NULL);
 
         translated_event = gdk_event_translator_translate (GDK_EVENT_TRANSLATOR (core_device_manager), display, xevent);
-        translated_event->key.device = keyboard;
+        gdk_event_set_device (translated_event, keyboard);
 
         gtk_main_do_event (translated_event);
         gdk_event_free (translated_event);

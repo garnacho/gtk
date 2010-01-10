@@ -9753,8 +9753,8 @@ send_crossing_event (GdkDisplay                 *display,
   if (window_event_mask & type_event_mask)
     {
       event = _gdk_make_event ((GdkWindow *)window, type, event_in_queue, TRUE);
+      gdk_event_set_device (event, device);
       event->crossing.time = time_;
-      event->crossing.device = device;
       event->crossing.subwindow = subwindow;
       if (subwindow)
 	g_object_ref (subwindow);

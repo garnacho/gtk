@@ -8817,7 +8817,7 @@ synth_crossing (GtkWidget       *widget,
   event->crossing.detail = detail;
   event->crossing.focus = FALSE;
   event->crossing.state = 0;
-  event->crossing.device = device;
+  gdk_event_set_device (event, device);
 
   if (!widget)
     widget = gtk_get_event_widget (event);
@@ -11192,9 +11192,9 @@ convert_event_to_motion (GdkEvent *event)
       new_event->axes = NULL; /* FIXME: not ideal for non-mice */
       new_event->state = 0; /* FIXME */
       new_event->is_hint = FALSE;
-      new_event->device = event->crossing.device;
       new_event->x_root = event->crossing.x_root;
       new_event->y_root = event->crossing.y_root;
+      gdk_event_set_device ((GdkEvent *) new_event, gdk_event_get_device ((GdkEvent *) event));
       break;
     default:
       g_warning ("Event with type %d can not be transformed to GdkEventMotion", event->type);

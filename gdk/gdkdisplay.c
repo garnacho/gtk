@@ -1098,15 +1098,18 @@ generate_grab_broken_event (GdkWindow *window,
 
   if (!GDK_WINDOW_DESTROYED (window))
     {
-      GdkEvent event;
-      event.type = GDK_GRAB_BROKEN;
-      event.grab_broken.window = window;
-      event.grab_broken.send_event = 0;
-      event.grab_broken.keyboard = (device->source == GDK_SOURCE_KEYBOARD) ? TRUE : FALSE;
-      event.grab_broken.implicit = implicit;
-      event.grab_broken.grab_window = grab_window;
-      event.grab_broken.device = device;
-      gdk_event_put (&event);
+      GdkEvent *event;
+
+      event = gdk_event_new (GDK_GRAB_BROKEN);
+      event->grab_broken.window = g_object_ref (window);
+      event->grab_broken.send_event = FALSE;
+      event->grab_broken.implicit = implicit;
+      event->grab_broken.grab_window = grab_window;
+      gdk_event_set_device (event, device);
+      event->grab_broken.keyboard = (device->source == GDK_SOURCE_KEYBOARD) ? TRUE : FALSE;
+
+      gdk_event_put (event);
+      gdk_event_free (event);
     }
 }
 

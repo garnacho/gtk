@@ -882,6 +882,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
       {
         XIDeviceEvent *xev = (XIDeviceEvent *) ev;
         GdkKeymap *keymap = gdk_keymap_get_for_display (display);
+        GdkDevice *device;
 
         event->key.type = xev->evtype == XI_KeyPress ? GDK_KEY_PRESS : GDK_KEY_RELEASE;
 
@@ -894,8 +895,9 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
         event->key.hardware_keycode = xev->detail;
         event->key.is_modifier = _gdk_keymap_key_is_modifier (keymap, event->key.hardware_keycode);
 
-        event->key.device = g_hash_table_lookup (device_manager->id_table,
-                                                 GUINT_TO_POINTER (xev->deviceid));
+        device = g_hash_table_lookup (device_manager->id_table,
+                                      GUINT_TO_POINTER (xev->deviceid));
+        gdk_event_set_device (event, device);
 
         _gdk_keymap_add_virtual_modifiers (keymap, &event->key.state);
 
@@ -1037,6 +1039,7 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
     case XI_Leave:
       {
         XIEnterEvent *xev = (XIEnterEvent *) ev;
+        GdkDevice *device;
 
         event->crossing.type = (ev->evtype == XI_Enter) ? GDK_ENTER_NOTIFY : GDK_LEAVE_NOTIFY;
 
@@ -1049,8 +1052,10 @@ gdk_device_manager_xi2_translate_event (GdkEventTranslator *translator,
 
         event->crossing.window = window;
         event->crossing.subwindow = gdk_window_lookup_for_display (display, xev->child);
-        event->crossing.device = g_hash_table_lookup (device_manager->id_table,
-                                                      GINT_TO_POINTER (xev->deviceid));
+
+        device = g_hash_table_lookup (device_manager->id_table,
+                                      GINT_TO_POINTER (xev->deviceid));
+        gdk_event_set_device (event, device);
 
         event->crossing.mode = translate_crossing_mode (xev->mode);
         event->crossing.detail = translate_notify_type (xev->detail);

@@ -1616,13 +1616,17 @@ gtk_main_do_event (GdkEvent *event)
       break;
       
     case GDK_ENTER_NOTIFY:
-      _gtk_widget_set_device_window (event_widget, event->crossing.device, event->any.window);
+      _gtk_widget_set_device_window (event_widget,
+                                     gdk_event_get_device (event),
+                                     event->any.window);
       if (GTK_WIDGET_IS_SENSITIVE (grab_widget))
 	gtk_widget_event (grab_widget, event);
       break;
       
     case GDK_LEAVE_NOTIFY:
-      _gtk_widget_set_device_window (event_widget, event->crossing.device, NULL);
+      _gtk_widget_set_device_window (event_widget,
+                                     gdk_event_get_device (event),
+                                     NULL);
       if (GTK_WIDGET_IS_SENSITIVE (grab_widget))
 	gtk_widget_event (grab_widget, event);
       break;

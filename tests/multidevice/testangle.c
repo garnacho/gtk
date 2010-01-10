@@ -46,7 +46,9 @@ enter_notify_cb (GtkWidget        *widget,
   devices = gtk_device_group_get_devices (data->group);
 
   if (g_list_length (devices) < 2)
-    gtk_device_group_add_device (data->group, event->device);
+    gtk_device_group_add_device (data->group, gdk_event_get_device ((GdkEvent *) event));
+
+  return FALSE;
 }
 
 static gboolean
@@ -58,7 +60,9 @@ leave_notify_cb (GtkWidget        *widget,
 
   data = (Data *) user_data;
 
-  gtk_device_group_remove_device (data->group, event->device);
+  gtk_device_group_remove_device (data->group, gdk_event_get_device ((GdkEvent *) event));
+
+  return FALSE;
 }
 
 static void

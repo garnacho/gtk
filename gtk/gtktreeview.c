@@ -5450,7 +5450,9 @@ gtk_tree_view_key_press (GtkWidget   *widget,
       if (tree_view->priv->imcontext_changed ||    /* we're in a preedit */
 	  (retval && text_modified))               /* ...or the text was modified */
 	{
-	  if (gtk_tree_view_real_start_interactive_search (tree_view, event->device, FALSE))
+	  if (gtk_tree_view_real_start_interactive_search (tree_view,
+                                                           gdk_event_get_device ((GdkEvent *) event),
+                                                           FALSE))
 	    {
 	      gtk_widget_grab_focus (GTK_WIDGET (tree_view));
 	      return TRUE;
@@ -5553,8 +5555,8 @@ gtk_tree_view_focus_out (GtkWidget     *widget,
 
   /* destroy interactive search dialog */
   if (tree_view->priv->search_window)
-    gtk_tree_view_search_dialog_hide (tree_view->priv->search_window,
-                                      tree_view, event->device);
+    gtk_tree_view_search_dialog_hide (tree_view->priv->search_window, tree_view,
+                                      gdk_event_get_device ((GdkEvent *) event));
 
   return FALSE;
 }
@@ -9270,7 +9272,7 @@ _gtk_tree_view_column_start_drag (GtkTreeView       *tree_view,
   send_event->crossing.subwindow = NULL;
   send_event->crossing.detail = GDK_NOTIFY_ANCESTOR;
   send_event->crossing.time = GDK_CURRENT_TIME;
-  send_event->crossing.device = device;
+  gdk_event_set_device (send_event, device);
 
   gtk_propagate_event (column->button, send_event);
   gdk_event_free (send_event);
@@ -9286,7 +9288,7 @@ _gtk_tree_view_column_start_drag (GtkTreeView       *tree_view,
   send_event->button.button = 1;
   send_event->button.x_root = 0;
   send_event->button.y_root = 0;
-  send_event->button.device = device;
+  gdk_event_set_device (send_event, device);
 
   gtk_propagate_event (column->button, send_event);
   gdk_event_free (send_event);
@@ -10253,7 +10255,7 @@ send_focus_change (GtkWidget *widget,
       fevent->focus_change.type = GDK_FOCUS_CHANGE;
       fevent->focus_change.window = g_object_ref (widget->window);
       fevent->focus_change.in = in;
-      fevent->focus_change.device = device;
+      gdk_event_set_device (fevent, device);
 
       gtk_widget_event (widget, fevent);
 
@@ -14359,7 +14361,8 @@ gtk_tree_view_search_key_press_event (GtkWidget *widget,
 	    event->keyval == GDK_KP_Tab ||
 	    event->keyval == GDK_ISO_Left_Tab))
     {
-      gtk_tree_view_search_dialog_hide (widget, tree_view, event->device);
+      gtk_tree_view_search_dialog_hide (widget, tree_view,
+                                        gdk_event_get_device ((GdkEvent *) event));
       return TRUE;
     }
 

@@ -5275,7 +5275,7 @@ do_focus_change (GtkWidget *widget,
       if (widget->window)
         g_object_ref (widget->window);
       fevent->focus_change.in = in;
-      fevent->focus_change.device = dev;
+      gdk_event_set_device (fevent, dev);
 
       gtk_widget_event (widget, fevent);
 

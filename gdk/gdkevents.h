@@ -352,7 +352,6 @@ struct _GdkEventKey
   guint16 hardware_keycode;
   guint8 group;
   guint is_modifier : 1;
-  GdkDevice *device;
 };
 
 struct _GdkEventCrossing
@@ -370,7 +369,6 @@ struct _GdkEventCrossing
   GdkNotifyType detail;
   gboolean focus;
   guint state;
-  GdkDevice *device;
 };
 
 struct _GdkEventFocus
@@ -379,7 +377,6 @@ struct _GdkEventFocus
   GdkWindow *window;
   gint8 send_event;
   gint16 in;
-  GdkDevice *device;
 };
 
 struct _GdkEventConfigure
@@ -477,7 +474,6 @@ struct _GdkEventGrabBroken {
   gboolean keyboard;
   gboolean implicit;
   GdkWindow *grab_window;
-  GdkDevice *device;
 };
 
 /* Event types for DND */
@@ -490,7 +486,6 @@ struct _GdkEventDND {
 
   guint32 time;
   gshort x_root, y_root;
-  GdkDevice *device;
 };
 
 union _GdkEvent
@@ -545,6 +540,8 @@ gboolean  gdk_event_get_root_coords	(const GdkEvent  *event,
 gboolean  gdk_event_get_axis            (const GdkEvent  *event,
                                          GdkAxisUse       axis_use,
                                          gdouble         *value);
+void       gdk_event_set_device         (GdkEvent        *event,
+                                         GdkDevice       *device);
 GdkDevice* gdk_event_get_device         (const GdkEvent  *event);
 void      gdk_event_request_motions     (const GdkEventMotion *event);
 
