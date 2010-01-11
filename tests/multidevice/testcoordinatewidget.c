@@ -120,22 +120,11 @@ test_coordinate_widget_enter_notify (GtkWidget        *widget,
 {
   TestCoordinateWidgetPrivate *priv;
   GdkDevice *device;
-  GdkPoint *point;
 
   priv = TEST_COORDINATE_WIDGET_GET_PRIVATE (widget);
   device = gdk_event_get_device ((GdkEvent *) event);
 
   gtk_device_group_add_device (priv->group, device);
-
-  point = g_new (GdkPoint, 1);
-  point->x = event->x;
-  point->y = event->y;
-
-  g_hash_table_insert (priv->coordinates,
-                       g_object_ref (device),
-                       point);
-
-  gtk_widget_queue_draw (widget);
 
   return FALSE;
 }
@@ -151,9 +140,6 @@ test_coordinate_widget_leave_notify (GtkWidget        *widget,
   device = gdk_event_get_device ((GdkEvent *) event);
 
   gtk_device_group_remove_device (priv->group, device);
-  g_hash_table_remove (priv->coordinates, device);
-
-  gtk_widget_queue_draw (widget);
 
   return FALSE;
 }
@@ -168,15 +154,25 @@ test_coordinate_widget_multidevice_event (GtkWidget           *widget,
   GdkPoint *point;
 
   priv = TEST_COORDINATE_WIDGET_GET_PRIVATE (widget);
-  ev = event->updated_event;
 
-  point = g_hash_table_lookup (priv->coordinates, ev->device);
+  if (event->type == GTK_EVENT_DEVICE_REMOVED)
+    g_hash_table_remove (priv->coordinates, event->updated_device);
+  else
+    {
+      point = g_hash_table_lookup (priv->coordinates, event->updated_device);
+      ev = event->updated_event;
 
-  if (G_UNLIKELY (!point))
-    return;
+      if (G_UNLIKELY (!point))
+        {
+          point = g_new (GdkPoint, 1);
+          g_hash_table_insert (priv->coordinates,
+                               g_object_ref (event->updated_device),
+                               point);
+        }
 
-  point->x = ev->x;
-  point->y = ev->y;
+      point->x = ev->x;
+      point->y = ev->y;
+    }
 
   gtk_widget_queue_draw (widget);
 }
