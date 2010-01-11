@@ -4733,6 +4733,7 @@ compose_multidevice_event (GtkWidget               *widget,
   event.n_events = g_list_length (devices);
   event.events = g_new0 (GdkEventMotion *, event.n_events);
   event.updated_event = (GdkEventMotion *) updated_event;
+  event.updated_device = device;
 
   while (devices)
     {

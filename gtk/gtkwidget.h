@@ -447,6 +447,7 @@ struct _GtkMultiDeviceEvent
   guint n_events;
   GdkEventMotion **events;
   GdkEventMotion *updated_event;
+  GdkDevice *updated_device;
 };
 
 struct _GtkWidgetAuxInfo
