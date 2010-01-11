@@ -43,12 +43,12 @@
  * @Short_description: A tool palette with categories
  * @Title: GtkToolPalette
  *
- * A #GtkToolPalette allows it to add #GtkToolItem<!-- -->s to a palette-like
+ * A #GtkToolPalette allows you to add #GtkToolItem<!-- -->s to a palette-like
  * container with different categories and drag and drop support.
  *
  * A #GtkToolPalette is created with a call to gtk_tool_palette_new().
  *
- * #GtkToolItem<!-- -->s cannot be added directly to a #GtkToolPalette,
+ * #GtkToolItem<!-- -->s cannot be added directly to a #GtkToolPalette - 
  * instead they are added to a #GtkToolItemGroup which can than be added
  * to a #GtkToolPalette. To add a #GtkToolItemGroup to a #GtkToolPalette,
  * use gtk_container_add().
@@ -1074,7 +1074,8 @@ gtk_tool_palette_new (void)
 /**
  * gtk_tool_palette_set_icon_size:
  * @palette: a #GtkToolPalette
- * @icon_size: the #GtkIconSize that icons in the tool palette shall have
+ * @icon_size: (type int): the #GtkIconSize that icons in the tool
+ *     palette shall have
  *
  * Sets the size of icons in the tool palette.
  *
@@ -1240,7 +1241,7 @@ gtk_tool_palette_unset_style (GtkToolPalette *palette)
  * Gets the size of icons in the tool palette.
  * See gtk_tool_palette_set_icon_size().
  *
- * Returns: the #GtkIconSize of icons in the tool palette
+ * Returns: (type int): the #GtkIconSize of icons in the tool palette
  *
  * Since: 2.20
  */

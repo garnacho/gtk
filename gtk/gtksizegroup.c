@@ -157,7 +157,7 @@ real_queue_resize (GtkWidget *widget)
   
   if (widget->parent)
     _gtk_container_queue_resize (GTK_CONTAINER (widget->parent));
-  else if (GTK_WIDGET_TOPLEVEL (widget) && GTK_IS_CONTAINER (widget))
+  else if (gtk_widget_is_toplevel (widget) && GTK_IS_CONTAINER (widget))
     _gtk_container_queue_resize (GTK_CONTAINER (widget));
 }
 
@@ -585,8 +585,8 @@ gtk_size_group_remove_widget (GtkSizeGroup *size_group,
  * 
  * Returns the list of widgets associated with @size_group.
  *
- * Return value: a #GSList of widgets. The list is owned by GTK+ 
- *   and should not be modified.
+ * Return value:  (element-type GtkWidget) (transfer none): a #GSList of
+ *   widgets. The list is owned by GTK+ and should not be modified.
  *
  * Since: 2.10
  **/

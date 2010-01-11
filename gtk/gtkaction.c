@@ -825,7 +825,7 @@ gtk_action_unblock_activate (GtkAction *action)
 /**
  * gtk_action_create_icon:
  * @action: the action object
- * @icon_size: the size of the icon that should be created.
+ * @icon_size: (type int): the size of the icon that should be created.
  *
  * This function is intended for use by action implementations to
  * create icons displayed in the proxy widgets.
@@ -978,8 +978,8 @@ gtk_action_disconnect_proxy (GtkAction *action,
  * 
  * Returns the proxy widgets for an action.
  * See also gtk_widget_get_action().
- * 
- * Return value: a #GSList of proxy widgets. The list is owned by GTK+
+ *
+ * Return value: (element-type GtkWidget) (transfer none): a #GSList of proxy widgets. The list is owned by GTK+
  * and must not be modified.
  *
  * Since: 2.4
@@ -1225,7 +1225,7 @@ gtk_action_get_is_important (GtkAction *action)
 
 /**
  * gtk_action_set_always_show_image:
- * @action: the action object
+ * @action: a #GtkAction
  * @always_show: %TRUE if menuitem proxies should always show their image
  *
  * Sets whether @action<!-- -->'s menu item proxies will ignore the
@@ -1258,10 +1258,11 @@ gtk_action_set_always_show_image (GtkAction *action,
 
 /**
  * gtk_action_get_always_show_image:
- * @action:
+ * @action: a #GtkAction
  *
  * Returns whether @action<!-- -->'s menu item proxies will ignore the
- * #GtkSettings:gtk-menu-images setting and always show their image, if available.
+ * #GtkSettings:gtk-menu-images setting and always show their image,
+ * if available.
  *
  * Returns: %TRUE if the menu item proxies will always show their image
  *
@@ -1810,8 +1811,8 @@ gtk_action_get_accel_closure (GtkAction *action)
 /**
  * gtk_action_set_accel_group:
  * @action: the action object
- * @accel_group: a #GtkAccelGroup or %NULL
- * 
+ * @accel_group: (allow-none): a #GtkAccelGroup or %NULL
+ *
  * Sets the #GtkAccelGroup in which the accelerator for this action
  * will be installed.
  *

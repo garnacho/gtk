@@ -1,8 +1,18 @@
 ## Makefile.am for gtk+/gdk
 include $(top_srcdir)/Makefile.decl
+-include $(INTROSPECTION_MAKEFILE)
+INTROSPECTION_GIRS =
+INTROSPECTION_SCANNER_ARGS = \
+   --add-include-path=../gdk-pixbuf
+INTROSPECTION_COMPILER_ARGS = \
+   --includedir=$(srcdir) \
+   --includedir=. \
+   --includedir=../gdk-pixbuf
 
 SUBDIRS = $(gdktarget) . tests
 DIST_SUBDIRS = win32 x11 quartz directfb tests
+
+CLEANFILES =
 
 EXTRA_DIST +=			\
 	keynames.txt		\
@@ -103,6 +113,12 @@ gdk_built_public_sources =			\
 gdk_built_private_headers =			\
 	gdkalias.h
 
+gdk_private_headers =   \
+	gdkinternals.h \
+	gdkintl.h \
+    gdkpoly-generic.h	\
+	gdkregion-generic.h
+
 gdk_c_sources =                 \
 	$(medialib_sources)     \
 	gdk.c			\
@@ -121,8 +137,6 @@ gdk_c_sources =                 \
 	gdkgc.c			\
 	gdkglobals.c		\
 	gdkimage.c		\
-	gdkinternals.h  	\
-	gdkintl.h		\
 	gdkkeys.c		\
 	gdkkeyuni.c		\
 	gdkoffscreenwindow.c	\
@@ -130,11 +144,9 @@ gdk_c_sources =                 \
 	gdkpixbuf-drawable.c	\
 	gdkpixbuf-render.c	\
 	gdkpixmap.c		\
-	gdkpoly-generic.h	\
 	gdkpolyreg-generic.c	\
 	gdkrectangle.c		\
 	gdkregion-generic.c	\
-	gdkregion-generic.h	\
 	gdkrgb.c		\
 	gdkscreen.c		\
 	gdkselection.c		\
@@ -158,7 +170,8 @@ gdkincludedir = $(includedir)/gtk-2.0/gdk
 gdkinclude_HEADERS = $(gdk_public_h_sources) $(gdk_built_public_sources)
 
 common_sources =                \
-	$(gdk_c_sources)	\
+	$(gdk_private_headers)      \
+    $(gdk_c_sources)	\
 	gdkenumtypes.c		\
 	gdkmarshalers.c		\
 	gdkmarshalers.h
@@ -183,6 +196,30 @@ libgdk_win32_2_0_la_LIBADD = win32/libgdk-win32.la $(GDK_DEP_LIBS) \
   $(top_builddir)/gdk-pixbuf/libgdk_pixbuf-$(GTK_API_VERSION).la
 libgdk_win32_2_0_la_DEPENDENCIES = win32/libgdk-win32.la win32/rc/gdk-win32-res.o gdk.def
 libgdk_win32_2_0_la_LDFLAGS = -Wl,win32/rc/gdk-win32-res.o -export-symbols $(srcdir)/gdk.def $(LDADD)
+
+if HAVE_INTROSPECTION
+
+introspection_files = \
+		$(gdk_public_h_sources) \
+		$(gdk_c_sources) \
+        gdkenumtypes.c \
+        gdkenumtypes.h
+
+Gdk_2_0_gir_SCANNERFLAGS = --strip-prefix=Gdk --add-include-path=../gdk-pixbuf
+Gdk_2_0_gir_INCLUDES = Gio-2.0 GdkPixbuf-2.0 Pango-1.0
+Gdk_2_0_gir_LIBS = $(gdktargetlib)
+Gdk_2_0_gir_FILES = $(addprefix $(srcdir)/,$(introspection_files))
+Gdk_2_0_gir_CFLAGS = $(INCLUDES)
+INTROSPECTION_GIRS += Gdk-2.0.gir
+
+girdir = $(datadir)/gir-1.0
+dist_gir_DATA = $(INTROSPECTION_GIRS)
+
+typelibsdir = $(libdir)/girepository-1.0
+typelibs_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
+
+CLEANFILES += $(dist_gir_DATA) $(typelibs_DATA)
+endif
 
 if OS_WIN32
 install-def-file: gdk.def

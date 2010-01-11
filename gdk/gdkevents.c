@@ -472,6 +472,7 @@ gdk_event_copy (const GdkEvent *event)
       break;
       
     case GDK_EXPOSE:
+    case GDK_DAMAGE:
       if (event->expose.region)
 	new_event->expose.region = gdk_region_copy (event->expose.region);
       break;
@@ -549,6 +550,7 @@ gdk_event_free (GdkEvent *event)
       break;
       
     case GDK_EXPOSE:
+    case GDK_DAMAGE:
       if (event->expose.region)
 	gdk_region_destroy (event->expose.region);
       break;
@@ -1241,7 +1243,7 @@ gdk_io_invoke (GIOChannel   *source,
  * Returns: a tag that can later be used as an argument to
  * gdk_input_remove().
  *
- * Deprecated: Use g_io_add_watch_full() on a #GIOChannel
+ * Deprecated: 2.14: Use g_io_add_watch_full() on a #GIOChannel
  */
 gint
 gdk_input_add_full (gint	      source,
@@ -1289,7 +1291,7 @@ gdk_input_add_full (gint	      source,
  * Returns: a tag that can later be used as an argument to
  * gdk_input_remove().
  *
- * Deprecated: Use g_io_add_watch() on a #GIOChannel
+ * Deprecated: 2.14: Use g_io_add_watch() on a #GIOChannel
  */
 gint
 gdk_input_add (gint		 source,

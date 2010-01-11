@@ -25,6 +25,17 @@
 
 @implementation GdkQuartzView
 
+-(void)dealloc
+{
+  if (trackingRect)
+    {
+      [self removeTrackingRect:trackingRect];
+      trackingRect = 0;
+    }
+
+  [super dealloc];
+}
+
 -(void)setGdkWindow:(GdkWindow *)window
 {
   gdk_window = window;
@@ -60,7 +71,8 @@
   GdkWindowObject *private = GDK_WINDOW_OBJECT (gdk_window);
   GdkWindowImplQuartz *impl = GDK_WINDOW_IMPL_QUARTZ (private->impl);
   const NSRect *drawn_rects;
-  int count, i;
+  NSInteger count;
+  int i;
   GdkRegion *region;
 
   if (GDK_WINDOW_DESTROYED (gdk_window))

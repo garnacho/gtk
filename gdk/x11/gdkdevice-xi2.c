@@ -470,10 +470,13 @@ gdk_device_xi2_window_at_position (GdkDevice       *device,
                       &mod_state,
                       &group_state);
 
-      if (get_toplevel &&
+      if (get_toplevel && last != root &&
           (window = gdk_window_lookup_for_display (display, last)) != NULL &&
           GDK_WINDOW_TYPE (window) != GDK_WINDOW_FOREIGN)
-        break;
+        {
+          xwindow = last;
+          break;
+        }
     }
 
   gdk_x11_display_ungrab (display);

@@ -1902,6 +1902,25 @@ gdk_pixbuf_real_save_to_callback (GdkPixbuf         *pixbuf,
  * be specified using the "compression" parameter; it's value is in an
  * integer in the range of [0,9].
  *
+ * ICC color profiles can also be embedded into PNG and TIFF images.
+ * The "icc-profile" value should be the complete ICC profile encoded
+ * into base64.
+ *
+ * <informalexample><programlisting>
+ * gchar *contents;
+ * gchar *contents_encode;
+ * gsize length;
+ * g_file_get_contents ("/home/hughsie/.color/icc/L225W.icm", &contents, &length, NULL);
+ * contents_encode = g_base64_encode ((const guchar *) contents, length);
+ * gdk_pixbuf_save (pixbuf, handle, "png", &amp;error,
+ *                  "icc-profile", contents_encode,
+ *                  NULL);
+ * </programlisting></informalexample>
+ *
+ * TIFF images recognize a "compression" option which acceps an integer value.
+ * Among the codecs are 1 None, 2 Huffman, 5 LZW, 7 JPEG and 8 Deflate, see
+ * the libtiff documentation and tiff.h for all supported codec values.
+ *
  * ICO images can be saved in depth 16, 24, or 32, by using the "depth"
  * parameter. When the ICO saver is given "x_hot" and "y_hot" parameters,
  * it produces a CUR instead of an ICO.

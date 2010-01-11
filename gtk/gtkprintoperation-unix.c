@@ -291,6 +291,19 @@ _gtk_print_operation_platform_backend_launch_preview (GtkPrintOperation *op,
 
   g_strfreev (argv);
 
+  if (error != NULL)
+    {
+      gchar* uri;
+
+      g_warning ("%s %s", _("Error launching preview"), error->message);
+
+      g_error_free (error);
+      error = NULL;
+      uri = g_filename_to_uri (filename, NULL, NULL);
+      gtk_show_uri (screen, uri, GDK_CURRENT_TIME, &error);
+      g_free (uri);
+    }
+
  out:
   if (error != NULL)
     {
@@ -525,11 +538,26 @@ finish_print (PrintResponseData *rdata,
   GtkPrintOperation *op = rdata->op;
   GtkPrintOperationPrivate *priv = op->priv;
   GtkPrintJob *job;
+  gdouble top, bottom, left, right;
   
   if (rdata->do_print)
     {
       gtk_print_operation_set_print_settings (op, settings);
       priv->print_context = _gtk_print_context_new (op);
+
+      if (gtk_print_settings_get_number_up (settings) < 2)
+        {
+	  if (printer && gtk_printer_get_hard_margins (printer, &top, &bottom, &left, &right))
+	    _gtk_print_context_set_hard_margins (priv->print_context, top, bottom, left, right);
+	}
+      else
+        {
+	  /* Pages do not have any unprintable area when printing n-up as each page on the
+	   * sheet has been scaled down and translated to a position within the printable
+	   * area of the sheet.
+	   */
+	  _gtk_print_context_set_hard_margins (priv->print_context, 0, 0, 0, 0);
+	}
 
       if (page_setup != NULL &&
           (gtk_print_operation_get_default_page_setup (op) == NULL ||
@@ -939,12 +967,12 @@ get_page_setup_dialog (GtkWindow        *parent,
 
 /**
  * gtk_print_run_page_setup_dialog:
- * @parent: transient parent, or %NULL
- * @page_setup: an existing #GtkPageSetup, or %NULL
+ * @parent: (allow-none): transient parent
+ * @page_setup: (allow-none): an existing #GtkPageSetup
  * @settings: a #GtkPrintSettings
- * 
- * Runs a page setup dialog, letting the user modify the values from 
- * @page_setup. If the user cancels the dialog, the returned #GtkPageSetup 
+ *
+ * Runs a page setup dialog, letting the user modify the values from
+ * @page_setup. If the user cancels the dialog, the returned #GtkPageSetup
  * is identical to the passed in @page_setup, otherwise it contains the 
  * modifications done in the dialog.
  *

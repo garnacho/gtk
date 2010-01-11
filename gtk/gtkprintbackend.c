@@ -304,6 +304,11 @@ _gtk_print_backend_create (const gchar *backend_name)
   return pb;
 }
 
+/**
+ * gtk_printer_backend_load_modules:
+ *
+ * Return value: (element-type GtkPrintBackend) (transfer container):
+ */
 GList *
 gtk_print_backend_load_modules (void)
 {
@@ -349,11 +354,11 @@ G_DEFINE_TYPE (GtkPrintBackend, gtk_print_backend, G_TYPE_OBJECT)
 static void                 fallback_printer_request_details       (GtkPrinter          *printer);
 static gboolean             fallback_printer_mark_conflicts        (GtkPrinter          *printer,
 								    GtkPrinterOptionSet *options);
-static void                 fallback_printer_get_hard_margins      (GtkPrinter          *printer,
-								    gdouble             *top,
-								    gdouble             *bottom,
-								    gdouble             *left,
-								    gdouble             *right);
+static gboolean             fallback_printer_get_hard_margins      (GtkPrinter          *printer,
+                                                                    gdouble             *top,
+                                                                    gdouble             *bottom,
+                                                                    gdouble             *left,
+                                                                    gdouble             *right);
 static GList *              fallback_printer_list_papers           (GtkPrinter          *printer);
 static GtkPageSetup *       fallback_printer_get_default_page_size (GtkPrinter          *printer);
 static GtkPrintCapabilities fallback_printer_get_capabilities      (GtkPrinter          *printer);
@@ -494,17 +499,14 @@ fallback_printer_mark_conflicts (GtkPrinter          *printer,
   return FALSE;
 }
 
-static void
+static gboolean
 fallback_printer_get_hard_margins (GtkPrinter *printer,
 				   gdouble    *top,
 				   gdouble    *bottom,
 				   gdouble    *left,
 				   gdouble    *right)
 {
-  *top = 0;
-  *bottom = 0;
-  *left = 0;
-  *right = 0;
+  return FALSE;
 }
 
 static GList *
@@ -590,6 +592,11 @@ gtk_print_backend_set_list_done (GtkPrintBackend *backend)
 }
 
 
+/**
+ * gtk_print_backend_get_printer_list:
+ *
+ * Return value: (element-type GtkPrinter) (transfer container):
+ */
 GList *
 gtk_print_backend_get_printer_list (GtkPrintBackend *backend)
 {

@@ -124,7 +124,8 @@ enum {
   PROP_ENABLE_EVENT_SOUNDS,
   PROP_ENABLE_TOOLTIPS,
   PROP_TOOLBAR_STYLE,
-  PROP_TOOLBAR_ICON_SIZE
+  PROP_TOOLBAR_ICON_SIZE,
+  PROP_AUTO_MNEMONICS
 };
 
 
@@ -974,8 +975,6 @@ gtk_settings_class_init (GtkSettingsClass *class)
    * GtkSettings:toolbar-style:
    *
    * The size of icons in default toolbars.
-   *
-   * Since: 2.18
    */
   result = settings_install_property_parser (class,
                                              g_param_spec_enum ("gtk-toolbar-style",
@@ -984,15 +983,13 @@ gtk_settings_class_init (GtkSettingsClass *class)
                                                                    GTK_TYPE_TOOLBAR_STYLE,
                                                                    GTK_TOOLBAR_BOTH,
                                                                    GTK_PARAM_READWRITE),
-                                             NULL);
+                                             gtk_rc_property_parse_enum);
   g_assert (result == PROP_TOOLBAR_STYLE);
 
   /**
    * GtkSettings:toolbar-icon-size:
    *
    * The size of icons in default toolbars.
-   *
-   * Since: 2.18
    */
   result = settings_install_property_parser (class,
                                              g_param_spec_enum ("gtk-toolbar-icon-size",
@@ -1001,8 +998,25 @@ gtk_settings_class_init (GtkSettingsClass *class)
                                                                    GTK_TYPE_ICON_SIZE,
                                                                    GTK_ICON_SIZE_LARGE_TOOLBAR,
                                                                    GTK_PARAM_READWRITE),
-                                             NULL);
+                                             gtk_rc_property_parse_enum);
   g_assert (result == PROP_TOOLBAR_ICON_SIZE);
+
+  /**
+   * GtkSettings:gtk-auto-mnemonics:
+   *
+   * Whether mnemonics should be automatically shown and hidden when the user
+   * presses the mnemonic activator.
+   *
+   * Since: 2.20
+   */
+  result = settings_install_property_parser (class,
+                                             g_param_spec_boolean ("gtk-auto-mnemonics",
+                                                                   P_("Auto Mnemonics"),
+                                                                   P_("Whether mnemonics should be automatically shown and hidden when the user presses the mnemonic activator."),
+                                                                   FALSE,
+                                                                   GTK_PARAM_READWRITE),
+                                             NULL);
+  g_assert (result == PROP_AUTO_MNEMONICS);
 }
 
 static void
@@ -1067,8 +1081,8 @@ gtk_settings_get_for_screen (GdkScreen *screen)
  * 
  * Gets the #GtkSettings object for the default GDK screen, creating
  * it if necessary. See gtk_settings_get_for_screen().
- * 
- * Return value: a #GtkSettings object. If there is no default
+ *
+ * Return value: (transfer none): a #GtkSettings object. If there is no default
  *  screen, then returns %NULL.
  **/
 GtkSettings*

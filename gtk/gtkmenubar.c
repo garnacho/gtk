@@ -625,6 +625,7 @@ window_key_press_handler (GtkWidget   *widget,
 	    {
 	      GtkMenuShell *menu_shell = GTK_MENU_SHELL (menubars->data);
 
+              _gtk_menu_shell_set_keyboard_mode (menu_shell, TRUE);
 	      _gtk_menu_shell_activate (menu_shell);
 	      gtk_menu_shell_select_first (menu_shell, FALSE);
 	      
@@ -689,7 +690,7 @@ gtk_menu_bar_hierarchy_changed (GtkWidget *widget,
   if (old_toplevel)
     remove_from_window (GTK_WINDOW (old_toplevel), menubar);
   
-  if (GTK_WIDGET_TOPLEVEL (toplevel))
+  if (gtk_widget_is_toplevel (toplevel))
     add_to_window (GTK_WINDOW (toplevel), menubar);
 }
 
@@ -707,7 +708,7 @@ _gtk_menu_bar_cycle_focus (GtkMenuBar       *menubar,
   GtkWidget *toplevel = gtk_widget_get_toplevel (GTK_WIDGET (menubar));
   GtkMenuItem *to_activate = NULL;
 
-  if (GTK_WIDGET_TOPLEVEL (toplevel))
+  if (gtk_widget_is_toplevel (toplevel))
     {
       GList *tmp_menubars = get_viewable_menu_bars (GTK_WINDOW (toplevel));
       GList *menubars;

@@ -5,19 +5,19 @@
 # Copyright (C) 2007-2009 The GNOME Project.
 # This file is distributed under the same license as the gtk package.
 #
-# Lauris Kaplinski <lauris@ariman.ee>, 1999.
-# Tõivo Leedjärv <toivo@linux.ee>, 2002-2004.
-# Priit Laes <amd@tt.ee>, 2004, 2005.
-# Ivar Smolin <okul@linux.ee>, 2005-2009.
-# Mattias Põldaru <mahfiaz@gmail.com>, 2009.
+# Lauris Kaplinski <lauris ariman ee>, 1999.
+# Tõivo Leedjärv <toivo linux ee>, 2002-2004.
+# Priit Laes <amd tt ee>, 2004, 2005.
+# Ivar Smolin <okul linux ee>, 2005-2009.
+# Mattias Põldaru <mahfiaz gmail com>, 2009.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: gtk+ HEAD\n"
+"Project-Id-Version: gtk+ MASTER\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=gtk"
 "+&component=general\n"
-"POT-Creation-Date: 2009-11-06 13:56+0000\n"
-"PO-Revision-Date: 2009-09-24 20:43+0300\n"
+"POT-Creation-Date: 2009-12-23 07:14+0000\n"
+"PO-Revision-Date: 2009-12-25 18:16+0200\n"
 "Last-Translator: Ivar Smolin <okul@linux.ee>\n"
 "Language-Team: Estonian <gnome-et@linux.ee>\n"
 "MIME-Version: 1.0\n"
@@ -613,6 +613,9 @@ msgstr ""
 msgid "Keys for PNG text chunks must be ASCII characters."
 msgstr "PNG tekstitükkide võtmed peavad olema ASCII-märkidena."
 
+msgid "Color profile has invalid length '%"
+msgstr "Värviprofiilil on vigane pikkus '%'"
+
 #, c-format
 msgid ""
 "PNG compression level must be a value between 0 and 9; value '%s' could not "
@@ -768,6 +771,13 @@ msgstr "Tõrge TIFF-faili laadimisel"
 
 msgid "Failed to save TIFF image"
 msgstr "Tõrge TIFF-faili salvestamisel"
+
+msgid "TIFF compression doesn't refer to a valid codec."
+msgstr "TIFF-pakkimine ei viita korrektsele koodekile."
+
+#, c-format
+msgid "Color profile has invalid length '%d'."
+msgstr "Värviprofiilil on vigane pikkus '%d'"
 
 msgid "Failed to write TIFF data"
 msgstr "Tõrge TIFF-andmete kirjutamisel"
@@ -1216,10 +1226,10 @@ msgstr ""
 msgid ""
 "The previously-selected color, for comparison to the color you're selecting "
 "now."
-msgstr ""
+msgstr "Eelnevalt valitud värvus hetkel valitava värvusega võrdlemiseks."
 
 msgid "The color you've chosen."
-msgstr ""
+msgstr "Sinu poolt valitud värvus."
 
 msgid "_Save color here"
 msgstr "_Salvesta värv siia"
@@ -1447,10 +1457,19 @@ msgstr "Loo _kataloogi:"
 
 #, c-format
 msgid "Could not read the contents of %s"
-msgstr ""
+msgstr "Faili %s sisu pole võimalik lugeda"
 
 msgid "Could not read the contents of the folder"
 msgstr "Kataloogi sisu pole võimalik lugeda"
+
+msgid "Unknown"
+msgstr "Tundmatu"
+
+msgid "%H:%M"
+msgstr "%H:%M"
+
+msgid "Yesterday at %H:%M"
+msgstr "Eile kell %H:%M"
 
 msgid "Cannot change to folder because it is not local"
 msgstr "Kataloogi pole võimalik muuta kuna see pole kohalik kataloog"
@@ -1495,15 +1514,6 @@ msgstr "Otsing:"
 #, c-format
 msgid "Could not mount %s"
 msgstr "%s pole võimalik ühendada"
-
-msgid "Unknown"
-msgstr "Tundmatu"
-
-msgid "%H:%M"
-msgstr "%H:%M"
-
-msgid "Yesterday at %H:%M"
-msgstr "Eile kell %H:%M"
 
 #. Translators: this is shown in the feedback for Tab-completion in a file
 #. * chooser's text entry, when the user enters an invalid path.
@@ -2424,7 +2434,7 @@ msgstr "URI-ga '%s' pole võimalik leida ühtegi kirjet"
 
 msgctxt "throbbing progress animation widget"
 msgid "Spinner"
-msgstr ""
+msgstr "Edenemisnäidik"
 
 msgid "Provides visual indication of progress"
 msgstr "Edenemise visuaalne kajastus"

@@ -255,7 +255,7 @@ gdk_window_impl_quartz_begin_paint_region (GdkPaintable    *paintable,
   if (bg_pixmap == NULL)
     {
       CGContextRef cg_context;
-      gfloat r, g, b, a;
+      CGFloat r, g, b, a;
       gint i;
 
       cg_context = gdk_quartz_drawable_get_context (GDK_DRAWABLE (impl), FALSE);
@@ -730,7 +730,7 @@ find_child_window_helper (GdkWindow *window,
         {
           NSRect frame = NSMakeRect (0, 0, 100, 100);
           NSRect content;
-          int mask;
+          NSUInteger mask;
           int titlebar_height;
 
           mask = [child_impl->toplevel styleMask];
@@ -890,6 +890,7 @@ get_nsscreen_for_point (gint x, gint y)
 {
   int i;
   NSArray *screens;
+  NSScreen *screen = NULL;
 
   GDK_QUARTZ_ALLOC_POOL;
 
@@ -901,12 +902,15 @@ get_nsscreen_for_point (gint x, gint y)
 
       if (x >= rect.origin.x && x <= rect.origin.x + rect.size.width &&
           y >= rect.origin.y && y <= rect.origin.y + rect.size.height)
-        return [screens objectAtIndex:i];
+        {
+          screen = [screens objectAtIndex:i];
+          break;
+        }
     }
 
   GDK_QUARTZ_RELEASE_POOL;
 
-  return NULL;
+  return screen;
 }
 
 void
@@ -996,7 +1000,7 @@ _gdk_window_impl_new (GdkWindow     *window,
         NSScreen *screen;
         NSRect screen_rect;
         NSRect content_rect;
-        int style_mask;
+        NSUInteger style_mask;
         int nx, ny;
         const char *title;
 
@@ -1054,6 +1058,7 @@ _gdk_window_impl_new (GdkWindow     *window,
 	impl->view = [[GdkQuartzView alloc] initWithFrame:content_rect];
 	[impl->view setGdkWindow:window];
 	[impl->toplevel setContentView:impl->view];
+	[impl->view release];
       }
       break;
 
@@ -1075,6 +1080,7 @@ _gdk_window_impl_new (GdkWindow     *window,
 	    /* GdkWindows should be hidden by default */
 	    [impl->view setHidden:YES];
 	    [parent_impl->view addSubview:impl->view];
+	    [impl->view release];
 	  }
       }
       break;
@@ -2644,7 +2650,7 @@ gdk_window_set_decorations (GdkWindow       *window,
 			    GdkWMDecoration  decorations)
 {
   GdkWindowImplQuartz *impl;
-  int old_mask, new_mask;
+  NSUInteger old_mask, new_mask;
   NSView *old_view;
 
   if (GDK_WINDOW_DESTROYED (window) ||

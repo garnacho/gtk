@@ -31,6 +31,7 @@
 #include "config.h"
 
 #include <string.h>
+#include "gtkaccellabel.h"
 #include "gtkactivatable.h"
 #include "gtkbuildable.h"
 #include "gtkimagemenuitem.h"
@@ -785,7 +786,8 @@ gtk_ui_manager_remove_action_group (GtkUIManager   *self,
  * 
  * Returns the list of action groups associated with @self.
  *
- * Return value: a #GList of action groups. The list is owned by GTK+ 
+ * Return value:  (element-type GtkActionGroup) (transfer none): a #GList of
+ *   action groups. The list is owned by GTK+
  *   and should not be modified.
  *
  * Since: 2.4
@@ -804,7 +806,7 @@ gtk_ui_manager_get_action_groups (GtkUIManager *self)
  * 
  * Returns the #GtkAccelGroup associated with @self.
  *
- * Return value: the #GtkAccelGroup.
+ * Return value: (transfer none): the #GtkAccelGroup.
  *
  * Since: 2.4
  **/
@@ -834,8 +836,8 @@ gtk_ui_manager_get_accel_group (GtkUIManager *self)
  * the lifecycle of the ui manager. If you add the widgets returned by this 
  * function to some container or explicitly ref them, they will survive the
  * destruction of the ui manager.
- * 
- * Return value: the widget found by following the path, or %NULL if no widget
+ *
+ * Return value: (transfer none): the widget found by following the path, or %NULL if no widget
  *   was found.
  *
  * Since: 2.4
@@ -890,9 +892,9 @@ collect_toplevels (GNode   *node,
  *   #GTK_UI_MANAGER_POPUP.
  * 
  * Obtains a list of all toplevel widgets of the requested types.
- * 
- * Return value: a newly-allocated #GSList of all toplevel widgets of the
- * requested types.  Free the returned list with g_slist_free().
+ *
+ * Return value: (element-type GtkWidget) (transfer container): a newly-allocated #GSList of
+ * all toplevel widgets of the requested types.  Free the returned list with g_slist_free().
  *
  * Since: 2.4
  **/
@@ -942,6 +944,23 @@ gtk_ui_manager_get_action (GtkUIManager *self,
   return GTK_UI_MANAGER_GET_CLASS (self)->get_action (self, path);
 }
 
+static gboolean
+node_is_dead (GNode *node)
+{
+  GNode *child;
+
+  if (NODE_INFO (node)->uifiles != NULL)
+    return FALSE;
+
+  for (child = node->children; child != NULL; child = child->next)
+    {
+      if (!node_is_dead (child))
+	return FALSE;
+    }
+
+  return TRUE;
+}
+
 static GNode *
 get_child_node (GtkUIManager *self, 
 		GNode        *parent,
@@ -976,7 +995,18 @@ get_child_node (GtkUIManager *self,
 			       node_type, 
 			       NODE_INFO (child)->name,
 			       NODE_INFO (child)->type);
-		  
+
+                    if (node_is_dead (child))
+                      {
+                        /* This node was removed but is still dirty so
+                         * it is still in the tree. We want to treat this
+                         * as if it didn't exist, which means we move it
+                         * to the position it would have been created at.
+                         */
+                        g_node_unlink (child);
+                        goto insert_child;
+                      }
+
 		  return child;
 		}
 	    }
@@ -989,21 +1019,21 @@ get_child_node (GtkUIManager *self,
 	  mnode->type = node_type;
 	  mnode->name = g_strndup (childname, childname_length);
 
+	  child = g_node_new (mnode);
+	insert_child:
 	  if (sibling)
 	    {
 	      if (top)
-		child = g_node_insert_before (parent, sibling, 
-					      g_node_new (mnode));
+		g_node_insert_before (parent, sibling, child);
 	      else
-		child = g_node_insert_after (parent, sibling, 
-					     g_node_new (mnode));
+		g_node_insert_after (parent, sibling, child);
 	    }
 	  else
 	    {
 	      if (top)
-		child = g_node_prepend_data (parent, mnode);
+		g_node_prepend (parent, child);
 	      else
-		child = g_node_append_data (parent, mnode);
+		g_node_append (parent, child);
 	    }
 
 	  mark_node_dirty (child);
@@ -1707,11 +1737,11 @@ gtk_ui_manager_add_ui_from_file (GtkUIManager *self,
  * @merge_id: the merge id for the merged UI, see gtk_ui_manager_new_merge_id()
  * @path: a path
  * @name: the name for the added UI element
- * @action: the name of the action to be proxied, or %NULL to add a separator
+ * @action: (allow-none): the name of the action to be proxied, or %NULL to add a separator
  * @type: the type of UI element to add.
- * @top: if %TRUE, the UI element is added before its siblings, otherwise it 
+ * @top: if %TRUE, the UI element is added before its siblings, otherwise it
  *   is added after its siblings.
- * 
+ *
  * Adds a UI element to the current contents of @self. 
  *
  * If @type is %GTK_UI_MANAGER_AUTO, GTK+ inserts a menuitem, toolitem or 
@@ -2615,8 +2645,9 @@ update_node (GtkUIManager *self,
           if (in_popup && !popup_accels)
 	    {
 	      /* don't show accels in popups */
-	      GtkWidget *label = GTK_BIN (info->proxy)->child;
-	      g_object_set (label, "accel-closure", NULL, NULL);
+	      GtkWidget *child = gtk_bin_get_child (GTK_BIN (info->proxy));
+	      if (GTK_IS_ACCEL_LABEL (child))
+	        g_object_set (child, "accel-closure", NULL, NULL);
 	    }
         }
       

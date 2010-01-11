@@ -282,7 +282,7 @@ gtk_tooltip_set_icon (GtkTooltip *tooltip,
  * gtk_tooltip_set_icon_from_stock:
  * @tooltip: a #GtkTooltip
  * @stock_id: a stock id, or %NULL
- * @size: a stock icon size
+ * @size: (type int): a stock icon size
  *
  * Sets the icon of the tooltip (which is in front of the text) to be
  * the stock item indicated by @stock_id with the size indicated
@@ -309,7 +309,7 @@ gtk_tooltip_set_icon_from_stock (GtkTooltip  *tooltip,
  * gtk_tooltip_set_icon_from_icon_name:
  * @tooltip: a #GtkTooltip
  * @icon_name: an icon name, or %NULL
- * @size: a stock icon size
+ * @size: (type int): a stock icon size
  *
  * Sets the icon of the tooltip (which is in front of the text) to be
  * the icon indicated by @icon_name with the size indicated
@@ -336,7 +336,7 @@ gtk_tooltip_set_icon_from_icon_name (GtkTooltip  *tooltip,
  * gtk_tooltip_set_icon_from_gicon:
  * @tooltip: a #GtkTooltip
  * @gicon: a #GIcon representing the icon, or %NULL
- * @size: a stock icon size
+ * @size: (type int): a stock icon size
  *
  * Sets the icon of the tooltip (which is in front of the text)
  * to be the icon indicated by @gicon with the size indicated
@@ -619,7 +619,7 @@ window_to_alloc (GtkWidget *dest_widget,
 		 gint      *dest_y)
 {
   /* Translate from window relative to allocation relative */
-  if (!GTK_WIDGET_NO_WINDOW (dest_widget) && dest_widget->parent)
+  if (gtk_widget_get_has_window (dest_widget) && dest_widget->parent)
     {
       gint wx, wy;
       gdk_window_get_position (dest_widget->window, &wx, &wy);
@@ -874,7 +874,7 @@ gtk_tooltip_position (GtkTooltip *tooltip,
   if (tooltip->keyboard_mode_enabled)
     {
       gdk_window_get_origin (new_tooltip_widget->window, &x, &y);
-      if (GTK_WIDGET_NO_WINDOW (new_tooltip_widget))
+      if (!gtk_widget_get_has_window (new_tooltip_widget))
         {
 	  x += new_tooltip_widget->allocation.x;
 	  y += new_tooltip_widget->allocation.y;

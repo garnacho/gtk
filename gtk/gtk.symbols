@@ -409,6 +409,7 @@ gtk_text_direction_get_type G_GNUC_CONST
 gtk_text_buffer_target_info_get_type G_GNUC_CONST
 gtk_text_search_flags_get_type G_GNUC_CONST
 gtk_text_window_type_get_type G_GNUC_CONST
+gtk_tool_palette_drag_targets_get_type G_GNUC_CONST
 gtk_tree_model_flags_get_type G_GNUC_CONST
 gtk_tree_view_mode_get_type G_GNUC_CONST
 gtk_tree_view_grid_lines_get_type G_GNUC_CONST
@@ -1705,12 +1706,14 @@ gtk_file_selection_show_fileop_buttons
 
 #if IN_HEADER(__GTK_FIXED_H__)
 #if IN_FILE(__GTK_FIXED_C__)
-gtk_fixed_get_has_window
 gtk_fixed_get_type G_GNUC_CONST
 gtk_fixed_move
 gtk_fixed_new
 gtk_fixed_put
+#ifndef GTK_DISABLE_DEPRECATED
 gtk_fixed_set_has_window
+gtk_fixed_get_has_window
+#endif
 #endif
 #endif
 
@@ -2712,6 +2715,15 @@ gtk_object_get_type G_GNUC_CONST
 #endif
 #endif
 
+#if IN_HEADER(__GTK_OFFSCREEN_WINDOW_H__)
+#if IN_FILE(__GTK_OFFSCREEN_WINDOW_C__)
+gtk_offscreen_window_get_type G_GNUC_CONST
+gtk_offscreen_window_new
+gtk_offscreen_window_get_pixmap
+gtk_offscreen_window_get_pixbuf
+#endif
+#endif
+
 #if IN_HEADER(__GTK_ORIENTABLE_H__)
 #if IN_FILE(__GTK_ORIENTABLE_C__)
 gtk_orientable_get_orientation
@@ -2918,6 +2930,7 @@ gtk_print_context_get_width
 gtk_print_context_get_height
 gtk_print_context_get_dpi_x
 gtk_print_context_get_dpi_y
+gtk_print_context_get_hard_margins
 gtk_print_context_get_pango_fontmap
 gtk_print_context_create_pango_context
 gtk_print_context_create_pango_layout
@@ -2945,6 +2958,7 @@ gtk_printer_compare
 gtk_printer_has_details
 gtk_printer_request_details
 gtk_printer_get_capabilities
+gtk_printer_get_hard_margins
 gtk_enumerate_printers
 gtk_print_capabilities_get_type G_GNUC_CONST
 #endif
@@ -4467,6 +4481,7 @@ gtk_tool_item_group_get_item_position
 gtk_tool_item_group_get_n_items
 gtk_tool_item_group_get_nth_item
 gtk_tool_item_group_get_drop_item
+gtk_tool_item_group_get_collapsed
 #endif
 #endif
 
@@ -5247,6 +5262,7 @@ gtk_window_get_icon
 gtk_window_get_icon_list
 gtk_window_get_icon_name
 gtk_window_get_mnemonic_modifier
+gtk_window_get_mnemonics_visible
 gtk_window_get_modal
 gtk_window_get_position
 gtk_window_get_resizable
@@ -5318,6 +5334,7 @@ gtk_window_set_icon_name
 gtk_window_set_keep_above
 gtk_window_set_keep_below
 gtk_window_set_mnemonic_modifier
+gtk_window_set_mnemonics_visible
 gtk_window_set_modal
 gtk_window_set_opacity
 gtk_window_get_opacity

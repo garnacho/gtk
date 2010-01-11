@@ -1652,6 +1652,18 @@ gtk_menu_popup_for_device (GtkMenu             *menu,
     popup_grab_on_window (widget->window, keyboard, pointer, activate_time); /* Should always succeed */
 
   gtk_grab_add (GTK_WIDGET (menu));
+
+  if (parent_menu_shell)
+    {
+      gboolean keyboard_mode;
+
+      keyboard_mode = _gtk_menu_shell_get_keyboard_mode (GTK_MENU_SHELL (parent_menu_shell));
+      _gtk_menu_shell_set_keyboard_mode (menu_shell, keyboard_mode);
+    }
+  else if (menu_shell->button == 0) /* a keynav-activated context menu */
+    _gtk_menu_shell_set_keyboard_mode (menu_shell, TRUE);
+
+  _gtk_menu_shell_update_mnemonics (menu_shell);
 }
 
 /**
@@ -1850,6 +1862,11 @@ gtk_menu_set_active (GtkMenu *menu,
     }
 }
 
+
+/**
+ * gtk_menu_set_accel_group:
+ * @accel_group: (allow-none):
+ */
 void
 gtk_menu_set_accel_group (GtkMenu	*menu,
 			  GtkAccelGroup *accel_group)
@@ -1896,7 +1913,7 @@ gtk_menu_real_can_activate_accel (GtkWidget *widget,
 /**
  * gtk_menu_set_accel_path
  * @menu:       a valid #GtkMenu
- * @accel_path: a valid accelerator path
+ * @accel_path: (allow-none): a valid accelerator path
  *
  * Sets an accelerator path for this menu from which accelerator paths
  * for its immediate children, its menu items, can be constructed.
@@ -2072,7 +2089,7 @@ gtk_menu_get_toplevel (GtkWidget *menu)
   else if (GTK_IS_WIDGET (attach))
     {
       toplevel = gtk_widget_get_toplevel (attach);
-      if (GTK_WIDGET_TOPLEVEL (toplevel)) 
+      if (gtk_widget_is_toplevel (toplevel)) 
 	return toplevel;
     }
 
@@ -4927,11 +4944,11 @@ gtk_menu_hide_all (GtkWidget *widget)
 /**
  * gtk_menu_set_screen:
  * @menu: a #GtkMenu.
- * @screen: a #GdkScreen, or %NULL if the screen should be
+ * @screen: (allow-none): a #GdkScreen, or %NULL if the screen should be
  *          determined by the widget the menu is attached to.
  *
  * Sets the #GdkScreen on which the menu will be displayed.
- * 
+ *
  * Since: 2.2
  **/
 void
@@ -5399,7 +5416,7 @@ gtk_menu_get_monitor (GtkMenu *menu)
  * Returns a list of the menus which are attached to this widget.
  * This list is owned by GTK+ and must not be modified.
  *
- * Return value: the list of menus attached to his widget.
+ * Return value: (element-type GtkWidget) (transfer none): the list of menus attached to his widget.
  *
  * Since: 2.6
  **/

@@ -173,6 +173,7 @@ enum {
   TOGGLE_OVERWRITE,
   ICON_PRESS,
   ICON_RELEASE,
+  PREEDIT_CHANGED,
   LAST_SIGNAL
 };
 
@@ -1552,6 +1553,27 @@ gtk_entry_class_init (GtkEntryClass *class)
                   GTK_TYPE_ENTRY_ICON_POSITION,
                   GDK_TYPE_EVENT | G_SIGNAL_TYPE_STATIC_SCOPE);
 
+  /**
+   * GtkEntry::preedit-changed:
+   * @entry: the object which received the signal
+   * @preedit: the current preedit string
+   *
+   * If an input method is used, the typed text will not immediately
+   * be committed to the buffer. So if you are interested in the text,
+   * connect to this signal.
+   *
+   * Since: 2.20
+   */
+  signals[PREEDIT_CHANGED] =
+    g_signal_new_class_handler (I_("preedit-changed"),
+                                G_OBJECT_CLASS_TYPE (gobject_class),
+                                G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+                                NULL,
+                                NULL, NULL,
+                                _gtk_marshal_VOID__STRING,
+                                G_TYPE_NONE, 1,
+                                G_TYPE_STRING);
+
 
   /*
    * Key bindings
@@ -1987,9 +2009,13 @@ gtk_entry_set_property (GObject         *object,
 
     case PROP_IM_MODULE:
       g_free (priv->im_module);
-      priv->im_module = g_strdup (g_value_get_string (value));
+      priv->im_module = g_value_dup_string (value);
       if (GTK_IS_IM_MULTICONTEXT (entry->im_context))
         gtk_im_multicontext_set_context_id (GTK_IM_MULTICONTEXT (entry->im_context), priv->im_module);
+      break;
+
+    case PROP_EDITING_CANCELED:
+      entry->editing_canceled = g_value_get_boolean (value);
       break;
 
     case PROP_SCROLL_OFFSET:
@@ -4535,7 +4561,7 @@ gtk_entry_real_insert_text (GtkEditable *editable,
    * following signal handlers: buffer_inserted_text(), buffer_notify_display_text(),
    * buffer_notify_text(), buffer_notify_length()
    */
-  n_inserted = gtk_entry_buffer_insert_text (GTK_ENTRY_GET_PRIVATE (editable)->buffer, *position, new_text, n_chars);
+  n_inserted = gtk_entry_buffer_insert_text (get_buffer (GTK_ENTRY (editable)), *position, new_text, n_chars);
 
   if (n_inserted != n_chars)
       gtk_widget_error_bell (GTK_WIDGET (editable));
@@ -5152,6 +5178,7 @@ gtk_entry_preedit_changed_cb (GtkIMContext *context,
       gtk_im_context_get_preedit_string (entry->im_context,
                                          &preedit_string, NULL,
                                          &cursor_pos);
+      g_signal_emit (entry, signals[PREEDIT_CHANGED], 0, preedit_string);
       entry->preedit_length = strlen (preedit_string);
       cursor_pos = CLAMP (cursor_pos, 0, g_utf8_strlen (preedit_string, -1));
       entry->preedit_cursor = cursor_pos;
@@ -6566,7 +6593,7 @@ gtk_entry_new_with_buffer (GtkEntryBuffer *buffer)
  * 
  * Return value: a new #GtkEntry
  *
- * Deprecated: Use gtk_entry_set_max_length() instead.
+ * Deprecated: 2.0: Use gtk_entry_set_max_length() instead.
  **/
 GtkWidget*
 gtk_entry_new_with_max_length (gint max)
@@ -7240,7 +7267,7 @@ gtk_entry_get_has_frame (GtkEntry *entry)
 /**
  * gtk_entry_set_inner_border:
  * @entry: a #GtkEntry
- * @border: a #GtkBorder, or %NULL
+ * @border: (allow-none): a #GtkBorder, or %NULL
  *
  * Sets %entry's inner-border property to %border, or clears it if %NULL
  * is passed. The inner-border is the area around the entry's text, but
@@ -7278,7 +7305,7 @@ gtk_entry_set_inner_border (GtkEntry        *entry,
  * This function returns the entry's #GtkEntry:inner-border property. See
  * gtk_entry_set_inner_border() for more information.
  *
- * Return value: the entry's #GtkBorder, or %NULL if none was set.
+ * Return value: (transfer none): the entry's #GtkBorder, or %NULL if none was set.
  *
  * Since: 2.10
  **/
@@ -7304,8 +7331,8 @@ gtk_entry_get_inner_border (GtkEntry *entry)
  * gtk_entry_layout_index_to_text_index() and
  * gtk_entry_text_index_to_layout_index() are needed to convert byte
  * indices in the layout to byte indices in the entry contents.
- * 
- * Return value: the #PangoLayout for this entry
+ *
+ * Return value: (transfer none): the #PangoLayout for this entry
  **/
 PangoLayout*
 gtk_entry_get_layout (GtkEntry *entry)
@@ -9639,7 +9666,7 @@ connect_completion_signals (GtkEntry           *entry,
 /**
  * gtk_entry_set_completion:
  * @entry: A #GtkEntry
- * @completion: The #GtkEntryCompletion or %NULL
+ * @completion: (allow-none): The #GtkEntryCompletion or %NULL
  *
  * Sets @completion to be the auxiliary completion object to use with @entry.
  * All further configuration of the completion mechanism is done on
@@ -9756,9 +9783,9 @@ gtk_entry_set_cursor_hadjustment (GtkEntry      *entry,
  * Retrieves the horizontal cursor adjustment for the entry. 
  * See gtk_entry_set_cursor_hadjustment().
  *
- * Return value: the horizontal cursor adjustment, or %NULL 
+ * Return value: (transfer none): the horizontal cursor adjustment, or %NULL
  *   if none has been set.
- * 
+ *
  * Since: 2.12
  */
 GtkAdjustment*

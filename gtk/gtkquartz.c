@@ -83,7 +83,7 @@ target_to_pasteboard_type (const char *target)
     return [NSString stringWithUTF8String:target];
 }
 
-NSArray *
+NSSet *
 _gtk_quartz_target_list_to_pasteboard_types (GtkTargetList *target_list)
 {
   NSMutableSet *set = [[NSMutableSet alloc] init];
@@ -97,10 +97,10 @@ _gtk_quartz_target_list_to_pasteboard_types (GtkTargetList *target_list)
       g_free (target);
     }
 
-  return [set allObjects];
+  return set;
 }
 
-NSArray *
+NSSet *
 _gtk_quartz_target_entries_to_pasteboard_types (const GtkTargetEntry *targets,
 						guint                 n_targets)
 {
@@ -112,7 +112,7 @@ _gtk_quartz_target_entries_to_pasteboard_types (const GtkTargetEntry *targets,
       [set addObject:target_to_pasteboard_type (targets[i].target)];
     }
 
-  return [set allObjects];
+  return set;
 }
 
 GdkAtom 
@@ -260,7 +260,7 @@ _gtk_quartz_set_selection_data_for_pasteboard (NSPasteboard     *pasteboard,
   GdkDisplay *display;
   gint format;
   const guchar *data;
-  gint length;
+  NSUInteger length;
 
   target = gdk_atom_name (gtk_selection_data_get_target (selection_data));
   display = gtk_selection_data_get_display (selection_data);
@@ -316,8 +316,8 @@ _gtk_quartz_set_selection_data_for_pasteboard (NSPasteboard     *pasteboard,
       g_strfreev (list);
     }
   else
-    [pasteboard setData:[NSData dataWithBytesNoCopy:data
-	    	                             length:length
-			               freeWhenDone:NO]
-                forType:type];
+    [pasteboard setData:[NSData dataWithBytesNoCopy:(void *)data
+                                             length:length
+                                       freeWhenDone:NO]
+                                            forType:type];
 }

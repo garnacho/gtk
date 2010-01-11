@@ -1017,6 +1017,10 @@ gtk_combo_box_set_property (GObject      *object,
                                             g_value_get_enum (value));
       break;
 
+    case PROP_EDITING_CANCELED:
+      combo_box->priv->editing_canceled = g_value_get_boolean (value);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -1488,7 +1492,7 @@ gtk_combo_box_menu_position_below (GtkMenu  *menu,
 
   sx = sy = 0;
 
-  if (GTK_WIDGET_NO_WINDOW (child))
+  if (!gtk_widget_get_has_window (child))
     {
       sx += child->allocation.x;
       sy += child->allocation.y;
@@ -1651,7 +1655,7 @@ gtk_combo_box_list_position (GtkComboBox *combo_box,
 
   *x = *y = 0;
 
-  if (GTK_WIDGET_NO_WINDOW (sample))
+  if (!gtk_widget_get_has_window (sample))
     {
       *x += sample->allocation.x;
       *y += sample->allocation.y;
@@ -3266,7 +3270,9 @@ gtk_combo_box_menu_item_activate (GtkWidget *item,
 
   gtk_tree_path_free (path);
 
-  combo_box->priv->editing_canceled = FALSE;
+  g_object_set (combo_box,
+                "editing-canceled", FALSE,
+                NULL);
 }
 
 static void
@@ -5065,10 +5071,12 @@ gtk_combo_box_get_active_iter (GtkComboBox     *combo_box,
 /**
  * gtk_combo_box_set_active_iter:
  * @combo_box: A #GtkComboBox
- * @iter: The #GtkTreeIter
+ * @iter: The #GtkTreeIter, or %NULL
  * 
- * Sets the current active item to be the one referenced by @iter. 
- * @iter must correspond to a path of depth one.
+ * Sets the current active item to be the one referenced by @iter, or
+ * unsets the active item if @iter is %NULL.
+ *
+ * @iter must correspond to a path of depth one, or be %NULL.
  * 
  * Since: 2.4
  */
@@ -5076,11 +5084,13 @@ void
 gtk_combo_box_set_active_iter (GtkComboBox     *combo_box,
                                GtkTreeIter     *iter)
 {
-  GtkTreePath *path;
+  GtkTreePath *path = NULL;
 
   g_return_if_fail (GTK_IS_COMBO_BOX (combo_box));
 
-  path = gtk_tree_model_get_path (gtk_combo_box_get_model (combo_box), iter);
+  if (iter)
+    path = gtk_tree_model_get_path (gtk_combo_box_get_model (combo_box), iter);
+
   gtk_combo_box_set_active_internal (combo_box, path);
   gtk_tree_path_free (path);
 }
@@ -5088,9 +5098,9 @@ gtk_combo_box_set_active_iter (GtkComboBox     *combo_box,
 /**
  * gtk_combo_box_set_model:
  * @combo_box: A #GtkComboBox
- * @model: A #GtkTreeModel
+ * @model: (allow-none): A #GtkTreeModel
  *
- * Sets the model used by @combo_box to be @model. Will unset a previously set 
+ * Sets the model used by @combo_box to be @model. Will unset a previously set
  * model (if applicable). If model is %NULL, then it will unset the model.
  *
  * Note that this function does not clear the cell renderers, you have to 
@@ -5172,7 +5182,7 @@ out:
  *
  * Returns the #GtkTreeModel which is acting as data source for @combo_box.
  *
- * Return value: A #GtkTreeModel which was passed during construction.
+ * Return value: (transfer none): A #GtkTreeModel which was passed during construction.
  *
  * Since: 2.4
  */
@@ -5197,7 +5207,7 @@ gtk_combo_box_get_model (GtkComboBox *combo_box)
  * gtk_combo_box_insert_text(), gtk_combo_box_prepend_text() and
  * gtk_combo_box_remove_text().
  *
- * Return value: A new text combo box.
+ * Return value: (transfer none): A new text combo box.
  *
  * Since: 2.4
  */
@@ -5580,8 +5590,9 @@ gtk_cell_editable_key_press (GtkWidget   *widget,
 
   if (event->keyval == GDK_Escape)
     {
-      combo_box->priv->editing_canceled = TRUE;
-
+      g_object_set (combo_box,
+                    "editing-canceled", TRUE,
+                    NULL);
       gtk_cell_editable_editing_done (GTK_CELL_EDITABLE (combo_box));
       gtk_cell_editable_remove_widget (GTK_CELL_EDITABLE (combo_box));
       
@@ -5636,7 +5647,9 @@ popup_idle (gpointer data)
 			     combo_box, 0);
   
   /* we unset this if a menu item is activated */
-  combo_box->priv->editing_canceled = TRUE;
+  g_object_set (combo_box,
+                "editing-canceled", TRUE,
+                NULL);
   gtk_combo_box_popup (combo_box);
 
   combo_box->priv->popup_idle_id = 0;
@@ -5795,14 +5808,6 @@ gtk_combo_box_set_title (GtkComboBox *combo_box,
 
       g_object_notify (G_OBJECT (combo_box), "tearoff-title");
     }
-}
-
-gboolean
-_gtk_combo_box_editing_canceled (GtkComboBox *combo_box)
-{
-  g_return_val_if_fail (GTK_IS_COMBO_BOX (combo_box), TRUE);
-
-  return combo_box->priv->editing_canceled;
 }
 
 /**

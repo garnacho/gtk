@@ -481,6 +481,15 @@ gdk_window_class_init (GdkWindowObjectClass *klass)
 
 
   /* Properties */
+
+  /**
+   * GdkWindow:cursor:
+   *
+   * The mouse pointer for a #GdkWindow. See gdk_window_set_cursor() and
+   * gdk_window_get_cursor() for details.
+   *
+   * Since: 2.18
+   */
   g_object_class_install_property (object_class,
                                    PROP_CURSOR,
                                    g_param_spec_boxed ("cursor",
@@ -1219,14 +1228,12 @@ get_native_device_event_mask (GdkWindowObject *private,
 
       /* Do whatever the app asks to, since the app
        * may be asking for weird things for native windows,
-       * but filter out things that override the special
-       * requests below. */
-      mask = private->event_mask &
-	~(GDK_POINTER_MOTION_HINT_MASK |
-	  GDK_BUTTON_MOTION_MASK |
-	  GDK_BUTTON1_MOTION_MASK |
-	  GDK_BUTTON2_MOTION_MASK |
-	  GDK_BUTTON3_MOTION_MASK);
+       * but don't use motion hints as that may affect non-native
+       * child windows that don't want it. Also, we need to
+       * set all the app-specified masks since they will be picked
+       * up by any implicit grabs (i.e. if they were not set as
+       * native we would not get the events we need). */
+      mask = private->event_mask & ~GDK_POINTER_MOTION_HINT_MASK;
 
       /* We need thse for all native windows so we can
 	 emulate events on children: */
@@ -1266,11 +1273,7 @@ get_native_grab_event_mask (GdkEventMask grab_mask)
     GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK |
     GDK_SCROLL_MASK |
     (grab_mask &
-     ~(GDK_POINTER_MOTION_HINT_MASK |
-       GDK_BUTTON_MOTION_MASK |
-       GDK_BUTTON1_MOTION_MASK |
-       GDK_BUTTON2_MOTION_MASK |
-       GDK_BUTTON3_MOTION_MASK));
+     ~GDK_POINTER_MOTION_HINT_MASK);
 }
 
 static GdkEventMask
@@ -1306,7 +1309,7 @@ sync_native_window_stack_position (GdkWindow *window)
 
 /**
  * gdk_window_new:
- * @parent: a #GdkWindow, or %NULL to create the window as a child of
+ * @parent: (allow-none): a #GdkWindow, or %NULL to create the window as a child of
  *   the default root window for the default display.
  * @attributes: attributes of the new window
  * @attributes_mask: mask indicating which fields in @attributes are valid
@@ -1316,7 +1319,7 @@ sync_native_window_stack_position (GdkWindow *window)
  * more details.  Note: to use this on displays other than the default
  * display, @parent must be specified.
  *
- * Return value: the new #GdkWindow
+ * Return value: (transfer none): the new #GdkWindow
  **/
 GdkWindow*
 gdk_window_new (GdkWindow     *parent,
@@ -1789,6 +1792,67 @@ gdk_window_reparent (GdkWindow *window,
     _gdk_synthesize_crossing_events_for_geometry_change (window);
 }
 
+static gboolean
+temporary_disable_extension_events (GdkWindowObject *window)
+{
+  GdkWindowObject *child;
+  GList *l;
+  gboolean res;
+
+  if (window->extension_events != 0)
+    {
+      g_object_set_data (G_OBJECT (window),
+			 "gdk-window-extension-events",
+			 GINT_TO_POINTER (window->extension_events));
+      gdk_input_set_extension_events ((GdkWindow *)window, 0,
+				      GDK_EXTENSION_EVENTS_NONE);
+    }
+  else
+    res = FALSE;
+
+  for (l = window->children; l != NULL; l = l->next)
+    {
+      child = l->data;
+
+      if (window->impl_window == child->impl_window)
+	res |= temporary_disable_extension_events (child);
+    }
+
+  return res;
+}
+
+static void
+reenable_extension_events (GdkWindowObject *window)
+{
+  GdkWindowObject *child;
+  GList *l;
+  int mask;
+
+  mask = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (window),
+					      "gdk-window-extension-events"));
+
+  if (mask != 0)
+    {
+      /* We don't have the mode here, so we pass in cursor.
+	 This works with the current code since mode is not
+	 stored except as part of the mask, and cursor doesn't
+	 change the mask. */
+      gdk_input_set_extension_events ((GdkWindow *)window, mask,
+				      GDK_EXTENSION_EVENTS_CURSOR);
+      g_object_set_data (G_OBJECT (window),
+			 "gdk-window-extension-events",
+			 NULL);
+    }
+
+  for (l = window->children; l != NULL; l = l->next)
+    {
+      child = l->data;
+
+      if (window->impl_window == child->impl_window)
+	reenable_extension_events (window);
+    }
+}
+
 /**
  * gdk_window_ensure_native:
  * @window: a #GdkWindow
@@ -1816,6 +1880,7 @@ gdk_window_ensure_native (GdkWindow *window)
   GdkWindowObject *above;
   GList listhead;
   GdkWindowImplIface *impl_iface;
+  gboolean disabled_extension_events;
 
   g_return_val_if_fail (GDK_IS_WINDOW (window), FALSE);
 
@@ -1835,6 +1900,12 @@ gdk_window_ensure_native (GdkWindow *window)
     return TRUE;
 
   /* Need to create a native window */
+
+  /* First we disable any extension events on the window or its
+     descendants to handle the native input window moving */
+  disabled_extension_events = FALSE;
+  if (impl_window->input_window)
+    disabled_extension_events = temporary_disable_extension_events (private);
 
   screen = gdk_drawable_get_screen (window);
   visual = gdk_drawable_get_visual (window);
@@ -1888,6 +1959,9 @@ gdk_window_ensure_native (GdkWindow *window)
 
   if (gdk_window_is_viewable (window))
     impl_iface->show (window, FALSE);
+
+  if (disabled_extension_events)
+    reenable_extension_events (private);
 
   return TRUE;
 }
@@ -2223,6 +2297,8 @@ gdk_window_get_window_type (GdkWindow *window)
  * Check to see if a window is destroyed..
  *
  * Return value: %TRUE if the window is destroyed
+ *
+ * Since: 2.18
  **/
 gboolean
 gdk_window_is_destroyed (GdkWindow *window)
@@ -2613,6 +2689,14 @@ gdk_window_begin_implicit_paint (GdkWindow *window, GdkRectangle *rect)
   if (private->paint_stack != NULL ||
       private->implicit_paint != NULL)
     return FALSE; /* Don't stack implicit paints */
+
+  /* Never do implicit paints for foreign windows, they don't need
+   * double buffer combination since they have no client side children,
+   * and creating pixmaps for them is risky since they could disappear
+   * at any time
+   */
+  if (private->window_type == GDK_WINDOW_FOREIGN)
+    return FALSE;
 
   paint = g_new (GdkWindowPaint, 1);
   paint->region = gdk_region_new (); /* Empty */
@@ -3451,12 +3535,12 @@ gdk_window_get_offsets (GdkWindow *window,
 /**
  * gdk_window_get_internal_paint_info:
  * @window: a #GdkWindow
- * @real_drawable: location to store the drawable to which drawing should be
+ * @real_drawable: (out): location to store the drawable to which drawing should be
  *            done.
- * @x_offset: location to store the X offset between coordinates in @window,
+ * @x_offset: (out): location to store the X offset between coordinates in @window,
  *            and the underlying window system primitive coordinates for
  *            *@real_drawable.
- * @y_offset: location to store the Y offset between coordinates in @window,
+ * @y_offset: (out): location to store the Y offset between coordinates in @window,
  *            and the underlying window system primitive coordinates for
  *            *@real_drawable.
  *
@@ -4562,7 +4646,7 @@ gdk_window_clear_area_internal (GdkWindow *window,
   region = gdk_region_rectangle (&rect);
   gdk_window_clear_region_internal (window,
 				    region,
-				    FALSE);
+				    send_expose);
   gdk_region_destroy (region);
 
 }
@@ -6194,18 +6278,18 @@ gdk_window_constrain_size (GdkGeometry *geometry,
 /**
  * gdk_window_get_pointer:
  * @window: a #GdkWindow
- * @x: return location for X coordinate of pointer or %NULL to not
+ * @x: (out) (allow-none): return location for X coordinate of pointer or %NULL to not
  *      return the X coordinate
- * @y: return location for Y coordinate of pointer or %NULL to not
+ * @y: (out) (allow-none):  return location for Y coordinate of pointer or %NULL to not
  *      return the Y coordinate
- * @mask: return location for modifier mask or %NULL to not return the
+ * @mask: (out) (allow-none): return location for modifier mask or %NULL to not return the
  *      modifier mask
  *
  * Obtains the current pointer position and modifier state.
  * The position is given in coordinates relative to the upper left
  * corner of @window.
  *
- * Return value: the window containing the pointer (as with
+ * Return value: (transfer none): the window containing the pointer (as with
  * gdk_window_at_pointer()), or %NULL if the window containing the
  * pointer isn't known to GDK
  **/
@@ -6273,8 +6357,8 @@ gdk_window_get_device_position (GdkWindow       *window,
 
 /**
  * gdk_window_at_pointer:
- * @win_x: return location for origin of the window under the pointer
- * @win_y: return location for origin of the window under the pointer
+ * @win_x: (out) (allow-none): return location for origin of the window under the pointer
+ * @win_y: (out) (allow-none): return location for origin of the window under the pointer
  *
  * Obtains the window underneath the mouse pointer, returning the
  * location of that window in @win_x, @win_y. Returns %NULL if the
@@ -6285,7 +6369,7 @@ gdk_window_get_device_position (GdkWindow       *window,
  * NOTE: For multihead-aware widgets or applications use
  * gdk_display_get_window_at_pointer() instead.
  *
- * Return value: window under the mouse pointer
+ * Return value: (transfer none): window under the mouse pointer
  **/
 GdkWindow*
 gdk_window_at_pointer (gint *win_x,
@@ -8223,6 +8307,8 @@ gdk_window_get_origin (GdkWindow *window,
  * window coordinates. This is similar to
  * gdk_window_get_origin() but allows you go pass
  * in any position in the window, not just the origin.
+ *
+ * Since: 2.18
  */
 void
 gdk_window_get_root_coords (GdkWindow *window,

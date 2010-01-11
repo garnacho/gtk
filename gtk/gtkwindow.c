@@ -42,6 +42,7 @@
 #include "gtkkeyhash.h"
 #include "gtkmain.h"
 #include "gtkmnemonichash.h"
+#include "gtkmenubar.h"
 #include "gtkiconfactory.h"
 #include "gtkicontheme.h"
 #include "gtkmarshalers.h"
@@ -101,6 +102,8 @@ enum {
   /* Writeonly properties */
   PROP_STARTUP_ID,
   
+  PROP_MNEMONICS_VISIBLE,
+
   LAST_ARG
 };
 
@@ -184,6 +187,9 @@ struct _GtkWindowPrivate
   guint reset_type_hint : 1;
   guint opacity_set : 1;
   guint builder_visible : 1;
+
+  guint mnemonics_visible : 1;
+  guint mnemonics_visible_set : 1;
 
   GdkWindowTypeHint type_hint;
 
@@ -456,9 +462,8 @@ gtk_window_class_init (GtkWindowClass *klass)
   widget_class->focus_out_event = gtk_window_focus_out_event;
   widget_class->client_event = gtk_window_client_event;
   widget_class->focus = gtk_window_focus;
-  
   widget_class->expose_event = gtk_window_expose;
-   
+
   container_class->check_resize = gtk_window_check_resize;
 
   klass->set_focus = gtk_window_real_set_focus;
@@ -591,6 +596,13 @@ gtk_window_class_init (GtkWindowClass *klass)
                                                         P_("Icon for this window"),
                                                         GDK_TYPE_PIXBUF,
                                                         GTK_PARAM_READWRITE));
+  g_object_class_install_property (gobject_class,
+                                   PROP_MNEMONICS_VISIBLE,
+                                   g_param_spec_boolean ("mnemonics-visible",
+                                                         P_("Mnemonics Visible"),
+                                                         P_("Whether mnemonics are currently visible in this window"),
+                                                         TRUE,
+                                                         GTK_PARAM_READWRITE));
   
   /**
    * GtkWindow:icon-name:
@@ -666,7 +678,7 @@ gtk_window_class_init (GtkWindowClass *klass)
                                                          GTK_PARAM_READWRITE));  
 
   /**
-   * GtkWindow:accept-focus-hint:
+   * GtkWindow:accept-focus:
    *
    * Whether the window should receive the input focus.
    *
@@ -681,7 +693,7 @@ gtk_window_class_init (GtkWindowClass *klass)
                                                          GTK_PARAM_READWRITE));  
 
   /**
-   * GtkWindow:focus-on-map-hint:
+   * GtkWindow:focus-on-map:
    *
    * Whether the window should receive the input focus when mapped.
    *
@@ -929,6 +941,7 @@ gtk_window_init (GtkWindow *window)
   priv->type_hint = GDK_WINDOW_TYPE_HINT_NORMAL;
   priv->opacity = 1.0;
   priv->startup_id = NULL;
+  priv->mnemonics_visible = TRUE;
 
   colormap = _gtk_widget_peek_colormap ();
   if (colormap)
@@ -951,8 +964,11 @@ gtk_window_set_property (GObject      *object,
 			 GParamSpec   *pspec)
 {
   GtkWindow  *window;
+  GtkWindowPrivate *priv;
   
   window = GTK_WINDOW (object);
+
+  priv = GTK_WINDOW_GET_PRIVATE (window);
 
   switch (prop_id)
     {
@@ -1049,6 +1065,9 @@ gtk_window_set_property (GObject      *object,
       break;
     case PROP_OPACITY:
       gtk_window_set_opacity (window, g_value_get_double (value));
+      break;
+    case PROP_MNEMONICS_VISIBLE:
+      gtk_window_set_mnemonics_visible (window, g_value_get_boolean (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1164,6 +1183,9 @@ gtk_window_get_property (GObject      *object,
       break;
     case PROP_OPACITY:
       g_value_set_double (value, gtk_window_get_opacity (window));
+      break;
+    case PROP_MNEMONICS_VISIBLE:
+      g_value_set_boolean (value, priv->mnemonics_visible);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1551,7 +1573,7 @@ gtk_window_get_role (GtkWindow *window)
 /**
  * gtk_window_set_focus:
  * @window: a #GtkWindow
- * @focus: widget to be the new focus widget, or %NULL to unset
+ * @focus: (allow-none): widget to be the new focus widget, or %NULL to unset
  *   any focus widget for the toplevel window.
  *
  * If @focus is not the current focus widget, and is focusable, sets
@@ -1568,7 +1590,7 @@ gtk_window_set_focus (GtkWindow *window,
   if (focus)
     {
       g_return_if_fail (GTK_IS_WIDGET (focus));
-      g_return_if_fail (GTK_WIDGET_CAN_FOCUS (focus));
+      g_return_if_fail (gtk_widget_get_can_focus (focus));
     }
 
   if (focus)
@@ -1606,7 +1628,7 @@ _gtk_window_internal_set_focus (GtkWindow *window,
 /**
  * gtk_window_set_default:
  * @window: a #GtkWindow
- * @default_widget: widget to be the default, or %NULL to unset the
+ * @default_widget: (allow-none): widget to be the default, or %NULL to unset the
  *                  default widget for the toplevel.
  *
  * The default widget is the widget that's activated when the user
@@ -1624,7 +1646,7 @@ gtk_window_set_default (GtkWindow *window,
   g_return_if_fail (GTK_IS_WINDOW (window));
 
   if (default_widget)
-    g_return_if_fail (GTK_WIDGET_CAN_DEFAULT (default_widget));
+    g_return_if_fail (gtk_widget_get_can_default (default_widget));
   
   if (window->default_widget != default_widget)
     {
@@ -1638,7 +1660,7 @@ gtk_window_set_default (GtkWindow *window,
 	  old_default_widget = window->default_widget;
 	  
 	  if (window->focus_widget != window->default_widget ||
-	      !GTK_WIDGET_RECEIVES_DEFAULT (window->default_widget))
+	      !gtk_widget_get_receives_default (window->default_widget))
 	    GTK_WIDGET_UNSET_FLAGS (window->default_widget, GTK_HAS_DEFAULT);
 	  gtk_widget_queue_draw (window->default_widget);
 	}
@@ -1648,7 +1670,7 @@ gtk_window_set_default (GtkWindow *window,
       if (window->default_widget)
 	{
 	  if (window->focus_widget == NULL ||
-	      !GTK_WIDGET_RECEIVES_DEFAULT (window->focus_widget))
+	      !gtk_widget_get_receives_default (window->focus_widget))
 	    GTK_WIDGET_SET_FLAGS (window->default_widget, GTK_HAS_DEFAULT);
 	  gtk_widget_queue_draw (window->default_widget);
 	}
@@ -1960,9 +1982,9 @@ gtk_window_activate_focus (GtkWindow *window)
  * Note that this is the widget that would have the focus
  * if the toplevel window focused; if the toplevel window
  * is not focused then  <literal>GTK_WIDGET_HAS_FOCUS (widget)</literal> will
- * not be %TRUE for the widget. 
- * 
- * Return value: the currently focused widget, or %NULL if there is none.
+ * not be %TRUE for the widget.
+ *
+ * Return value: (transfer none): the currently focused widget, or %NULL if there is none.
  **/
 GtkWidget *
 gtk_window_get_focus (GtkWindow *window)
@@ -1978,7 +2000,7 @@ gtk_window_get_focus (GtkWindow *window)
  * 
  * Activates the default widget for the window, unless the current 
  * focused widget has been configured to receive the default action 
- * (see #GTK_RECEIVES_DEFAULT in #GtkWidgetFlags), in which case the
+ * (see gtk_widget_set_receives_default()), in which case the
  * focused widget is activated. 
  * 
  * Return value: %TRUE if a widget got activated.
@@ -1989,7 +2011,7 @@ gtk_window_activate_default (GtkWindow *window)
   g_return_val_if_fail (GTK_IS_WINDOW (window), FALSE);
 
   if (window->default_widget && GTK_WIDGET_IS_SENSITIVE (window->default_widget) &&
-      (!window->focus_widget || !GTK_WIDGET_RECEIVES_DEFAULT (window->focus_widget)))
+      (!window->focus_widget || !gtk_widget_get_receives_default (window->focus_widget)))
     return gtk_widget_activate (window->default_widget);
   else if (window->focus_widget && GTK_WIDGET_IS_SENSITIVE (window->focus_widget))
     return gtk_widget_activate (window->focus_widget);
@@ -2071,8 +2093,8 @@ gtk_window_get_modal (GtkWindow *window)
  * callbacks that might destroy the widgets, you <emphasis>must</emphasis> call
  * <literal>g_list_foreach (result, (GFunc)g_object_ref, NULL)</literal> first, and
  * then unref all the widgets afterwards.
- * 
- * Return value: list of toplevel widgets
+ *
+ * Return value: (element-type GtkWidget) (transfer container): list of toplevel widgets
  **/
 GList*
 gtk_window_list_toplevels (void)
@@ -2242,7 +2264,7 @@ gtk_window_unset_transient_for  (GtkWindow *window)
 /**
  * gtk_window_set_transient_for:
  * @window: a #GtkWindow
- * @parent: parent window
+ * @parent: (allow-none): parent window
  *
  * Dialog windows should be set transient for the main application
  * window they were spawned from. This allows <link
@@ -2319,7 +2341,7 @@ gtk_window_set_transient_for  (GtkWindow *window,
  * Fetches the transient parent for this window. See
  * gtk_window_set_transient_for().
  *
- * Return value: the transient parent for this window, or %NULL
+ * Return value: (transfer none): the transient parent for this window, or %NULL
  *    if no transient parent has been set.
  **/
 GtkWindow *
@@ -3414,8 +3436,8 @@ gtk_window_set_icon_list (GtkWindow  *window,
  * Retrieves the list of icons set by gtk_window_set_icon_list().
  * The list is copied, but the reference count on each
  * member won't be incremented.
- * 
- * Return value: copy of window's icon list
+ *
+ * Return value: (element-type GdkPixbuf) (transfer container): copy of window's icon list
  **/
 GList*
 gtk_window_get_icon_list (GtkWindow  *window)
@@ -3435,8 +3457,8 @@ gtk_window_get_icon_list (GtkWindow  *window)
 /**
  * gtk_window_set_icon:
  * @window: a #GtkWindow
- * @icon: icon image, or %NULL
- * 
+ * @icon: (allow-none): icon image, or %NULL
+ *
  * Sets up the icon representing a #GtkWindow. This icon is used when
  * the window is minimized (also known as iconified).  Some window
  * managers or desktop environments may also place it in the window
@@ -3490,11 +3512,11 @@ update_themed_icon (GtkIconTheme *icon_theme,
 /**
  * gtk_window_set_icon_name:
  * @window: a #GtkWindow
- * @name: the name of the themed icon
+ * @name: (allow-none): the name of the themed icon
  *
  * Sets the icon for the window from a named themed icon. See
- * the docs for #GtkIconTheme for more details. 
- * 
+ * the docs for #GtkIconTheme for more details.
+ *
  * Note that this has nothing to do with the WM_ICON_NAME 
  * property which is mentioned in the ICCCM.
  *
@@ -3539,7 +3561,7 @@ gtk_window_set_icon_name (GtkWindow   *window,
  *
  * Since: 2.6
  */
-G_CONST_RETURN gchar *
+const gchar *
 gtk_window_get_icon_name (GtkWindow *window)
 {
   GtkWindowIconInfo *info;
@@ -3558,8 +3580,8 @@ gtk_window_get_icon_name (GtkWindow *window)
  * Gets the value set by gtk_window_set_icon() (or if you've
  * called gtk_window_set_icon_list(), gets the first icon in
  * the icon list).
- * 
- * Return value: icon for window
+ *
+ * Return value: (transfer none): icon for window
  **/
 GdkPixbuf*
 gtk_window_get_icon (GtkWindow  *window)
@@ -3994,8 +4016,8 @@ gtk_window_resize (GtkWindow *window,
 /**
  * gtk_window_get_size:
  * @window: a #GtkWindow
- * @width: return location for width, or %NULL
- * @height: return location for height, or %NULL
+ * @width: (out): return location for width, or %NULL
+ * @height: (out): return location for height, or %NULL
  *
  * Obtains the current size of @window. If @window is not onscreen,
  * it returns the size GTK+ will suggest to the <link
@@ -4537,6 +4559,7 @@ gtk_window_map (GtkWidget *widget)
   GtkWindow *window = GTK_WINDOW (widget);
   GtkWindowPrivate *priv = GTK_WINDOW_GET_PRIVATE (window);
   GdkWindow *toplevel;
+  gboolean auto_mnemonics;
 
   GTK_WIDGET_SET_FLAGS (widget, GTK_MAPPED);
 
@@ -4612,6 +4635,14 @@ gtk_window_map (GtkWidget *widget)
           gdk_notify_startup_complete ();
         }
     }
+
+  /* if auto-mnemonics is enabled and mnemonics visible is not already set
+   * (as in the case of popup menus), then hide mnemonics initially
+   */
+  g_object_get (gtk_widget_get_settings (widget), "gtk-auto-mnemonics",
+                &auto_mnemonics, NULL);
+  if (auto_mnemonics && !priv->mnemonics_visible_set)
+    gtk_window_set_mnemonics_visible (window, FALSE);
 }
 
 static gboolean
@@ -5119,7 +5150,9 @@ _gtk_window_query_nonaccels (GtkWindow      *window,
  * overriding the standard key handling for a toplevel window.
  *
  * Return value: %TRUE if a widget in the focus chain handled the event.
- **/
+ *
+ * Since: 2.4
+ */
 gboolean
 gtk_window_propagate_key_event (GtkWindow        *window,
                                 GdkEventKey      *event)
@@ -5312,9 +5345,16 @@ gtk_window_focus_out_event (GtkWidget     *widget,
 			    GdkEventFocus *event)
 {
   GtkWindow *window = GTK_WINDOW (widget);
+  gboolean auto_mnemonics;
 
   _gtk_window_set_has_toplevel_focus (window, FALSE);
   _gtk_window_set_is_active (window, FALSE);
+
+  /* set the mnemonic-visible property to false */
+  g_object_get (gtk_widget_get_settings (widget),
+                "gtk-auto-mnemonics", &auto_mnemonics, NULL);
+  if (auto_mnemonics)
+    gtk_window_set_mnemonics_visible (window, FALSE);
 
   return FALSE;
 }
@@ -5454,21 +5494,21 @@ gtk_window_real_set_focus (GtkWindow *window,
     {
       g_object_ref (old_focus);
       g_object_freeze_notify (G_OBJECT (old_focus));
-      old_focus_had_default = GTK_WIDGET_HAS_DEFAULT (old_focus);
+      old_focus_had_default = gtk_widget_has_default (old_focus);
     }
   if (focus)
     {
       g_object_ref (focus);
       g_object_freeze_notify (G_OBJECT (focus));
-      focus_had_default = GTK_WIDGET_HAS_DEFAULT (focus);
+      focus_had_default = gtk_widget_has_default (focus);
     }
   
   if (window->default_widget)
-    had_default = GTK_WIDGET_HAS_DEFAULT (window->default_widget);
+    had_default = gtk_widget_has_default (window->default_widget);
   
   if (window->focus_widget)
     {
-      if (GTK_WIDGET_RECEIVES_DEFAULT (window->focus_widget) &&
+      if (gtk_widget_get_receives_default (window->focus_widget) &&
 	  (window->focus_widget != window->default_widget))
         {
 	  GTK_WIDGET_UNSET_FLAGS (window->focus_widget, GTK_HAS_DEFAULT);
@@ -5493,10 +5533,10 @@ gtk_window_real_set_focus (GtkWindow *window,
     {
       window->focus_widget = focus;
   
-      if (GTK_WIDGET_RECEIVES_DEFAULT (window->focus_widget) &&
+      if (gtk_widget_get_receives_default (window->focus_widget) &&
 	  (window->focus_widget != window->default_widget))
 	{
-	  if (GTK_WIDGET_CAN_DEFAULT (window->focus_widget))
+	  if (gtk_widget_get_can_default (window->focus_widget))
 	    GTK_WIDGET_SET_FLAGS (window->focus_widget, GTK_HAS_DEFAULT);
 
 	  if (window->default_widget)
@@ -5516,12 +5556,12 @@ gtk_window_real_set_focus (GtkWindow *window,
    * is harmless.
    */
   if (window->default_widget &&
-      (had_default != GTK_WIDGET_HAS_DEFAULT (window->default_widget)))
+      (had_default != gtk_widget_has_default (window->default_widget)))
     gtk_widget_queue_draw (window->default_widget);
   
   if (old_focus)
     {
-      if (old_focus_had_default != GTK_WIDGET_HAS_DEFAULT (old_focus))
+      if (old_focus_had_default != gtk_widget_has_default (old_focus))
 	gtk_widget_queue_draw (old_focus);
 	
       g_object_thaw_notify (G_OBJECT (old_focus));
@@ -5529,7 +5569,7 @@ gtk_window_real_set_focus (GtkWindow *window,
     }
   if (focus)
     {
-      if (focus_had_default != GTK_WIDGET_HAS_DEFAULT (focus))
+      if (focus_had_default != gtk_widget_has_default (focus))
 	gtk_widget_queue_draw (focus);
 
       g_object_thaw_notify (G_OBJECT (focus));
@@ -6614,7 +6654,7 @@ static gint
 gtk_window_expose (GtkWidget      *widget,
 		   GdkEventExpose *event)
 {
-  if (!GTK_WIDGET_APP_PAINTABLE (widget))
+  if (!gtk_widget_get_app_paintable (widget))
     gtk_window_paint (widget, &event->area);
   
   if (GTK_WIDGET_CLASS (gtk_window_parent_class)->expose_event)
@@ -7289,7 +7329,7 @@ gtk_window_set_gravity (GtkWindow *window,
  *
  * Gets the value set by gtk_window_set_gravity().
  *
- * Return value: window gravity
+ * Return value: (transfer none): window gravity
  **/
 GdkGravity
 gtk_window_get_gravity (GtkWindow *window)
@@ -7505,7 +7545,7 @@ gtk_window_check_screen (GtkWindow *window)
  *
  * Returns the #GdkScreen associated with @window.
  *
- * Return value: a #GdkScreen.
+ * Return value: (transfer none): a #GdkScreen.
  *
  * Since: 2.2
  */
@@ -7690,7 +7730,8 @@ gtk_window_group_remove_window (GtkWindowGroup *window_group,
  *
  * Returns a list of the #GtkWindows that belong to @window_group.
  *
- * Returns: A newly-allocated list of windows inside the group.
+ * Returns: (element-type GtkWidget) (transfer container): A newly-allocated list of
+ *   windows inside the group.
  *
  * Since: 2.14
  **/
@@ -7721,9 +7762,9 @@ gtk_window_group_list_windows (GtkWindowGroup *window_group)
  *
  * Returns the group for @window or the default group, if
  * @window is %NULL or if @window does not have an explicit
- * window group. 
+ * window group.
  *
- * Returns: the #GtkWindowGroup for a window or the default group
+ * Returns: (transfer none): the #GtkWindowGroup for a window or the default group
  *
  * Since: 2.10
  */
@@ -8238,7 +8279,9 @@ gtk_window_free_key_hash (GtkWindow *window)
  * overriding the standard key handling for a toplevel window.
  *
  * Return value: %TRUE if a mnemonic or accelerator was found and activated.
- **/
+ *
+ * Since: 2.4
+ */
 gboolean
 gtk_window_activate_key (GtkWindow   *window,
 			 GdkEventKey *event)
@@ -8377,12 +8420,12 @@ void
 _gtk_window_set_is_toplevel (GtkWindow *window,
 			     gboolean   is_toplevel)
 {
-  if (GTK_WIDGET_TOPLEVEL (window))
+  if (gtk_widget_is_toplevel (GTK_WIDGET (window)))
     g_assert (g_slist_find (toplevel_list, window) != NULL);
   else
     g_assert (g_slist_find (toplevel_list, window) == NULL);
 
-  if (is_toplevel == GTK_WIDGET_TOPLEVEL (window))
+  if (is_toplevel == gtk_widget_is_toplevel (GTK_WIDGET (window)))
     return;
 
   if (is_toplevel)
@@ -8460,6 +8503,39 @@ gtk_window_get_window_type (GtkWindow *window)
   g_return_val_if_fail (GTK_IS_WINDOW (window), GTK_WINDOW_TOPLEVEL);
 
   return window->type;
+}
+
+gboolean
+gtk_window_get_mnemonics_visible (GtkWindow *window)
+{
+  GtkWindowPrivate *priv;
+
+  g_return_val_if_fail (GTK_IS_WINDOW (window), FALSE);
+
+  priv = GTK_WINDOW_GET_PRIVATE (window);
+
+  return priv->mnemonics_visible;
+}
+
+void
+gtk_window_set_mnemonics_visible (GtkWindow *window,
+                                  gboolean   setting)
+{
+  GtkWindowPrivate *priv;
+
+  g_return_if_fail (GTK_IS_WINDOW (window));
+
+  priv = GTK_WINDOW_GET_PRIVATE (window);
+
+  setting = setting != FALSE;
+
+  if (priv->mnemonics_visible != setting)
+    {
+      priv->mnemonics_visible = setting;
+      g_object_notify (G_OBJECT (window), "mnemonics-visible");
+    }
+
+  priv->mnemonics_visible_set = TRUE;
 }
 
 #if defined (G_OS_WIN32) && !defined (_WIN64)

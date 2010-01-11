@@ -292,6 +292,16 @@ gdk_device_get_property (GObject    *object,
     }
 }
 
+/**
+ * gdk_device_get_state:
+ * @device: a #GdkDevice.
+ * @window: a #GdkWindow.
+ * @axes: an array of doubles to store the values of the axes of @device in,
+ * or %NULL.
+ * @mask: location to store the modifiers, or %NULL.
+ *
+ * Gets the current state of a device.
+ */
 void
 gdk_device_get_state (GdkDevice       *device,
                       GdkWindow       *window,
@@ -311,7 +321,7 @@ gdk_device_get_state (GdkDevice       *device,
  * @window: the window with respect to which which the event coordinates will be reported
  * @start: starting timestamp for range of events to return
  * @stop: ending timestamp for the range of events to return
- * @events: location to store a newly-allocated array of #GdkTimeCoord, or %NULL
+ * @events: (array length=n_events) (out) (transfer none): location to store a newly-allocated array of #GdkTimeCoord, or %NULL
  * @n_events: location to store the length of @events, or %NULL
  *
  * Obtains the motion history for a device; given a starting and
@@ -356,6 +366,13 @@ _gdk_device_allocate_history (GdkDevice *device,
   return result;
 }
 
+/**
+ * gdk_device_free_history:
+ * @events: (inout) (transfer none): an array of #GdkTimeCoord.
+ * @n_events: the length of the array.
+ *
+ * Frees an array of #GdkTimeCoord that was returned by gdk_device_get_history().
+ */
 void
 gdk_device_free_history (GdkTimeCoord **events,
                          gint           n_events)

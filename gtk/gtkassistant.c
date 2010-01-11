@@ -55,7 +55,8 @@ struct _GtkAssistantPage
 {
   GtkWidget *page;
   GtkAssistantPageType type;
-  gboolean   complete;
+  guint      complete : 1;
+  guint      complete_set : 1;
 
   GtkWidget *title;
   GdkPixbuf *header_image;
@@ -136,6 +137,8 @@ static void       gtk_assistant_buildable_custom_finished    (GtkBuildable  *bui
                                                               const gchar   *tagname,
                                                               gpointer       user_data);
 
+static GList*     find_page                                  (GtkAssistant  *assistant,
+                                                              GtkWidget     *page);
 
 enum
 {
@@ -516,7 +519,7 @@ set_assistant_buttons_state (GtkAssistant *assistant)
       compute_last_button_state (assistant);
       break;
     case GTK_ASSISTANT_PAGE_SUMMARY:
-      gtk_widget_set_sensitive (assistant->close, TRUE);
+      gtk_widget_set_sensitive (assistant->close, priv->current_page->complete);
       gtk_widget_grab_default (assistant->close);
       gtk_widget_show (assistant->close);
       gtk_widget_hide (assistant->cancel);
@@ -1692,7 +1695,7 @@ gtk_assistant_insert_page (GtkAssistant *assistant,
   g_return_val_if_fail (GTK_IS_ASSISTANT (assistant), 0);
   g_return_val_if_fail (GTK_IS_WIDGET (page), 0);
   g_return_val_if_fail (page->parent == NULL, 0);
-  g_return_val_if_fail (!GTK_WIDGET_TOPLEVEL (page), 0);
+  g_return_val_if_fail (!gtk_widget_is_toplevel (page), 0);
 
   priv = assistant->priv;
 
@@ -1928,6 +1931,13 @@ gtk_assistant_set_page_type (GtkAssistant         *assistant,
     {
       page_info->type = type;
 
+      /* backwards compatibility to the era before fixing bug 604289 */
+      if (type == GTK_ASSISTANT_PAGE_SUMMARY && !page_info->complete_set)
+        {
+          gtk_assistant_set_page_complete (assistant, page, TRUE);
+          page_info->complete_set = FALSE;
+        }
+
       /* Always set buttons state, a change in a future page
 	 might change current page buttons */
       set_assistant_buttons_state (assistant);
@@ -1970,8 +1980,8 @@ gtk_assistant_get_page_type (GtkAssistant *assistant,
  * gtk_assistant_set_page_header_image:
  * @assistant: a #GtkAssistant
  * @page: a page of @assistant
- * @pixbuf: the new header image @page
- * 
+ * @pixbuf: (allow-none): the new header image @page
+ *
  * Sets a header image for @page. This image is displayed in the header
  * area of the assistant when @page is the current page.
  *
@@ -2050,8 +2060,8 @@ gtk_assistant_get_page_header_image (GtkAssistant *assistant,
  * gtk_assistant_set_page_side_image:
  * @assistant: a #GtkAssistant
  * @page: a page of @assistant
- * @pixbuf: the new header image @page
- * 
+ * @pixbuf: (allow-none): the new header image @page
+ *
  * Sets a header image for @page. This image is displayed in the side
  * area of the assistant when @page is the current page.
  *
@@ -2159,6 +2169,7 @@ gtk_assistant_set_page_complete (GtkAssistant *assistant,
   if (complete != page_info->complete)
     {
       page_info->complete = complete;
+      page_info->complete_set = TRUE;
 
       /* Always set buttons state, a change in a future page
 	 might change current page buttons */

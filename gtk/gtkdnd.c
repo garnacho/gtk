@@ -1130,7 +1130,7 @@ gtk_drag_highlight_expose (GtkWidget      *widget,
     {
       cairo_t *cr;
       
-      if (GTK_WIDGET_NO_WINDOW (widget))
+      if (!gtk_widget_get_has_window (widget))
 	{
 	  x = widget->allocation.x;
 	  y = widget->allocation.y;
@@ -1884,7 +1884,7 @@ gtk_drag_find_widget (GtkWidget       *widget,
       allocation_to_window_x = widget->allocation.x;
       allocation_to_window_y = widget->allocation.y;
 
-      if (!GTK_WIDGET_NO_WINDOW (widget))
+      if (gtk_widget_get_has_window (widget))
 	{
 	  /* The allocation is relative to the parent window for
 	   * window widgets, not to widget->window.
@@ -2089,7 +2089,7 @@ gtk_drag_dest_realized (GtkWidget *widget)
 {
   GtkWidget *toplevel = gtk_widget_get_toplevel (widget);
 
-  if (GTK_WIDGET_TOPLEVEL (toplevel))
+  if (gtk_widget_is_toplevel (toplevel))
     gdk_window_register_dnd (toplevel->window);
 }
 
@@ -2099,7 +2099,7 @@ gtk_drag_dest_hierarchy_changed (GtkWidget *widget,
 {
   GtkWidget *toplevel = gtk_widget_get_toplevel (widget);
 
-  if (GTK_WIDGET_TOPLEVEL (toplevel) && GTK_WIDGET_REALIZED (toplevel))
+  if (gtk_widget_is_toplevel (toplevel) && GTK_WIDGET_REALIZED (toplevel))
     gdk_window_register_dnd (toplevel->window);
 }
 
@@ -2879,10 +2879,10 @@ gtk_drag_source_unset_icon (GtkDragSourceSite *site)
  * @widget: a #GtkWidget
  * @colormap: the colormap of the icon
  * @pixmap: the image data for the icon
- * @mask: the transparency mask for an image.
- * 
+ * @mask: (allow-none): the transparency mask for an image.
+ *
  * Sets the icon that will be used for drags from a particular widget
- * from a pixmap/mask. GTK+ retains references for the arguments, and 
+ * from a pixmap/mask. GTK+ retains references for the arguments, and
  * will release them when they are no longer needed.
  * Use gtk_drag_source_set_icon_pixbuf() instead.
  **/

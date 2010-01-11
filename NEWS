@@ -1,3 +1,76 @@
+Overview of Changes from GTK+ 2.19.1 to 2.19.2
+==============================================
+
+* Introspection:
+ - Introspection data for gdk-pixbuf, gdk and gtk is now
+   included in GTK+ itself. As a consequence, the atk dependency
+   has been bumped to 2.29.2, and a gobject-introspection dependency
+   has been added. configure with --disable-introspection in order
+   to not build introspection data.
+
+* Client-side windows:
+ - Fix some issues with handling of button and motion events
+ - Fix damage reporting for drawing on offscreen windows
+ - Fix problems with handling of input extension events
+
+* Printing:
+ - Add api to handle printer hard margins
+
+* Simple IM Context:
+ - Sync with Xorg compose file
+ - Make Compose-vowel-minus combinations consistent
+
+* GDK:
+ - gdk_screen_get_primary_monitor: New function to get the
+   'primary' monitor in a multi-monitor setup
+
+* gdk-pixbuf has gained the ability to store and retrieve embedded
+  ICC color profiles in png and tiff images
+
+* Keyboard handling:
+ - Mnemonic underlines can now optionally be hidden until the Alt key
+   is pressed, this can be turned on with the gtk-auto-mnemonics setting
+ - Using the Super, Meta and Hyper modifiers in accelerators is working
+   more reliably
+
+* Bugs fixed:
+ 603652 Sporadic crashes with GtkSocket
+ 605008 the region of damage event doesn't be copied in gdk_event_copy
+ 588554 only show the accelerator when pressing alt
+ 601473 GDK_BUTTON?_MOTION_MASK appears to be broken
+ 601712 Add API for determining primary monitor
+  50942 selection/arrow key improvement
+ 427409 editing shortcut always fails with super key
+ 468989 need a way to get the printer's hard margins
+ 502266 gtk_tree_selection_get_selected_rows free example produces...
+ 592279 Introspection support
+ 597386 Cannot click buttons more than once without moving the mouse...
+ 599213 Use GtkCellEditable:editing_canceled property instead...
+ 599397 Button stuck at pressed look after screen rotation
+ 601383 gtk_icon_view_get_selected_items: example code gives...
+ 602099 Actions can be activatable too
+ 603619 the colormap of offscreen's pixmap doesn't inherit...
+ 603904 gdk_draw_line doesn't have expose area.
+ 604117 Add info about single includes when compiling GTK+ apps
+ 604289 Please permit progress pages to be final in a dialog
+ 604462 gtktoolitem.c: return-value is different type
+ 604747 Using gdk_draw_line, the expose area of damage event is wrong
+ 604787 property-notify-event is not delivered to a non-toplevel...
+ 604881 GtkCellEditable::editing-cancelled should be writable
+ 591085 GtkBuilder object ID bounded to GtkWidget "name" property
+
+* Updated translations:
+ Arabic
+ Estonian
+ Hebrew
+ Low German
+ Norwegian bokmål
+ Slovenian
+ Spanish
+ Telugu
+ Vietnamese
+
+
 Overview of Changes from GTK+ 2.19.0 to 2.19.1
 ==============================================
 
@@ -11,6 +84,8 @@ Overview of Changes from GTK+ 2.19.0 to 2.19.1
 
 * GtkToolPalette is a new container to show tool items
   in collapsible groups in a grid
+
+* gdk-pixbuf can now handle compressed TIFF images
 
 * GSEAL work:
  - New accessor: gtk_window_get_window_type()
@@ -32,6 +107,30 @@ Overview of Changes from GTK+ 2.19.0 to 2.19.1
  595498 No accesor for GTK_WINDOW ()->type
  116650 "action area" for GtkNotebook (e.g. for tab close button)
  600150 GtkColorSelection tooltip issues
+ 480065 wrong tree collapsed (or expanded) after having scrolled
+ 596473 Second double-click of GtkTreeView row doesn't emit...
+ 601869 GtkUIManager assumes too much about popup menus
+ 581145 Wrong positioning for fullscreen gedit toolbar animation
+ 602724 gailimage doesn't handle GTK_IMAGE_{GICON,ICON_NAME}...
+ 561130 get_monitor_geometry segfaults if called with non-existant...
+ 597026 Missing include for memset()
+ 585383 Segfault in gdk_pixbuf__ico_image_save
+ 597865 Move documentation from templates to inline comments
+ 123569 Catch contents being reparented out of socket
+ 561334 Incorrect named constant in documentation of two GtkButton...
+ 601611 gtk_selection_data_get_targets() reads X Atom data as GdkAtoms
+ 601409 action area presence modifies notebook behaviour
+ 603268 wrong Since: markers in toolpalette merge
+ 603271 wrong toolbar style
+ 601959 must release compose key before continuing compose sequence
+ 603302 Incorrectly warn about links on text with color and underline
+ 603201 gtk_about_dialog_set_url_hook has no effect anymore
+ 591438 dfb_events_dispatch is not thread safe
+ 589842 GtkAction API to have its menu item proxies have always-show...
+ 584700 TIFF pixbuf loader should support compression
+ 603128 Adding new UI that was recently removed may cause wrong order
+ 601682 Print preview should use gtk_show_uri by default
+ 596083 Deprecate notebook label packing functionality
 
 * Updated translations:
  Estonian

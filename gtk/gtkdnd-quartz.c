@@ -357,7 +357,7 @@ gtk_drag_highlight_expose (GtkWidget      *widget,
     {
       cairo_t *cr;
       
-      if (GTK_WIDGET_NO_WINDOW (widget))
+      if (!gtk_widget_get_has_window (widget))
 	{
 	  x = widget->allocation.x;
 	  y = widget->allocation.y;
@@ -434,7 +434,7 @@ get_toplevel_nswindow (GtkWidget *widget)
 {
   GtkWidget *toplevel = gtk_widget_get_toplevel (widget);
   
-  if (GTK_WIDGET_TOPLEVEL (toplevel) && toplevel->window)
+  if (gtk_widget_is_toplevel (toplevel) && toplevel->window)
     return [gdk_quartz_window_get_nsview (toplevel->window) window];
   else
     return NULL;
@@ -446,7 +446,7 @@ register_types (GtkWidget *widget, GtkDragDestSite *site)
   if (site->target_list)
     {
       NSWindow *nswindow = get_toplevel_nswindow (widget);
-      NSArray *types;
+      NSSet *types;
       NSAutoreleasePool *pool;
 
       if (!nswindow)
@@ -455,7 +455,9 @@ register_types (GtkWidget *widget, GtkDragDestSite *site)
       pool = [[NSAutoreleasePool alloc] init];
       types = _gtk_quartz_target_list_to_pasteboard_types (site->target_list);
 
-      [nswindow registerForDraggedTypes:types];
+      [nswindow registerForDraggedTypes:[types allObjects]];
+
+      [types release];
       [pool release];
     }
 }
@@ -695,7 +697,7 @@ gtk_drag_find_widget (GtkWidget       *widget,
       allocation_to_window_x = widget->allocation.x;
       allocation_to_window_y = widget->allocation.y;
 
-      if (!GTK_WIDGET_NO_WINDOW (widget))
+      if (gtk_widget_get_has_window (widget))
 	{
 	  /* The allocation is relative to the parent window for
 	   * window widgets, not to widget->window.
@@ -1063,19 +1065,27 @@ gtk_drag_dest_find_target (GtkWidget      *widget,
 static gboolean
 gtk_drag_begin_idle (gpointer arg)
 {
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   GdkDragContext* context = (GdkDragContext*) arg;
   GtkDragSourceInfo* info = gtk_drag_get_source_info (context, FALSE);
   NSWindow *nswindow;
   NSPasteboard *pasteboard;
   GtkDragSourceOwner *owner;
   NSPoint point;
+  NSSet *types;
+  NSImage *drag_image;
 
   g_assert (info != NULL);
 
   pasteboard = [NSPasteboard pasteboardWithName:NSDragPboard];
   owner = [[GtkDragSourceOwner alloc] initWithInfo:info];
 
-  [pasteboard declareTypes:_gtk_quartz_target_list_to_pasteboard_types (info->target_list) owner:owner];
+  types = _gtk_quartz_target_list_to_pasteboard_types (info->target_list);
+
+  [pasteboard declareTypes:[types allObjects] owner:owner];
+
+  [owner release];
+  [types release];
 
   if ((nswindow = get_toplevel_nswindow (info->source_widget)) == NULL)
      return FALSE;
@@ -1086,7 +1096,9 @@ gtk_drag_begin_idle (gpointer arg)
   /* FIXME: If the event isn't a mouse event, use the global cursor position instead */
   point = [info->nsevent locationInWindow];
 
-  [nswindow dragImage:_gtk_quartz_create_image_from_pixbuf (info->icon_pixbuf)
+  drag_image = _gtk_quartz_create_image_from_pixbuf (info->icon_pixbuf);
+
+  [nswindow dragImage:drag_image
                    at:point
                offset:NSMakeSize(0, 0)
                 event:info->nsevent
@@ -1095,6 +1107,9 @@ gtk_drag_begin_idle (gpointer arg)
             slideBack:YES];
 
   [info->nsevent release];
+  [drag_image release];
+
+  [pool release];
 
   return FALSE;
 }

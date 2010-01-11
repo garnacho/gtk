@@ -1046,7 +1046,7 @@ gtk_tree_view_column_update_button (GtkTreeViewColumn *tree_column)
       if (GTK_WIDGET_HAS_FOCUS (tree_column->button))
 	{
 	  GtkWidget *toplevel = gtk_widget_get_toplevel (tree_column->tree_view);
-	  if (GTK_WIDGET_TOPLEVEL (toplevel))
+	  if (gtk_widget_is_toplevel (toplevel))
 	    {
 	      gtk_window_set_focus (GTK_WINDOW (toplevel), NULL);
 	    }
@@ -1139,7 +1139,7 @@ gtk_tree_view_column_mnemonic_activate (GtkWidget *widget,
   GTK_TREE_VIEW (column->tree_view)->priv->focus_column = column;
   if (column->clickable)
     gtk_button_clicked (GTK_BUTTON (column->button));
-  else if (GTK_WIDGET_CAN_FOCUS (column->button))
+  else if (gtk_widget_get_can_focus (column->button))
     gtk_widget_grab_focus (column->button);
   else
     gtk_widget_grab_focus (column->tree_view);
@@ -2246,8 +2246,8 @@ gtk_tree_view_column_get_clickable (GtkTreeViewColumn *tree_column)
 /**
  * gtk_tree_view_column_set_widget:
  * @tree_column: A #GtkTreeViewColumn.
- * @widget: A child #GtkWidget, or %NULL.
- * 
+ * @widget: (allow-none): A child #GtkWidget, or %NULL.
+ *
  * Sets the widget in the header to be @widget.  If widget is %NULL, then the
  * header button is set with a #GtkLabel set to the title of @tree_column.
  **/

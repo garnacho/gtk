@@ -149,6 +149,11 @@ tiff_image_parse (TIFF *tiff, TiffContext *context, GError **error)
 	GdkPixbuf *pixbuf;
 	uint16 orientation = 0;
 	uint16 transform = 0;
+        uint16 codec;
+        gchar *icc_profile_base64;
+        const gchar *icc_profile;
+        guint icc_profile_size;
+        gint retval;
 
         /* We're called with the lock held. */
         
@@ -265,6 +270,21 @@ tiff_image_parse (TIFF *tiff, TiffContext *context, GError **error)
 		g_snprintf (str, sizeof (str), "%d", transform);
 		gdk_pixbuf_set_option (pixbuf, "orientation", str);
 	}
+
+        TIFFGetField (tiff, TIFFTAG_COMPRESSION, &codec);
+        if (codec > 0) {
+          gchar str[5];
+          g_snprintf (str, sizeof (str), "%d", codec);
+          gdk_pixbuf_set_option (pixbuf, "compression", str);
+        }
+
+        /* Extract embedded ICC profile */
+        retval = TIFFGetField (tiff, TIFFTAG_ICCPROFILE, &icc_profile_size, &icc_profile);
+        if (retval == 1) {
+                icc_profile_base64 = g_base64_encode ((const guchar *) icc_profile, icc_profile_size);
+                gdk_pixbuf_set_option (pixbuf, "icc-profile", icc_profile_base64);
+                g_free (icc_profile_base64);
+        }
 
 	if (context && context->prepare_func)
 		(* context->prepare_func) (pixbuf, NULL, context->user_data);
@@ -654,6 +674,8 @@ gdk_pixbuf__tiff_image_save_to_callback (GdkPixbufSaveFunc   save_func,
         int y;
         TiffSaveContext *context;
         gboolean retval;
+        guchar *icc_profile = NULL;
+        gsize icc_profile_size = 0;
 
         tiff_push_handlers ();
 
@@ -689,12 +711,49 @@ gdk_pixbuf__tiff_image_save_to_callback (GdkPixbufSaveFunc   save_func,
         TIFFSetField (tiff, TIFFTAG_SAMPLESPERPIXEL, has_alpha ? 4 : 3);
         TIFFSetField (tiff, TIFFTAG_ROWSPERSTRIP, height);
 
+        /* libtiff supports a number of 'codecs' such as:
+           1 None, 2 Huffman, 5 LZW, 7 JPEG, 8 Deflate, see tiff.h */
+        if (keys && *keys && values && *values) {
+            guint i = 0;
+
+            while (keys[i]) {
+                if (g_str_equal (keys[i], "compression")) {
+                    guint16 codec = strtol (values[i], NULL, 0);
+                    if (TIFFIsCODECConfigured (codec))
+                        TIFFSetField (tiff, TIFFTAG_COMPRESSION, codec);
+                    else {
+                        tiff_set_error (error,
+                                        GDK_PIXBUF_ERROR_FAILED,
+                                        _("TIFF compression doesn't refer to a valid codec."));
+                        retval = FALSE;
+                        goto cleanup;
+                    }
+                } else if (g_str_equal (keys[i], "icc-profile")) {
+                        /* decode from base64 */
+                        icc_profile = g_base64_decode (values[i], &icc_profile_size);
+                        if (icc_profile_size < 127) {
+                            g_set_error (error,
+                                         GDK_PIXBUF_ERROR,
+                                         GDK_PIXBUF_ERROR_BAD_OPTION,
+                                         _("Color profile has invalid length %d."),
+                                         (gint)icc_profile_size);
+                            retval = FALSE;
+                            goto cleanup;
+                        }
+                }
+                i++;
+            }
+        }
+
         if (has_alpha)
                 TIFFSetField (tiff, TIFFTAG_EXTRASAMPLES, 1, alpha_samples);
 
         TIFFSetField (tiff, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
         TIFFSetField (tiff, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);        
         TIFFSetField (tiff, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+
+        if (icc_profile != NULL)
+                TIFFSetField (tiff, TIFFTAG_ICCPROFILE, icc_profile_size, icc_profile);
 
         for (y = 0; y < height; y++) {
                 if (TIFFWriteScanline (tiff, pixels + y * rowstride, y, 0) == -1 ||
@@ -708,11 +767,8 @@ gdk_pixbuf__tiff_image_save_to_callback (GdkPixbufSaveFunc   save_func,
                                 _("Failed to write TIFF data"));
 
                 TIFFClose (tiff);
-
-                free_save_context (context);               
-                tiff_pop_handlers ();
-                
-                return FALSE;
+                retval = FALSE;
+                goto cleanup;
         }
 
         TIFFClose (tiff);
@@ -720,20 +776,18 @@ gdk_pixbuf__tiff_image_save_to_callback (GdkPixbufSaveFunc   save_func,
                 tiff_set_error (error,
                                 GDK_PIXBUF_ERROR_FAILED,
                                 _("TIFFClose operation failed"));
-
-                free_save_context (context);               
-                tiff_pop_handlers ();
-                
-                return FALSE;
+                retval = FALSE;
+                goto cleanup;
         }
 
-        tiff_pop_handlers ();
 
         /* Now call the callback */
         retval = save_func (context->buffer, context->used, error, user_data);
 
-        free_save_context (context);               
-        
+cleanup:
+        g_free (icc_profile);
+        tiff_pop_handlers ();
+        free_save_context (context);
         return retval;
 }
 

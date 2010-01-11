@@ -1994,11 +1994,11 @@ gtk_icon_view_stop_editing (GtkIconView *icon_view,
  * gtk_icon_view_set_cursor:
  * @icon_view: A #GtkIconView
  * @path: A #GtkTreePath
- * @cell: One of the cell renderers of @icon_view, or %NULL
+ * @cell: (allow-none): One of the cell renderers of @icon_view, or %NULL
  * @start_editing: %TRUE if the specified cell should start being edited.
  *
  * Sets the current keyboard focus to be at @path, and selects it.  This is
- * useful when you want to focus the user's attention on a particular item.  
+ * useful when you want to focus the user's attention on a particular item.
  * If @cell is not %NULL, then focus is given to the cell specified by 
  * it. Additionally, if @start_editing is %TRUE, then editing should be 
  * started in the specified cell.  
@@ -5274,10 +5274,10 @@ gtk_icon_view_get_selection_mode (GtkIconView *icon_view)
 /**
  * gtk_icon_view_set_model:
  * @icon_view: A #GtkIconView.
- * @model: The model.
+ * @model: (allow-none): The model.
  *
- * Sets the model for a #GtkIconView.  
- * If the @icon_view already has a model set, it will remove 
+ * Sets the model for a #GtkIconView.
+ * If the @icon_view already has a model set, it will remove
  * it before setting the new model.  If @model is %NULL, then
  * it will unset the old model.
  *
@@ -5802,11 +5802,11 @@ gtk_icon_view_unselect_path (GtkIconView *icon_view,
  *
  * To free the return value, use:
  * |[
- * g_list_foreach (list, gtk_tree_path_free, NULL);
+ * g_list_foreach (list, (GFunc)gtk_tree_path_free, NULL);
  * g_list_free (list);
  * ]|
  *
- * Return value: A #GList containing a #GtkTreePath for each selected row.
+ * Return value: (element-type GtkTreePath) (transfer full): A #GList containing a #GtkTreePath for each selected row.
  *
  * Since: 2.6
  **/
@@ -7207,9 +7207,9 @@ gtk_icon_view_unset_model_drag_dest (GtkIconView *icon_view)
 /**
  * gtk_icon_view_set_drag_dest_item:
  * @icon_view: a #GtkIconView
- * @path: The path of the item to highlight, or %NULL.
+ * @path: (allow-none): The path of the item to highlight, or %NULL.
  * @pos: Specifies where to drop, relative to the item
- * 
+ *
  * Sets the item that is highlighted for feedback.
  *
  * Since: 2.8
@@ -8495,7 +8495,7 @@ gtk_icon_view_item_accessible_grab_focus (AtkComponent *component)
   gtk_widget_grab_focus (item->widget);
   gtk_icon_view_set_cursor_item (GTK_ICON_VIEW (item->widget), item->item, -1);
   toplevel = gtk_widget_get_toplevel (GTK_WIDGET (item->widget));
-  if (GTK_WIDGET_TOPLEVEL (toplevel))
+  if (gtk_widget_is_toplevel (toplevel))
     gtk_window_present (GTK_WINDOW (toplevel));
 
   return TRUE;

@@ -1,4 +1,7 @@
 include $(top_srcdir)/Makefile.decl
+-include $(INTROSPECTION_MAKEFILE)
+
+INTROSPECTION_GIRS =
 
 SUBDIRS = pixops
 
@@ -685,6 +688,26 @@ EXTRA_DIST +=					\
 	gdk-pixbuf-enum-types.c.template	\
 	gdk-pixbuf-enum-types.h.template	\
 	gen-color-table.pl
+
+if HAVE_INTROSPECTION
+
+GdkPixbuf_2_0_gir_SCANNERFLAGS = --strip-prefix=Gdk
+GdkPixbuf_2_0_gir_INCLUDES = GModule-2.0 Gio-2.0
+GdkPixbuf_2_0_gir_LIBS = libgdk_pixbuf-2.0.la
+GdkPixbuf_2_0_gir_CFLAGS = $(INCLUDES)
+GdkPixbuf_2_0_gir_FILES = \
+    $(addprefix $(srcdir)/,$(libgdk_pixbufinclude_HEADERS)) \
+    $(addprefix $(srcdir)/,$(libgdk_pixbuf_2_0_la_SOURCES))
+INTROSPECTION_GIRS += GdkPixbuf-2.0.gir
+
+girdir = $(datadir)/gir-1.0
+dist_gir_DATA = $(INTROSPECTION_GIRS)
+
+typelibsdir = $(libdir)/girepository-1.0
+typelibs_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
+
+CLEANFILES += $(dist_gir_DATA) $(typelibs_DATA)
+endif
 
 if CROSS_COMPILING
 RUN_QUERY_LOADER_TEST=false

@@ -544,7 +544,7 @@ gtk_scale_button_dispose (GObject *object)
 
 /**
  * gtk_scale_button_new:
- * @size: a stock icon size
+ * @size: (int): a stock icon size
  * @min: the minimum value of the scale (usually 0)
  * @max: the maximum value of the scale (usually 100)
  * @step: the stepping of value when a scroll-wheel event,
@@ -1174,7 +1174,7 @@ gtk_scale_button_grab_notify (GtkScaleButton *button,
 
   priv = button->priv;
 
-  if (!GTK_WIDGET_HAS_GRAB (priv->dock))
+  if (!gtk_widget_has_grab (priv->dock))
     return;
 
   if (gtk_widget_is_ancestor (gtk_grab_get_current (), priv->dock))

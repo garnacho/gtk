@@ -428,17 +428,33 @@ gtk_button_class_init (GtkButtonClass *klass)
 		  G_TYPE_NONE, 0);
   widget_class->activate_signal = button_signals[ACTIVATE];
 
+  /**
+   * GtkButton:default-border:
+   *
+   * The "default-border" style property defines the extra space to add
+   * around a button that can become the default widget of its window.
+   * For more information about default widgets, see gtk_widget_grab_default().
+   */
+
   gtk_widget_class_install_style_property (widget_class,
 					   g_param_spec_boxed ("default-border",
 							       P_("Default Spacing"),
-							       P_("Extra space to add for CAN_DEFAULT buttons"),
+							       P_("Extra space to add for GTK_CAN_DEFAULT buttons"),
 							       GTK_TYPE_BORDER,
 							       GTK_PARAM_READABLE));
 
+  /**
+   * GtkButton:default-outside-border:
+   *
+   * The "default-outside-border" style property defines the extra outside
+   * space to add around a button that can become the default widget of its
+   * window. Extra outside space is always drawn outside the button border.
+   * For more information about default widgets, see gtk_widget_grab_default().
+   */
   gtk_widget_class_install_style_property (widget_class,
 					   g_param_spec_boxed ("default-outside-border",
 							       P_("Default Outside Spacing"),
-							       P_("Extra space to add for CAN_DEFAULT buttons that is always drawn outside the border"),
+							       P_("Extra space to add for GTK_CAN_DEFAULT buttons that is always drawn outside the border"),
 							       GTK_TYPE_BORDER,
 							       GTK_PARAM_READABLE));
   gtk_widget_class_install_style_property (widget_class,
@@ -1338,7 +1354,7 @@ gtk_button_size_request (GtkWidget      *widget,
                           GTK_WIDGET (widget)->style->ythickness) * 2 +
                          inner_border.top + inner_border.bottom);
 
-  if (GTK_WIDGET_CAN_DEFAULT (widget))
+  if (gtk_widget_get_can_default (widget))
     {
       requisition->width += default_border.left + default_border.right;
       requisition->height += default_border.top + default_border.bottom;
@@ -1405,7 +1421,7 @@ gtk_button_size_allocate (GtkWidget     *widget,
                                      inner_border.bottom -
 				     border_width * 2);
 
-      if (GTK_WIDGET_CAN_DEFAULT (button))
+      if (gtk_widget_get_can_default (GTK_WIDGET (button)))
 	{
 	  child_allocation.x += default_border.left;
 	  child_allocation.y += default_border.top;
@@ -1413,7 +1429,7 @@ gtk_button_size_allocate (GtkWidget     *widget,
 	  child_allocation.height = MAX (1, child_allocation.height - default_border.top - default_border.bottom);
 	}
 
-      if (GTK_WIDGET_CAN_FOCUS (button))
+      if (gtk_widget_get_can_focus (GTK_WIDGET (button)))
 	{
 	  child_allocation.x += focus_width + focus_pad;
 	  child_allocation.y += focus_width + focus_pad;
@@ -1472,7 +1488,7 @@ _gtk_button_paint (GtkButton          *button,
       width = widget->allocation.width - border_width * 2;
       height = widget->allocation.height - border_width * 2;
 
-      if (GTK_WIDGET_HAS_DEFAULT (widget) &&
+      if (gtk_widget_has_default (widget) &&
 	  GTK_BUTTON (widget)->relief == GTK_RELIEF_NORMAL)
 	{
 	  gtk_paint_box (widget->style, widget->window,
@@ -1485,7 +1501,7 @@ _gtk_button_paint (GtkButton          *button,
 	  width -= default_border.left + default_border.right;
 	  height -= default_border.top + default_border.bottom;
 	}
-      else if (GTK_WIDGET_CAN_DEFAULT (widget))
+      else if (gtk_widget_get_can_default (widget))
 	{
 	  x += default_outside_border.left;
 	  y += default_outside_border.top;
@@ -2127,11 +2143,22 @@ static void
 gtk_button_screen_changed (GtkWidget *widget,
 			   GdkScreen *previous_screen)
 {
+  GtkButton *button;
   GtkSettings *settings;
   guint show_image_connection;
 
   if (!gtk_widget_has_screen (widget))
     return;
+
+  button = GTK_BUTTON (widget);
+
+  /* If the button is being pressed while the screen changes the
+    release might never occur, so we reset the state. */
+  if (button->button_down)
+    {
+      button->button_down = FALSE;
+      gtk_button_update_state (button);
+    }
 
   settings = gtk_widget_get_settings (widget);
 
@@ -2149,7 +2176,7 @@ gtk_button_screen_changed (GtkWidget *widget,
 		     I_("gtk-button-connection"),
 		     GUINT_TO_POINTER (show_image_connection));
 
-  show_image_change_notify (GTK_BUTTON (widget));
+  show_image_change_notify (button);
 }
 
 static void

@@ -705,16 +705,16 @@ gtk_tool_item_new (void)
 
 /**
  * gtk_tool_item_get_ellipsize_mode:
- * @tool_item: a #GtkToolItem: 
- * 
+ * @tool_item: a #GtkToolItem
+ *
  * Returns the ellipsize mode used for @tool_item. Custom subclasses of
  * #GtkToolItem should call this function to find out how text should
  * be ellipsized.
- * 
+ *
  * Return value: a #PangoEllipsizeMode indicating how text in @tool_item
  * should be ellipsized.
- * 
- * Since: 2.14
+ *
+ * Since: 2.20
  **/
 PangoEllipsizeMode
 gtk_tool_item_get_ellipsize_mode (GtkToolItem *tool_item)
@@ -738,7 +738,8 @@ gtk_tool_item_get_ellipsize_mode (GtkToolItem *tool_item)
  * #GtkToolItem should call this function to find out what size icons
  * they should use.
  * 
- * Return value: a #GtkIconSize indicating the icon size used for @tool_item
+ * Return value: (type int): a #GtkIconSize indicating the icon size
+ * used for @tool_item
  * 
  * Since: 2.4
  **/
@@ -865,7 +866,7 @@ gtk_tool_item_get_relief_style (GtkToolItem *tool_item)
  * Return value: a #gfloat indicating the horizontal text alignment
  * used for @tool_item
  * 
- * Since: 2.14
+ * Since: 2.20
  **/
 gfloat
 gtk_tool_item_get_text_alignment (GtkToolItem *tool_item)
@@ -883,17 +884,17 @@ gtk_tool_item_get_text_alignment (GtkToolItem *tool_item)
 
 /**
  * gtk_tool_item_get_text_orientation:
- * @tool_item: a #GtkToolItem: 
- * 
+ * @tool_item: a #GtkToolItem
+ *
  * Returns the text orientation used for @tool_item. Custom subclasses of
  * #GtkToolItem should call this function to find out how text should
  * be orientated.
- * 
+ *
  * Return value: a #GtkOrientation indicating the text orientation
  * used for @tool_item
- * 
- * Since: 2.14
- **/
+ *
+ * Since: 2.20
+ */
 GtkOrientation
 gtk_tool_item_get_text_orientation (GtkToolItem *tool_item)
 {
@@ -910,21 +911,21 @@ gtk_tool_item_get_text_orientation (GtkToolItem *tool_item)
 
 /**
  * gtk_tool_item_get_text_size_group:
- * @tool_item: a #GtkToolItem: 
- * 
+ * @tool_item: a #GtkToolItem
+ *
  * Returns the size group used for labels in @tool_item. Custom subclasses of
  * #GtkToolItem should call this function and use the size group for labels.
- * 
+ *
  * Return value: a #GtkSizeGroup
- * 
- * Since: 2.14
- **/
+ *
+ * Since: 2.20
+ */
 GtkSizeGroup *
 gtk_tool_item_get_text_size_group (GtkToolItem *tool_item)
 {
   GtkWidget *parent;
   
-  g_return_val_if_fail (GTK_IS_TOOL_ITEM (tool_item), GTK_ORIENTATION_HORIZONTAL);
+  g_return_val_if_fail (GTK_IS_TOOL_ITEM (tool_item), NULL);
 
   parent = GTK_WIDGET (tool_item)->parent;
   if (!parent || !GTK_IS_TOOL_SHELL (parent))
@@ -935,16 +936,16 @@ gtk_tool_item_get_text_size_group (GtkToolItem *tool_item)
 
 /**
  * gtk_tool_item_set_expand:
- * @tool_item: a #GtkToolItem 
+ * @tool_item: a #GtkToolItem
  * @expand: Whether @tool_item is allocated extra space
- * 
+ *
  * Sets whether @tool_item is allocated extra space when there
  * is more room on the toolbar then needed for the items. The
  * effect is that the item gets bigger when the toolbar gets bigger
  * and smaller when the toolbar gets smaller.
- * 
+ *
  * Since: 2.4
- **/
+ */
 void
 gtk_tool_item_set_expand (GtkToolItem *tool_item,
 			  gboolean     expand)
@@ -1094,10 +1095,10 @@ gtk_tool_item_real_set_tooltip (GtkToolItem *tool_item,
 
 /**
  * gtk_tool_item_set_tooltip:
- * @tool_item: a #GtkToolItem 
+ * @tool_item: a #GtkToolItem
  * @tooltips: The #GtkTooltips object to be used
- * @tip_text: text to be used as tooltip text for @tool_item
- * @tip_private: text to be used as private tooltip text
+ * @tip_text: (allow-none): text to be used as tooltip text for @tool_item
+ * @tip_private: (allow-none): text to be used as private tooltip text
  *
  * Sets the #GtkTooltips object to be used for @tool_item, the
  * text to be displayed as tooltip on the item and the private text
@@ -1332,10 +1333,10 @@ gtk_tool_item_get_visible_vertical (GtkToolItem *toolitem)
  * Returns the #GtkMenuItem that was last set by
  * gtk_tool_item_set_proxy_menu_item(), ie. the #GtkMenuItem
  * that is going to appear in the overflow menu.
- * 
- * Return value: The #GtkMenuItem that is going to appear in the
+ *
+ * Return value: (transfer none): The #GtkMenuItem that is going to appear in the
  * overflow menu for @tool_item.
- * 
+ *
  * Since: 2.4
  **/
 GtkWidget *
