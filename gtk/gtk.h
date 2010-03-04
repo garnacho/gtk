@@ -172,6 +172,7 @@
 #include <gtk/gtkstatusbar.h>
 #include <gtk/gtkstatusicon.h>
 #include <gtk/gtkstock.h>
+#include <gtk/gtkstyleset.h>
 #include <gtk/gtkstyle.h>
 #include <gtk/gtktable.h>
 #include <gtk/gtktearoffmenuitem.h>
