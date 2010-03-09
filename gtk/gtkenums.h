@@ -582,6 +582,16 @@ typedef enum
   GTK_DRAG_RESULT_ERROR
 } GtkDragResult;
 
+typedef enum
+{
+  GTK_STATE_FLAG_ACTIVE       = 1 << 0,
+  GTK_STATE_FLAG_PRELIGHT     = 1 << 1,
+  GTK_STATE_FLAG_SELECTED     = 1 << 2,
+  GTK_STATE_FLAG_INSENSITIVE  = 1 << 3,
+  GTK_STATE_FLAG_INCONSISTENT = 1 << 4,
+  GTK_STATE_FLAG_FOCUSED      = 1 << 5
+} GtkStateFlags;
+
 G_END_DECLS
 
 #endif /* __GTK_ENUMS_H__ */
