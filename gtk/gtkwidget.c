@@ -54,6 +54,7 @@
 #include "gtkbuildable.h"
 #include "gtkbuilderprivate.h"
 #include "gtkextendedlayout.h"
+#include "gtkstylecontext.h"
 #include "gtkalias.h"
 
 /**
@@ -389,6 +390,7 @@ static GQuark		quark_mnemonic_labels = 0;
 static GQuark		quark_tooltip_markup = 0;
 static GQuark		quark_has_tooltip = 0;
 static GQuark		quark_tooltip_window = 0;
+static GQuark           quark_style_context = 0;
 GParamSpecPool         *_gtk_widget_child_property_pool = NULL;
 GObjectNotifyContext   *_gtk_widget_child_property_notify_context = NULL;
 
@@ -485,6 +487,7 @@ gtk_widget_class_init (GtkWidgetClass *klass)
   quark_tooltip_markup = g_quark_from_static_string ("gtk-tooltip-markup");
   quark_has_tooltip = g_quark_from_static_string ("gtk-has-tooltip");
   quark_tooltip_window = g_quark_from_static_string ("gtk-tooltip-window");
+  quark_style_context = g_quark_from_static_string ("gtk-style-context");
 
   style_property_spec_pool = g_param_spec_pool_new (FALSE);
   _gtk_widget_child_property_pool = g_param_spec_pool_new (TRUE);
@@ -11485,6 +11488,26 @@ gtk_widget_send_focus_change (GtkWidget *widget,
   g_object_unref (widget);
 
   return res;
+}
+
+GtkStyleContext *
+gtk_widget_get_style_context (GtkWidget *widget)
+{
+  GtkStyleContext *context;
+
+  g_return_val_if_fail (GTK_IS_WIDGET (widget), NULL);
+
+  context = g_object_get_qdata (G_OBJECT (widget),
+                                quark_style_context);
+
+  if (G_UNLIKELY (!context))
+    {
+      context = g_object_new (GTK_TYPE_STYLE_CONTEXT, NULL);
+      g_object_set_qdata_full (widget, quark_style_context, context,
+                               (GDestroyNotify) g_object_unref);
+    }
+
+  return context;
 }
 
 #define __GTK_WIDGET_C__
