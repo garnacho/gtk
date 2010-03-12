@@ -11490,6 +11490,27 @@ gtk_widget_send_focus_change (GtkWidget *widget,
   return res;
 }
 
+GtkWidgetPath *
+gtk_widget_get_path (GtkWidget *widget)
+{
+  GtkWidgetPath *path;
+
+  g_return_val_if_fail (GTK_IS_WIDGET (widget), NULL);
+  g_return_val_if_fail (GTK_WIDGET_REALIZED (widget), NULL);
+
+  path = gtk_widget_path_new ();
+
+  while (widget)
+    {
+      gtk_widget_path_prepend_widget_desc (path,
+                                           G_OBJECT_TYPE (widget),
+                                           widget->name);
+      widget = widget->parent;
+    }
+
+  return path;
+}
+
 GtkStyleContext *
 gtk_widget_get_style_context (GtkWidget *widget)
 {
@@ -11503,7 +11524,8 @@ gtk_widget_get_style_context (GtkWidget *widget)
   if (G_UNLIKELY (!context))
     {
       context = g_object_new (GTK_TYPE_STYLE_CONTEXT, NULL);
-      g_object_set_qdata_full (widget, quark_style_context, context,
+      g_object_set_qdata_full (G_OBJECT (widget),
+                               quark_style_context, context,
                                (GDestroyNotify) g_object_unref);
     }
 
