@@ -3497,6 +3497,7 @@ gtk_widget_realize (GtkWidget *widget)
 {
   GdkExtensionMode mode;
   GtkWidgetShapeInfo *shape_info;
+  GtkStyleContext *context;
   
   g_return_if_fail (GTK_IS_WIDGET (widget));
   g_return_if_fail (GTK_WIDGET_ANCHORED (widget) ||
@@ -3545,6 +3546,17 @@ gtk_widget_realize (GtkWidget *widget)
       mode = gtk_widget_get_extension_events (widget);
       if (mode != GDK_EXTENSION_EVENTS_NONE)
         gtk_widget_set_extension_events_internal (widget, mode, NULL);
+
+      context = g_object_get_qdata (G_OBJECT (widget),
+                                    quark_style_context);
+      if (context)
+        {
+          GtkWidgetPath *path;
+
+          path = gtk_widget_get_path (widget);
+          gtk_style_context_set_path (context, path);
+          gtk_widget_path_free (path);
+        }
     }
 }
 
@@ -11527,6 +11539,15 @@ gtk_widget_get_style_context (GtkWidget *widget)
       g_object_set_qdata_full (G_OBJECT (widget),
                                quark_style_context, context,
                                (GDestroyNotify) g_object_unref);
+    }
+
+  if (GTK_WIDGET_REALIZED (widget))
+    {
+      GtkWidgetPath *path;
+
+      path = gtk_widget_get_path (widget);
+      gtk_style_context_set_path (context, path);
+      gtk_widget_path_free (path);
     }
 
   return context;
