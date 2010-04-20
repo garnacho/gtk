@@ -11516,9 +11516,7 @@ gtk_widget_get_path (GtkWidget *widget)
 
   while (widget)
     {
-      gtk_widget_path_prepend_widget_desc (path,
-                                           G_OBJECT_TYPE (widget),
-                                           widget->name);
+      gtk_widget_path_prepend_type (path, G_OBJECT_TYPE (widget));
       widget = widget->parent;
     }
 
