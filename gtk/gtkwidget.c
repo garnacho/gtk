@@ -11507,17 +11507,43 @@ gtk_widget_send_focus_change (GtkWidget *widget,
 GtkWidgetPath *
 gtk_widget_get_path (GtkWidget *widget)
 {
+  GtkStyleContext *context;
   GtkWidgetPath *path;
+  GtkWidget *parent;
+  GList *regions, *reg;
 
   g_return_val_if_fail (GTK_IS_WIDGET (widget), NULL);
   g_return_val_if_fail (GTK_WIDGET_REALIZED (widget), NULL);
 
+  parent = widget->parent;
   path = gtk_widget_path_new ();
+  gtk_widget_path_prepend_type (path, G_OBJECT_TYPE (widget));
+  regions = reg = NULL;
 
-  while (widget)
+  context = g_object_get_qdata (G_OBJECT (widget),
+                                quark_style_context);
+
+  if (context)
+    regions = reg = gtk_style_context_list_child_classes (context);
+
+  while (reg)
+    {
+      GtkChildClassFlags flags;
+      const gchar *region_name;
+
+      region_name = reg->data;
+      reg = reg->next;
+
+      gtk_style_context_has_child_class (context, region_name, &flags);
+      gtk_widget_path_iter_add_region (path, 0, region_name, flags);
+    }
+
+  g_list_free (regions);
+
+  while (parent)
     {
       gtk_widget_path_prepend_type (path, G_OBJECT_TYPE (widget));
-      widget = widget->parent;
+      parent = parent->parent;
     }
 
   return path;
