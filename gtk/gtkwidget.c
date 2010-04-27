@@ -11542,7 +11542,7 @@ gtk_widget_get_path (GtkWidget *widget)
 
   while (parent)
     {
-      gtk_widget_path_prepend_type (path, G_OBJECT_TYPE (widget));
+      gtk_widget_path_prepend_type (path, G_OBJECT_TYPE (parent));
       parent = parent->parent;
     }
 
