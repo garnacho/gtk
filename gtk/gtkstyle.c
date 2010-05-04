@@ -5924,13 +5924,28 @@ gtk_paint_hline (GtkStyle           *style,
                  gint                x2,
                  gint                y)
 {
+  GtkStyleContext *context;
+  cairo_t *cr;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_hline != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_hline (style, window, state_type,
-                                           (GdkRectangle *) area, widget, detail,
-                                           x1, x2, y);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  gtk_render_line (context, cr,
+                   x1, y, x2, y);
 }
 
 /**
@@ -5960,13 +5975,28 @@ gtk_paint_vline (GtkStyle           *style,
                  gint                y2_,
                  gint                x)
 {
+  GtkStyleContext *context;
+  cairo_t *cr;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_vline != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_vline (style, window, state_type,
-                                           (GdkRectangle *) area, widget, detail,
-                                           y1_, y2_, x);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  gtk_render_line (context, cr,
+                   x, y1_, x, y2_);
 }
 
 /**
@@ -6000,13 +6030,44 @@ gtk_paint_shadow (GtkStyle           *style,
                   gint                width,
                   gint                height)
 {
+  GtkStyleContext *context;
+  cairo_t *cr;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_shadow != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_shadow (style, window, state_type, shadow_type,
-                                            (GdkRectangle *) area, widget, detail,
-                                            x, y, width, height);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  if (width < 0 || height < 0)
+    {
+      gint w_width, w_height;
+
+      gdk_drawable_get_size (GDK_DRAWABLE (window), &w_width, &w_height);
+
+      if (width < 0)
+        width = w_width;
+
+      if (height < 0)
+        height = w_height;
+    }
+
+  gtk_render_frame (context, cr,
+                    (gdouble) x,
+                    (gdouble) y,
+                    (gdouble) width,
+                    (gdouble) height);
 }
 
 /**
@@ -6081,13 +6142,61 @@ gtk_paint_arrow (GtkStyle           *style,
                  gint                width,
                  gint                height)
 {
+  GtkStyleContext *context;
+  GtkStateFlags flags = 0;
+  cairo_t *cr;
+  gdouble angle;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_arrow != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_arrow (style, window, state_type, shadow_type,
-                                           (GdkRectangle *) area, widget, detail,
-                                           arrow_type, fill, x, y, width, height);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  if (arrow_type == GTK_ARROW_UP)
+    angle = 0;
+  else if (arrow_type == GTK_ARROW_RIGHT)
+    angle = G_PI / 2;
+  else if (arrow_type == GTK_ARROW_DOWN)
+    angle = G_PI;
+  else
+    angle = 3 * (G_PI / 2);
+
+  switch (state_type)
+    {
+    case GTK_STATE_PRELIGHT:
+      flags |= GTK_STATE_FLAG_PRELIGHT;
+      break;
+    case GTK_STATE_SELECTED:
+      flags |= GTK_STATE_FLAG_SELECTED;
+      break;
+    case GTK_STATE_INSENSITIVE:
+      flags |= GTK_STATE_FLAG_INSENSITIVE;
+      break;
+    case GTK_STATE_ACTIVE:
+      flags |= GTK_STATE_FLAG_ACTIVE;
+      break;
+    default:
+      break;
+    }
+
+  gtk_style_context_set_state (context, flags);
+  gtk_render_arrow (context,
+                    cr, angle,
+                    (gdouble) x,
+                    (gdouble) y,
+                    MIN ((gdouble) width, (gdouble) height));
 }
 
 /**
@@ -6197,13 +6306,49 @@ gtk_paint_box (GtkStyle           *style,
                gint                width,
                gint                height)
 {
+  GtkStyleContext *context;
+  GtkStateFlags flags = 0;
+  cairo_t *cr;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_box != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_box (style, window, state_type, shadow_type,
-                                         (GdkRectangle *) area, widget, detail,
-                                         x, y, width, height);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  switch (state_type)
+    {
+    case GTK_STATE_ACTIVE:
+      flags |= GTK_STATE_FLAG_ACTIVE;
+      break;
+    case GTK_STATE_PRELIGHT:
+      flags |= GTK_STATE_FLAG_PRELIGHT;
+      break;
+    case GTK_STATE_SELECTED:
+      flags |= GTK_STATE_FLAG_SELECTED;
+      break;
+    case GTK_STATE_INSENSITIVE:
+      flags |= GTK_STATE_FLAG_INSENSITIVE;
+      break;
+    default:
+      break;
+    }
+
+  gtk_style_context_set_state (context, flags);
+
+  gtk_render_background (context, cr, x, y, width, height);
+  gtk_render_frame (context, cr, x, y, width, height);
 }
 
 /**
@@ -6236,13 +6381,48 @@ gtk_paint_flat_box (GtkStyle           *style,
                     gint                width,
                     gint                height)
 {
+  GtkStyleContext *context;
+  GtkStateFlags flags = 0;
+  cairo_t *cr;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_flat_box != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_flat_box (style, window, state_type, shadow_type,
-                                              (GdkRectangle *) area, widget, detail,
-                                              x, y, width, height);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  switch (state_type)
+    {
+    case GTK_STATE_PRELIGHT:
+      flags |= GTK_STATE_FLAG_PRELIGHT;
+      break;
+    case GTK_STATE_SELECTED:
+      flags |= GTK_STATE_FLAG_SELECTED;
+      break;
+    case GTK_STATE_INSENSITIVE:
+      flags |= GTK_STATE_FLAG_INSENSITIVE;
+      break;
+    default:
+      break;
+    }
+
+  gtk_style_context_set_state (context, flags);
+  gtk_render_background (context, cr,
+                         (gdouble) x,
+                         (gdouble) y,
+                         (gdouble) width,
+                         (gdouble) height);
 }
 
 /**
@@ -6276,13 +6456,51 @@ gtk_paint_check (GtkStyle           *style,
                  gint                width,
                  gint                height)
 {
+  GtkStyleContext *context;
+  GtkStateFlags flags = 0;
+  cairo_t *cr;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_check != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_check (style, window, state_type, shadow_type,
-                                           (GdkRectangle *) area, widget, detail,
-                                           x, y, width, height);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  switch (state_type)
+    {
+    case GTK_STATE_PRELIGHT:
+      flags |= GTK_STATE_FLAG_PRELIGHT;
+      break;
+    case GTK_STATE_SELECTED:
+      flags |= GTK_STATE_FLAG_SELECTED;
+      break;
+    case GTK_STATE_INSENSITIVE:
+      flags |= GTK_STATE_FLAG_INSENSITIVE;
+      break;
+    default:
+      break;
+    }
+
+  if (shadow_type == GTK_SHADOW_IN)
+    flags |= GTK_STATE_FLAG_ACTIVE;
+  else if (shadow_type == GTK_SHADOW_ETCHED_IN)
+    flags |= GTK_STATE_FLAG_INCONSISTENT;
+
+  gtk_style_context_set_state (context, flags);
+  gtk_render_check (context,
+                    cr, x, y,
+                    width, height);
 }
 
 /**
@@ -6316,13 +6534,53 @@ gtk_paint_option (GtkStyle           *style,
                   gint                width,
                   gint                height)
 {
+  GtkStyleContext *context;
+  GtkStateFlags flags = 0;
+  cairo_t *cr;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_option != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_option (style, window, state_type, shadow_type,
-                                            (GdkRectangle *) area, widget, detail,
-                                            x, y, width, height);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  switch (state_type)
+    {
+    case GTK_STATE_PRELIGHT:
+      flags |= GTK_STATE_FLAG_PRELIGHT;
+      break;
+    case GTK_STATE_SELECTED:
+      flags |= GTK_STATE_FLAG_SELECTED;
+      break;
+    case GTK_STATE_INSENSITIVE:
+      flags |= GTK_STATE_FLAG_INSENSITIVE;
+      break;
+    default:
+      break;
+    }
+
+  if (shadow_type == GTK_SHADOW_IN)
+    flags |= GTK_STATE_FLAG_ACTIVE;
+  else if (shadow_type == GTK_SHADOW_ETCHED_IN)
+    flags |= GTK_STATE_FLAG_INCONSISTENT;
+
+  gtk_style_context_set_state (context, flags);
+  gtk_render_option (context, cr,
+                     (gdouble) x,
+                     (gdouble) y,
+                     (gdouble) width,
+                     (gdouble) height);
 }
 
 /**
@@ -6403,13 +6661,54 @@ gtk_paint_shadow_gap (GtkStyle           *style,
                       gint                gap_x,
                       gint                gap_width)
 {
+  GtkStyleContext *context;
+  GtkStateFlags flags = 0;
+  cairo_t *cr;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_shadow_gap != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_shadow_gap (style, window, state_type, shadow_type,
-                                                (GdkRectangle *) area, widget, detail,
-                                                x, y, width, height, gap_side, gap_x, gap_width);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  switch (state_type)
+    {
+    case GTK_STATE_ACTIVE:
+      flags |= GTK_STATE_ACTIVE;
+      break;
+    case GTK_STATE_PRELIGHT:
+      flags |= GTK_STATE_FLAG_PRELIGHT;
+      break;
+    case GTK_STATE_SELECTED:
+      flags |= GTK_STATE_FLAG_SELECTED;
+      break;
+    case GTK_STATE_INSENSITIVE:
+      flags |= GTK_STATE_FLAG_INSENSITIVE;
+      break;
+    default:
+      break;
+    }
+
+  gtk_style_context_set_state (context, flags);
+  gtk_render_frame_gap (context, cr,
+                        (gdouble) x,
+                        (gdouble) y,
+                        (gdouble) width,
+                        (gdouble) height,
+                        gap_side,
+                        (gdouble) gap_x,
+                        (gdouble) gap_x + gap_width);
 }
 
 
@@ -6450,13 +6749,60 @@ gtk_paint_box_gap (GtkStyle           *style,
                    gint                gap_x,
                    gint                gap_width)
 {
+  GtkStyleContext *context;
+  GtkStateFlags flags = 0;
+  cairo_t *cr;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_box_gap != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_box_gap (style, window, state_type, shadow_type,
-                                             (GdkRectangle *) area, widget, detail,
-                                             x, y, width, height, gap_side, gap_x, gap_width);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  switch (state_type)
+    {
+    case GTK_STATE_ACTIVE:
+      flags |= GTK_STATE_ACTIVE;
+      break;
+    case GTK_STATE_PRELIGHT:
+      flags |= GTK_STATE_FLAG_PRELIGHT;
+      break;
+    case GTK_STATE_SELECTED:
+      flags |= GTK_STATE_FLAG_SELECTED;
+      break;
+    case GTK_STATE_INSENSITIVE:
+      flags |= GTK_STATE_FLAG_INSENSITIVE;
+      break;
+    default:
+      break;
+    }
+
+  gtk_style_context_set_state (context, flags);
+  gtk_render_background (context, cr,
+                         (gdouble) x,
+                         (gdouble) y,
+                         (gdouble) width,
+                         (gdouble) height);
+
+  gtk_render_frame_gap (context, cr,
+                        (gdouble) x,
+                        (gdouble) y,
+                        (gdouble) width,
+                        (gdouble) height,
+                        gap_side,
+                        (gdouble) gap_x,
+                        (gdouble) gap_x + gap_width);
 }
 
 /**
@@ -6491,13 +6837,52 @@ gtk_paint_extension (GtkStyle           *style,
                      gint                height,
                      GtkPositionType     gap_side)
 {
+  GtkStyleContext *context;
+  GtkStateFlags flags = 0;
+  cairo_t *cr;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_extension != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_extension (style, window, state_type, shadow_type,
-                                               (GdkRectangle *) area, widget, detail,
-                                               x, y, width, height, gap_side);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  switch (state_type)
+    {
+    case GTK_STATE_ACTIVE:
+      flags |= GTK_STATE_ACTIVE;
+      break;
+    case GTK_STATE_PRELIGHT:
+      flags |= GTK_STATE_FLAG_PRELIGHT;
+      break;
+    case GTK_STATE_SELECTED:
+      flags |= GTK_STATE_FLAG_SELECTED;
+      break;
+    case GTK_STATE_INSENSITIVE:
+      flags |= GTK_STATE_FLAG_INSENSITIVE;
+      break;
+    default:
+      break;
+    }
+
+  gtk_style_context_set_state (context, flags);
+  gtk_render_extension (context, cr,
+                        (gdouble) x,
+                        (gdouble) y,
+                        (gdouble) width,
+                        (gdouble) height,
+                        gap_side);
 }
 
 /**
@@ -6529,13 +6914,32 @@ gtk_paint_focus (GtkStyle           *style,
                  gint                width,
                  gint                height)
 {
+  GtkStyleContext *context;
+  cairo_t *cr;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_focus != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
+  g_return_if_fail (!widget || GTK_IS_WIDGET (widget));
 
-  GTK_STYLE_GET_CLASS (style)->draw_focus (style, window, state_type,
-                                           (GdkRectangle *) area, widget, detail,
-                                           x, y, width, height);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  gtk_render_focus (context, cr,
+                    (gdouble) x,
+                    (gdouble) y,
+                    (gdouble) width,
+                    (gdouble) height);
 }
 
 /**
@@ -6571,13 +6975,47 @@ gtk_paint_slider (GtkStyle           *style,
                   gint                height,
                   GtkOrientation      orientation)
 {
+  GtkStyleContext *context;
+  GtkStateFlags flags = 0;
+  cairo_t *cr;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_slider != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_slider (style, window, state_type, shadow_type,
-                                            (GdkRectangle *) area, widget, detail,
-                                            x, y, width, height, orientation);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  switch (state_type)
+    {
+    case GTK_STATE_ACTIVE:
+      flags |= GTK_STATE_FLAG_ACTIVE;
+      break;
+    case GTK_STATE_PRELIGHT:
+      flags |= GTK_STATE_FLAG_PRELIGHT;
+      break;
+    case GTK_STATE_SELECTED:
+      flags |= GTK_STATE_FLAG_SELECTED;
+      break;
+    case GTK_STATE_INSENSITIVE:
+      flags |= GTK_STATE_FLAG_INSENSITIVE;
+      break;
+    default:
+      break;
+    }
+
+  gtk_style_context_set_state (context, flags);
+  gtk_render_slider (context, cr,  x, y, width, height, orientation);
 }
 
 /**
@@ -6612,13 +7050,49 @@ gtk_paint_handle (GtkStyle           *style,
                   gint                height,
                   GtkOrientation      orientation)
 {
+  GtkStyleContext *context;
+  GtkStateFlags flags = 0;
+  cairo_t *cr;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_handle != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_handle (style, window, state_type, shadow_type,
-                                            (GdkRectangle *) area, widget, detail,
-                                            x, y, width, height, orientation);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  switch (state_type)
+    {
+    case GTK_STATE_PRELIGHT:
+      flags |= GTK_STATE_FLAG_PRELIGHT;
+      break;
+    case GTK_STATE_SELECTED:
+      flags |= GTK_STATE_FLAG_SELECTED;
+      break;
+    case GTK_STATE_INSENSITIVE:
+      flags |= GTK_STATE_FLAG_INSENSITIVE;
+      break;
+    default:
+      break;
+    }
+
+  gtk_style_context_set_state (context, flags);
+  gtk_render_handle (context, cr,
+                     (gdouble) x,
+                     (gdouble) y,
+                     (gdouble) width,
+                     (gdouble) height,
+                     orientation);
 }
 
 /**
@@ -6657,13 +7131,57 @@ gtk_paint_expander (GtkStyle           *style,
                     gint                y,
 		    GtkExpanderStyle    expander_style)
 {
+  GtkStyleContext *context;
+  GtkStateFlags flags = 0;
+  cairo_t *cr;
+  gint size;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_expander != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_expander (style, window, state_type,
-                                              (GdkRectangle *) area, widget, detail,
-                                              x, y, expander_style);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  switch (state_type)
+    {
+    case GTK_STATE_PRELIGHT:
+      flags |= GTK_STATE_FLAG_PRELIGHT;
+      break;
+    case GTK_STATE_SELECTED:
+      flags |= GTK_STATE_FLAG_SELECTED;
+      break;
+    case GTK_STATE_INSENSITIVE:
+      flags |= GTK_STATE_FLAG_INSENSITIVE;
+      break;
+    default:
+      break;
+    }
+
+  if (widget)
+    gtk_widget_style_get (widget, "expander-size", &size, NULL);
+  else
+    size = 10;
+
+  if (expander_style == GTK_EXPANDER_EXPANDED)
+    flags |= GTK_STATE_FLAG_ACTIVE;
+
+  gtk_style_context_set_state (context, flags);
+  gtk_render_expander (context, cr,
+                       (gdouble) x - (size / 2),
+                       (gdouble) y - (size / 2),
+                       (gdouble) size,
+                       (gdouble) size);
 }
 
 /**
@@ -6695,13 +7213,47 @@ gtk_paint_layout (GtkStyle           *style,
                   gint                y,
                   PangoLayout        *layout)
 {
+  GtkStyleContext *context;
+  GtkStateFlags flags = 0;
+  cairo_t *cr;
+
   g_return_if_fail (GTK_IS_STYLE (style));
   g_return_if_fail (GTK_STYLE_GET_CLASS (style)->draw_layout != NULL);
   g_return_if_fail (style->depth == gdk_drawable_get_depth (window));
 
-  GTK_STYLE_GET_CLASS (style)->draw_layout (style, window, state_type, use_text,
-                                            (GdkRectangle *) area, widget, detail,
-                                            x, y, layout);
+  if (!widget)
+    {
+      gpointer window_data;
+
+      gdk_window_get_user_data (window, &window_data);
+      widget = window_data;
+
+      g_return_if_fail (GTK_IS_WIDGET (widget));
+    }
+
+  cr = gdk_cairo_create (window);
+  context = gtk_widget_get_style_context (widget);
+
+  switch (state_type)
+    {
+    case GTK_STATE_PRELIGHT:
+      flags |= GTK_STATE_FLAG_PRELIGHT;
+      break;
+    case GTK_STATE_SELECTED:
+      flags |= GTK_STATE_FLAG_SELECTED;
+      break;
+    case GTK_STATE_INSENSITIVE:
+      flags |= GTK_STATE_FLAG_INSENSITIVE;
+      break;
+    default:
+      break;
+    }
+
+  gtk_style_context_set_state (context, flags);
+  gtk_render_layout (context, cr,
+                     (gdouble) x,
+                     (gdouble) y,
+                     layout);
 }
 
 /**
