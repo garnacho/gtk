@@ -11513,7 +11513,7 @@ gtk_widget_get_path (GtkWidget *widget)
   GList *regions, *reg;
 
   g_return_val_if_fail (GTK_IS_WIDGET (widget), NULL);
-  g_return_val_if_fail (GTK_WIDGET_REALIZED (widget), NULL);
+  g_return_val_if_fail (gtk_widget_get_realized (widget), NULL);
 
   parent = widget->parent;
   path = gtk_widget_path_new ();
@@ -11592,7 +11592,7 @@ gtk_widget_get_style_context (GtkWidget *widget)
                                       GTK_STYLE_PROVIDER_PRIORITY_USER);
     }
 
-  if (GTK_WIDGET_REALIZED (widget))
+  if (gtk_widget_get_realized (widget))
     {
       GtkWidgetPath *path;
 
