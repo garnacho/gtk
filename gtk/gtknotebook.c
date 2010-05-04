@@ -378,8 +378,10 @@ static void  gtk_notebook_child_reordered    (GtkNotebook      *notebook,
 static void gtk_notebook_paint               (GtkWidget        *widget,
 					      GdkRectangle     *area);
 static void gtk_notebook_draw_tab            (GtkNotebook      *notebook,
-					      GtkNotebookPage  *page,
-					      GdkRectangle     *area);
+                                              GtkNotebookPage  *page,
+                                              GdkRectangle     *area,
+                                              guint             position,
+                                              gboolean          is_last);
 static void gtk_notebook_draw_arrow          (GtkNotebook      *notebook,
 					      GtkNotebookArrow  arrow);
 
@@ -2306,8 +2308,9 @@ gtk_notebook_expose (GtkWidget      *widget,
       gdk_drawable_get_size (priv->drag_window,
 			     &area.width, &area.height);
       gtk_notebook_draw_tab (notebook,
-			     notebook->cur_page,
-			     &area);
+                             notebook->cur_page,
+                             &area,
+                             0, FALSE);
       gtk_notebook_draw_focus (widget, event);
       gtk_container_propagate_expose (GTK_CONTAINER (notebook),
 				      notebook->cur_page->tab_label, event);
@@ -4840,8 +4843,8 @@ gtk_notebook_paint (GtkWidget    *widget,
   gint x, y;
   gint border_width = GTK_CONTAINER (widget)->border_width;
   gint gap_x = 0, gap_width = 0, step = STEP_PREV;
-  gboolean is_rtl;
-  gint tab_pos;
+  gboolean is_rtl, cur_page_end;
+  gint tab_pos, i, cur_page_pos;
    
   if (!gtk_widget_is_drawable (widget))
     return;
@@ -4933,6 +4936,8 @@ gtk_notebook_paint (GtkWidget    *widget,
 
   showarrow = FALSE;
   children = gtk_notebook_search_page (notebook, NULL, step, TRUE);
+  i = 0;
+
   while (children)
     {
       page = children->data;
@@ -4942,8 +4947,18 @@ gtk_notebook_paint (GtkWidget    *widget,
 	continue;
       if (!gtk_widget_get_mapped (page->tab_label))
 	showarrow = TRUE;
-      else if (page != notebook->cur_page)
-	gtk_notebook_draw_tab (notebook, page, area);
+      else
+        {
+          if (page != notebook->cur_page)
+            gtk_notebook_draw_tab (notebook, page, area, i, children != NULL);
+          else
+            {
+              cur_page_pos = i;
+              cur_page_end = (children != NULL);
+            }
+
+          i++;
+        }
     }
 
   if (showarrow && notebook->scrollable) 
@@ -4957,13 +4972,15 @@ gtk_notebook_paint (GtkWidget    *widget,
       if (notebook->has_after_next)
 	gtk_notebook_draw_arrow (notebook, ARROW_RIGHT_AFTER);
     }
-  gtk_notebook_draw_tab (notebook, notebook->cur_page, area);
+  gtk_notebook_draw_tab (notebook, notebook->cur_page, area, cur_page_pos, cur_page_end);
 }
 
 static void
 gtk_notebook_draw_tab (GtkNotebook     *notebook,
-		       GtkNotebookPage *page,
-		       GdkRectangle    *area)
+                       GtkNotebookPage *page,
+                       GdkRectangle    *area,
+                       guint            position,
+                       gboolean         is_last)
 {
   GtkNotebookPrivate *priv;
   GdkRectangle child_area;
@@ -4993,6 +5010,20 @@ gtk_notebook_draw_tab (GtkNotebook     *notebook,
 
   if (gdk_rectangle_intersect (&page_area, area, &child_area))
     {
+      GtkStyleContext *context;
+      GtkChildClassFlags flags = 0;
+
+      if (position % 2 == 0)
+        flags |= GTK_CHILD_CLASS_ODD;
+      else
+        flags |= GTK_CHILD_CLASS_EVEN;
+
+      if (position == 0)
+        flags |= GTK_CHILD_CLASS_FIRST;
+
+      if (is_last)
+        flags |= GTK_CHILD_CLASS_LAST;
+
       gap_side = get_tab_gap_pos (notebook);
 
       if (notebook->cur_page == page)
@@ -5000,12 +5031,17 @@ gtk_notebook_draw_tab (GtkNotebook     *notebook,
       else 
 	state_type = GTK_STATE_ACTIVE;
 
+      context = gtk_widget_get_style_context (widget);
+      gtk_style_context_set_child_class (context, "tab", flags);
+
       gtk_paint_extension (widget->style, window,
 			   state_type, GTK_SHADOW_OUT,
 			   area, widget, "tab",
 			   page_area.x, page_area.y,
 			   page_area.width, page_area.height,
 			   gap_side);
+
+      gtk_style_context_unset_child_class (context, "tab");
     }
 }
 
