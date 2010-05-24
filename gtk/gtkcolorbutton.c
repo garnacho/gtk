@@ -1002,7 +1002,7 @@ gtk_color_button_unit_changed (GtkWidget *widget)
 {
   GtkColorButton *color_button = GTK_COLOR_BUTTON (widget);
 
-  if (GTK_WIDGET_REALIZED (widget))
+  if (gtk_widget_get_realized (widget))
     {
       if (color_button->priv->pixbuf != NULL)
 	g_object_unref (color_button->priv->pixbuf);

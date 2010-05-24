@@ -1848,7 +1848,6 @@ gtk_notebook_size_request (GtkWidget      *widget,
 {
   GtkNotebookPrivate *priv = GTK_NOTEBOOK_GET_PRIVATE (widget);
   GtkNotebook *notebook = GTK_NOTEBOOK (widget);
-  GtkNotebookPrivate *priv = GTK_NOTEBOOK_GET_PRIVATE (notebook);
   GtkNotebookPage *page;
   GList *children;
   GtkRequisition child_requisition;

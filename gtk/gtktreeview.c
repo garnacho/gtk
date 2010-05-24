@@ -15733,7 +15733,7 @@ gtk_tree_view_unit_changed (GtkWidget *widget)
     GTK_WIDGET_CLASS (gtk_tree_view_parent_class)->unit_changed (widget);
 
   /* no need to do this unless we're realized since our realize method does this too */
-  if (!GTK_WIDGET_REALIZED (widget))
+  if (!gtk_widget_get_realized (widget))
     return;
 
   gtk_widget_style_get (widget,

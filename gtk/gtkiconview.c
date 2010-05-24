@@ -768,11 +768,11 @@ gtk_icon_view_class_init (GtkIconViewClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_ITEM_PADDING,
-                                   g_param_spec_size ("item-padding",
-						      P_("Item Padding"),
-						      P_("Padding around icon view items"),
-						      0, G_MAXINT, GTK_SIZE_ONE_TWELFTH_EM (6),
-						      GTK_PARAM_READWRITE));
+                                   gtk_param_spec_size ("item-padding",
+						        P_("Item Padding"),
+						        P_("Padding around icon view items"),
+						        0, G_MAXINT, GTK_SIZE_ONE_TWELFTH_EM (6),
+						        GTK_PARAM_READWRITE));
 
 
 
@@ -2946,28 +2946,14 @@ adjust_wrap_width (GtkIconView     *icon_view,
       else
 	item_width = item->width;
 
-<<<<<<< HEAD
       if (icon_view->priv->orientation == GTK_ORIENTATION_VERTICAL)
         wrap_width = item_width;
       else {
         if (item->width == -1 && item_width <= 0)
           wrap_width = MAX (2 * pixbuf_width, 50);
         else
-          wrap_width = item_width - pixbuf_width - icon_view->priv->spacing;
+          wrap_width = item_width - pixbuf_width - gtk_widget_size_to_pixel (icon_view, icon_view->priv->spacing);
         }
-=======
-      if (item->width == -1)
-        {
-	  if (item_width > 0)
-	    wrap_width = item_width - pixbuf_width - gtk_widget_size_to_pixel (icon_view, icon_view->priv->spacing);
-	  else
-	    wrap_width = MAX (2 * pixbuf_width, 50);
-	}
-      else if (icon_view->priv->orientation == GTK_ORIENTATION_VERTICAL)
-	wrap_width = item_width;
-      else
-	wrap_width = item_width - pixbuf_width - gtk_widget_size_to_pixel (icon_view, icon_view->priv->spacing);
->>>>>>> port GtkTreeView, GtkIconView, GtkComboBox and all GtkCellRenderer's to RI
 
       wrap_width -= icon_view->priv->item_padding * 2;
 

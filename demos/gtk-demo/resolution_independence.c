@@ -225,7 +225,7 @@ do_resolution_independence (GtkWidget *do_widget)
 
  have_window:
 
-  if (!GTK_WIDGET_VISIBLE (window))
+  if (!gtk_widget_get_visible (window))
     {
       gtk_widget_show_all (window);
     }

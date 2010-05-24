@@ -810,9 +810,7 @@ request_password (GtkPrintBackend  *backend,
           gtk_entry_set_visibility (GTK_ENTRY (entry), ai_visible[i]);
           gtk_entry_set_activates_default (GTK_ENTRY (entry), TRUE);
 
-          gtk_box_pack_start (GTK_BOX (vbox), box, FALSE, TRUE, 6);
-          gtk_box_pack_start (GTK_BOX (vbox), username_box, FALSE, TRUE,
-                              GTK_SIZE_ONE_TWELFTH_EM (6));
+          gtk_box_pack_start (GTK_BOX (vbox), box, FALSE, TRUE, GTK_SIZE_ONE_TWELFTH_EM(6));
 
           gtk_box_pack_start (GTK_BOX (box), label, TRUE, TRUE, 0);
           gtk_box_pack_start (GTK_BOX (box), entry, TRUE, TRUE, 0);

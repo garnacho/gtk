@@ -11606,7 +11606,7 @@ gtk_widget_get_monitor_num (GtkWidget *widget)
   toplevel = gtk_widget_get_toplevel (widget);
   if (toplevel != NULL)
     {
-      if (GTK_WIDGET_TOPLEVEL (toplevel) && GTK_IS_WINDOW (toplevel))
+      if (gtk_widget_is_toplevel (toplevel) && GTK_IS_WINDOW (toplevel))
         {
           monitor_num = gtk_window_get_monitor_num (GTK_WINDOW (toplevel));
         }
@@ -11630,7 +11630,7 @@ get_screen_and_monitor (GtkWidget *widget, GdkScreen **screen, gint *monitor_num
       if (toplevel != NULL)
         {
           *screen = gtk_widget_get_screen (toplevel);
-          if (*screen != NULL && GTK_WIDGET_TOPLEVEL (toplevel) && GTK_IS_WINDOW (toplevel))
+          if (*screen != NULL && gtk_widget_is_toplevel (toplevel) && GTK_IS_WINDOW (toplevel))
             *monitor_num = gtk_window_get_monitor_num (GTK_WINDOW (toplevel));
         }
     }
