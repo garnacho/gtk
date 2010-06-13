@@ -3548,17 +3548,6 @@ gtk_widget_realize (GtkWidget *widget)
       mode = gtk_widget_get_extension_events (widget);
       if (mode != GDK_EXTENSION_EVENTS_NONE)
         gtk_widget_set_extension_events_internal (widget, mode, NULL);
-
-      context = g_object_get_qdata (G_OBJECT (widget),
-                                    quark_style_context);
-      if (context)
-        {
-          GtkWidgetPath *path;
-
-          path = gtk_widget_get_path (widget);
-          gtk_style_context_set_path (context, path);
-          gtk_widget_path_free (path);
-        }
     }
 }
 
@@ -6388,7 +6377,8 @@ gtk_widget_set_parent (GtkWidget *widget,
 		       GtkWidget *parent)
 {
   GtkStateData data;
-  
+  GtkStyleContext *context;
+
   g_return_if_fail (GTK_IS_WIDGET (widget));
   g_return_if_fail (GTK_IS_WIDGET (parent));
   g_return_if_fail (widget != parent);
@@ -6439,6 +6429,17 @@ gtk_widget_set_parent (GtkWidget *widget,
 	gtk_widget_map (widget);
 
       gtk_widget_queue_resize (widget);
+    }
+
+  context = g_object_get_qdata (G_OBJECT (widget),
+                                    quark_style_context);
+  if (context)
+    {
+      GtkWidgetPath *path;
+
+      path = gtk_widget_get_path (widget);
+      gtk_style_context_set_path (context, path);
+      gtk_widget_path_free (path);
     }
 }
 
@@ -11513,7 +11514,7 @@ gtk_widget_get_path (GtkWidget *widget)
   GList *regions, *reg;
 
   g_return_val_if_fail (GTK_IS_WIDGET (widget), NULL);
-  g_return_val_if_fail (gtk_widget_get_realized (widget), NULL);
+  g_return_val_if_fail ((widget->parent || gtk_widget_is_toplevel (widget)), NULL);
 
   parent = widget->parent;
   path = gtk_widget_path_new ();
@@ -11592,7 +11593,8 @@ gtk_widget_get_style_context (GtkWidget *widget)
                                       GTK_STYLE_PROVIDER_PRIORITY_USER);
     }
 
-  if (gtk_widget_get_realized (widget))
+  if (widget->parent ||
+      gtk_widget_is_toplevel (widget))
     {
       GtkWidgetPath *path;
 
