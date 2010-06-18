@@ -929,7 +929,7 @@ parse_value (GType        type,
     {
       GtkThemingEngine *engine;
 
-      engine = gtk_theming_engine_load (value_str);
+      engine = (GtkThemingEngine *) gtk_theming_engine_load (value_str);
       g_value_set_object (value, engine);
     }
   else

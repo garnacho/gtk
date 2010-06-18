@@ -475,7 +475,7 @@ gtk_style_set_get_valist (GtkStyleSet  *set,
 
       if (!prop)
         {
-          GValue *empty_value = { 0 };
+          GValue empty_value = { 0 };
 
           g_warning ("No value for style property \"%s\"", property_name);
 
