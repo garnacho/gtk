@@ -91,6 +91,8 @@ GType gdk_pango_renderer_get_type (void) G_GNUC_CONST;
 PangoRenderer *gdk_pango_renderer_new         (GdkScreen *screen);
 PangoRenderer *gdk_pango_renderer_get_default (GdkScreen *screen);
 
+void gdk_pango_renderer_set_cr             (GdkPangoRenderer *gdk_renderer,
+                                            cairo_t          *cr);
 void gdk_pango_renderer_set_drawable       (GdkPangoRenderer *gdk_renderer,
 					    GdkDrawable      *drawable);
 void gdk_pango_renderer_set_gc             (GdkPangoRenderer *gdk_renderer,
@@ -160,6 +162,14 @@ struct _GdkPangoAttrEmbossColor
 PangoAttribute *gdk_pango_attr_stipple_new  (GdkBitmap *stipple);
 PangoAttribute *gdk_pango_attr_embossed_new (gboolean embossed);
 PangoAttribute *gdk_pango_attr_emboss_color_new (const GdkColor *color);
+
+void gdk_pango_show_layout (GdkScreen      *screen,
+                            cairo_t        *cr,
+                            gint            x,
+                            gint            y,
+                            PangoLayout    *layout,
+                            const GdkColor *foreground,
+                            const GdkColor *background);
 
 G_END_DECLS
 

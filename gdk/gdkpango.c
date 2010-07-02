@@ -161,17 +161,16 @@ get_cairo_context (GdkPangoRenderer *gdk_renderer,
   PangoRenderer *renderer = PANGO_RENDERER (gdk_renderer);
   GdkPangoRendererPrivate *priv = gdk_renderer->priv;
 
-  if (!priv->cr)
+  if (priv->cr)
     {
       const PangoMatrix *matrix;
-      
-      priv->cr = gdk_cairo_create (priv->drawable);
 
       matrix = pango_renderer_get_matrix (renderer);
+
       if (matrix)
 	{
 	  cairo_matrix_t cairo_matrix;
-	  
+
 	  cairo_matrix_init (&cairo_matrix,
 			     matrix->xx, matrix->yx,
 			     matrix->xy, matrix->yy,
@@ -210,12 +209,20 @@ get_cairo_context (GdkPangoRenderer *gdk_renderer,
 	  else
 	    color = NULL;
 
-	  _gdk_gc_update_context (priv->base_gc,
-				  priv->cr,
-				  color,
-				  priv->stipple[part],
-				  priv->gc_changed,
-				  priv->drawable);
+	  if (priv->base_gc)
+	    _gdk_gc_update_context (priv->base_gc,
+				    priv->cr,
+				    color,
+				    priv->stipple[part],
+				    priv->gc_changed,
+				    priv->drawable);
+	  else
+	    {
+	      if (color)
+		gdk_cairo_set_source_color (priv->cr, color);
+	      else
+		cairo_set_source_rgb (priv->cr, 0, 0, 0);
+	    }
 	}
 
       priv->last_part = part;
@@ -373,11 +380,21 @@ gdk_pango_renderer_begin (PangoRenderer *renderer)
 {
   GdkPangoRenderer *gdk_renderer = GDK_PANGO_RENDERER (renderer);
   GdkPangoRendererPrivate *priv = gdk_renderer->priv;
-  
-  if (!priv->drawable || !priv->base_gc)
+
+  if (!priv->cr)
     {
-      g_warning ("gdk_pango_renderer_set_drawable() and gdk_pango_renderer_set_drawable()"
-		 "must be used to set the target drawable and GC before using the renderer\n");
+      cairo_t *cr;
+
+      if (!priv->drawable || !priv->base_gc)
+	{
+	  g_warning ("gdk_pango_renderer_set_drawable() and gdk_pango_renderer_set_gc()"
+		     "must be used to set the target drawable and GC before using the renderer\n");
+	  return;
+	}
+
+      cr = gdk_cairo_create (priv->drawable);
+      gdk_pango_renderer_set_cr (gdk_renderer, cr);
+      cairo_destroy (cr);
     }
 }
 
@@ -387,11 +404,13 @@ gdk_pango_renderer_end (PangoRenderer *renderer)
   GdkPangoRenderer *gdk_renderer = GDK_PANGO_RENDERER (renderer);
   GdkPangoRendererPrivate *priv = gdk_renderer->priv;
 
-  if (priv->cr)
+  if (priv->drawable && priv->cr)
     {
+      /* cairo_t is disposable if drawable is set */
       cairo_destroy (priv->cr);
       priv->cr = NULL;
     }
+
   priv->last_part = (PangoRenderPart)-1;
 }
 
@@ -686,6 +705,25 @@ gdk_pango_renderer_set_gc (GdkPangoRenderer *gdk_renderer,
     }
 }
 
+void
+gdk_pango_renderer_set_cr (GdkPangoRenderer *gdk_renderer,
+			   cairo_t          *cr)
+{
+  GdkPangoRendererPrivate *priv;
+
+  g_return_if_fail (GDK_IS_PANGO_RENDERER (gdk_renderer));
+
+  priv = gdk_renderer->priv;
+
+  if (priv->cr != cr)
+    {
+      if (priv->cr)
+	cairo_destroy (priv->cr);
+
+      priv->cr = cairo_reference (cr);
+      priv->gc_changed = TRUE;
+    }
+}
 
 /**
  * gdk_pango_renderer_set_stipple:
@@ -819,6 +857,38 @@ get_renderer (GdkDrawable     *drawable,
   return renderer;
 }
 
+static PangoRenderer *
+get_renderer_for_cr (GdkScreen      *screen,
+                     cairo_t        *cr,
+		     const GdkColor *foreground,
+		     const GdkColor *background)
+{
+  PangoRenderer *renderer;
+  GdkPangoRenderer *gdk_renderer;
+
+  renderer = gdk_pango_renderer_get_default (screen);
+  gdk_renderer = GDK_PANGO_RENDERER (renderer);
+
+  gdk_pango_renderer_set_cr (gdk_renderer, cr);
+
+  gdk_pango_renderer_set_override_color (gdk_renderer,
+					 PANGO_RENDER_PART_FOREGROUND,
+					 foreground);
+  gdk_pango_renderer_set_override_color (gdk_renderer,
+					 PANGO_RENDER_PART_UNDERLINE,
+					 foreground);
+  gdk_pango_renderer_set_override_color (gdk_renderer,
+					 PANGO_RENDER_PART_STRIKETHROUGH,
+					 foreground);
+
+  gdk_pango_renderer_set_override_color (gdk_renderer,
+					 PANGO_RENDER_PART_BACKGROUND,
+					 background);
+  pango_renderer_activate (renderer);
+
+  return renderer;
+}
+
 /* Cleans up the renderer obtained with get_renderer() */
 static void
 release_renderer (PangoRenderer *renderer)
@@ -921,6 +991,51 @@ gdk_draw_layout_line_with_colors (GdkDrawable      *drawable,
   release_renderer (renderer);
 }
 
+static void
+adjust_matrix (PangoRenderer *renderer,
+	       PangoLayout   *layout,
+	       gint          *x,
+	       gint          *y)
+{
+  const PangoMatrix *matrix;
+
+  /* When we have a matrix, we do positioning by adjusting the matrix, and
+   * clamp just pass x=0, y=0 to the lower levels. We don't want to introduce
+   * a matrix when the caller didn't provide one, however, since that adds
+   * lots of floating point arithmetic for each glyph.
+   */
+  matrix = pango_context_get_matrix (pango_layout_get_context (layout));
+  if (matrix)
+    {
+      PangoMatrix tmp_matrix;
+      PangoRectangle rect;
+
+      pango_layout_get_extents (layout, NULL, &rect);
+      pango_matrix_transform_rectangle (matrix, &rect);
+      pango_extents_to_pixels (&rect, NULL);
+
+      tmp_matrix = *matrix;
+      tmp_matrix.x0 += *x - rect.x;
+      tmp_matrix.y0 += *y - rect.y;
+      pango_renderer_set_matrix (renderer, &tmp_matrix);
+
+      *x = 0;
+      *y = 0;
+    }
+  else if (GDK_PANGO_UNITS_OVERFLOWS (*x, *y))
+    {
+      PangoMatrix tmp_matrix = PANGO_MATRIX_INIT;
+      tmp_matrix.x0 = *x;
+      tmp_matrix.y0 = *y;
+      pango_renderer_set_matrix (renderer, &tmp_matrix);
+
+      *x = 0;
+      *y = 0;
+    }
+  else
+    pango_renderer_set_matrix (renderer, NULL);
+}
+
 /**
  * gdk_draw_layout_with_colors:
  * @drawable:  the drawable on which to draw string
@@ -952,52 +1067,17 @@ gdk_draw_layout_with_colors (GdkDrawable     *drawable,
                              const GdkColor  *background)
 {
   PangoRenderer *renderer;
-  const PangoMatrix *matrix;
-  
+
   g_return_if_fail (GDK_IS_DRAWABLE (drawable));
   g_return_if_fail (GDK_IS_GC (gc));
   g_return_if_fail (PANGO_IS_LAYOUT (layout));
 
   renderer = get_renderer (drawable, gc, foreground, background);
 
-  /* When we have a matrix, we do positioning by adjusting the matrix, and
-   * clamp just pass x=0, y=0 to the lower levels. We don't want to introduce
-   * a matrix when the caller didn't provide one, however, since that adds
-   * lots of floating point arithmetic for each glyph.
-   */
-  matrix = pango_context_get_matrix (pango_layout_get_context (layout));
-  if (matrix)
-    {
-      PangoMatrix tmp_matrix;
-      PangoRectangle rect;
-
-      pango_layout_get_extents (layout, NULL, &rect);
-      pango_matrix_transform_rectangle (matrix, &rect);
-      pango_extents_to_pixels (&rect, NULL);
-      
-      tmp_matrix = *matrix;
-      tmp_matrix.x0 += x - rect.x;
-      tmp_matrix.y0 += y - rect.y;
-      pango_renderer_set_matrix (renderer, &tmp_matrix);
-      
-      x = 0;
-      y = 0;
-    }
-  else if (GDK_PANGO_UNITS_OVERFLOWS (x, y))
-    {
-      PangoMatrix tmp_matrix = PANGO_MATRIX_INIT;
-      tmp_matrix.x0 = x;
-      tmp_matrix.y0 = y;
-      pango_renderer_set_matrix (renderer, &tmp_matrix);
-
-      x = 0;
-      y = 0;
-    }
-  else
-    pango_renderer_set_matrix (renderer, NULL);
+  adjust_matrix (renderer, layout, &x, &y);
 
   pango_renderer_draw_layout (renderer, layout, x * PANGO_SCALE, y * PANGO_SCALE);
-  
+
   release_renderer (renderer);
 }
 
@@ -1496,6 +1576,35 @@ gdk_pango_context_get_for_screen (GdkScreen *screen)
 
   return context;
 }
+
+void
+gdk_pango_show_layout (GdkScreen      *screen,
+                       cairo_t        *cr,
+		       gint            x,
+		       gint            y,
+		       PangoLayout    *layout,
+		       const GdkColor *foreground,
+		       const GdkColor *background)
+{
+  PangoRenderer *renderer;
+
+  g_return_if_fail (cr != NULL);
+  g_return_if_fail (GDK_IS_SCREEN (screen));
+  g_return_if_fail (PANGO_IS_LAYOUT (layout));
+
+  cairo_save (cr);
+
+  renderer = get_renderer_for_cr (screen, cr, foreground, background);
+
+  adjust_matrix (renderer, layout, &x, &y);
+
+  pango_renderer_draw_layout (renderer, layout, x * PANGO_SCALE, y * PANGO_SCALE);
+
+  release_renderer (renderer);
+
+  cairo_restore (cr);
+}
+
 
 #define __GDK_PANGO_C__
 #include "gdkaliasdef.c"
