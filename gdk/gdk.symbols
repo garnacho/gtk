@@ -913,6 +913,7 @@ gdk_net_wm_supports
 gdk_pango_attr_emboss_color_new
 gdk_pango_attr_embossed_new
 gdk_pango_attr_stipple_new
+gdk_pango_attr_shade_new
 gdk_pango_context_get
 gdk_pango_context_get_for_screen
 #ifndef GDK_DISABLE_DEPRECATED

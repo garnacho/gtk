@@ -50,6 +50,7 @@ struct _GdkPangoRendererPrivate
   GdkBitmap *stipple[MAX_RENDER_PART + 1];
   PangoColor emboss_color;
   gboolean embossed;
+  gdouble shade_factor;
 
   cairo_t *cr;
   PangoRenderPart last_part;
@@ -64,6 +65,7 @@ struct _GdkPangoRendererPrivate
 static PangoAttrType gdk_pango_attr_stipple_type;
 static PangoAttrType gdk_pango_attr_embossed_type;
 static PangoAttrType gdk_pango_attr_emboss_color_type;
+static PangoAttrType gdk_pango_attr_shade_type;
 
 enum {
   PROP_0,
@@ -219,7 +221,15 @@ get_cairo_context (GdkPangoRenderer *gdk_renderer,
 	  else
 	    {
 	      if (color)
-		gdk_cairo_set_source_color (priv->cr, color);
+                {
+                  gdouble factor;
+
+                  factor = priv->shade_factor;
+                  cairo_set_source_rgb (priv->cr,
+                                        CLAMP (factor * color->red / 65535., 0, 1),
+                                        CLAMP (factor * color->green / 65535., 0, 1),
+                                        CLAMP (factor * color->blue / 65535., 0, 1));
+                }
 	      else
 		cairo_set_source_rgb (priv->cr, 0, 0, 0);
 	    }
@@ -423,6 +433,7 @@ gdk_pango_renderer_prepare_run (PangoRenderer  *renderer,
   GdkBitmap *stipple = NULL;
   gboolean changed = FALSE;
   PangoColor emboss_color;
+  gdouble shade_factor = 1;
   GSList *l;
   int i;
 
@@ -450,6 +461,10 @@ gdk_pango_renderer_prepare_run (PangoRenderer  *renderer,
 	{
 	  emboss_color = ((GdkPangoAttrEmbossColor*)attr)->color;
 	}
+      else if (attr->klass->type == gdk_pango_attr_shade_type)
+        {
+          shade_factor = ((GdkPangoAttrShade *) attr)->factor;
+        }
     }
 
   gdk_pango_renderer_set_stipple (gdk_renderer, PANGO_RENDER_PART_FOREGROUND, stipple);
@@ -460,6 +475,12 @@ gdk_pango_renderer_prepare_run (PangoRenderer  *renderer,
   if (embossed != gdk_renderer->priv->embossed)
     {
       gdk_renderer->priv->embossed = embossed;
+      changed = TRUE;
+    }
+
+  if (shade_factor != gdk_renderer->priv->shade_factor)
+    {
+      gdk_renderer->priv->shade_factor = shade_factor;
       changed = TRUE;
     }
 
@@ -1207,6 +1228,62 @@ gdk_pango_attr_stipple_new (GdkBitmap *stipple)
   result->stipple = stipple;
 
   return (PangoAttribute *)result;
+}
+
+/* GdkPangoAttrShade */
+static PangoAttribute *
+gdk_pango_attr_shade_copy (const PangoAttribute *attr)
+{
+  const GdkPangoAttrShade *s = (const GdkPangoAttrShade *) attr;
+
+  return gdk_pango_attr_shade_new (s->factor);
+}
+
+static void
+gdk_pango_attr_shade_destroy (PangoAttribute *attr)
+{
+  g_free (attr);
+}
+
+static gboolean
+gdk_pango_attr_shade_compare (const PangoAttribute *attr1,
+                              const PangoAttribute *attr2)
+{
+  const GdkPangoAttrShade *s1 = (const GdkPangoAttrShade *) attr1;
+  const GdkPangoAttrShade *s2 = (const GdkPangoAttrShade *) attr2;
+
+  return s1->factor == s2->factor;
+}
+
+/**
+ * gdk_pango_attr_shade_new:
+ * @factor: shading factor
+ *
+ * Creates a new attribute to shade a region.
+ *
+ * Return value: new #PangoAttribute
+ **/
+PangoAttribute *
+gdk_pango_attr_shade_new (gdouble factor)
+{
+  GdkPangoAttrShade *result;
+
+  static PangoAttrClass klass = {
+    0,
+    gdk_pango_attr_shade_copy,
+    gdk_pango_attr_shade_destroy,
+    gdk_pango_attr_shade_compare
+  };
+
+  if (!klass.type)
+    klass.type = gdk_pango_attr_shade_type =
+      pango_attr_type_register ("GdkPangoAttrShade");
+
+  result = g_new (GdkPangoAttrShade, 1);
+  result->attr.klass = &klass;
+  result->factor = factor;
+
+  return (PangoAttribute *) result;
 }
 
 /* GdkPangoAttrEmbossed */
