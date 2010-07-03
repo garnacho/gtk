@@ -3499,7 +3499,6 @@ gtk_widget_realize (GtkWidget *widget)
 {
   GdkExtensionMode mode;
   GtkWidgetShapeInfo *shape_info;
-  GtkStyleContext *context;
   
   g_return_if_fail (GTK_IS_WIDGET (widget));
   g_return_if_fail (GTK_WIDGET_ANCHORED (widget) ||
@@ -6440,6 +6439,9 @@ gtk_widget_set_parent (GtkWidget *widget,
       path = gtk_widget_get_path (widget);
       gtk_style_context_set_path (context, path);
       gtk_widget_path_free (path);
+
+      gtk_style_context_set_screen (context,
+                                    gtk_widget_get_screen (widget));
     }
 }
 
@@ -7033,14 +7035,20 @@ do_screen_change (GtkWidget *widget,
 {
   if (old_screen != new_screen)
     {
+      GtkStyleContext *context;
+
       if (old_screen)
 	{
 	  PangoContext *context = g_object_get_qdata (G_OBJECT (widget), quark_pango_context);
 	  if (context)
 	    g_object_set_qdata (G_OBJECT (widget), quark_pango_context, NULL);
 	}
-      
+
       _gtk_tooltip_hide (widget);
+
+      context = gtk_widget_get_style_context (widget);
+      gtk_style_context_set_screen (context, new_screen);
+
       g_signal_emit (widget, widget_signals[SCREEN_CHANGED], 0, old_screen);
     }
 }
@@ -11604,6 +11612,9 @@ gtk_widget_get_style_context (GtkWidget *widget)
           path = gtk_widget_get_path (widget);
           gtk_style_context_set_path (context, path);
           gtk_widget_path_free (path);
+
+          gtk_style_context_set_screen (context,
+                                        gtk_widget_get_screen (widget));
         }
     }
 
