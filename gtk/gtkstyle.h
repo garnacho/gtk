@@ -940,6 +940,10 @@ GdkGC *_gtk_widget_get_cursor_gc    (GtkWidget          *widget);
 void   _gtk_widget_get_cursor_color (GtkWidget          *widget,
 				     GdkColor           *color);
 
+gboolean   gtk_style_has_context     (GtkStyle *style);
+
+
+
 G_END_DECLS
 
 #endif /* __GTK_STYLE_H__ */
