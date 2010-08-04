@@ -5779,16 +5779,33 @@ void
 gtk_widget_set_name (GtkWidget	 *widget,
 		     const gchar *name)
 {
+  GtkStyleContext *context;
   gchar *new_name;
-  
+
   g_return_if_fail (GTK_IS_WIDGET (widget));
 
   new_name = g_strdup (name);
   g_free (widget->name);
   widget->name = new_name;
 
+  context = g_object_get_qdata (G_OBJECT (widget),
+                                quark_style_context);
+  if (context)
+    {
+      GtkWidgetPath *path;
+
+      path = gtk_widget_get_path (widget);
+      gtk_style_context_set_path (context, path);
+      gtk_widget_path_free (path);
+
+      gtk_style_context_set_screen (context,
+                                    gtk_widget_get_screen (widget));
+    }
+
+#if 0
   if (gtk_widget_has_rc_style (widget))
     gtk_widget_reset_rc_style (widget);
+#endif
 
   g_object_notify (G_OBJECT (widget), "name");
 }
@@ -11551,9 +11568,13 @@ gtk_widget_get_path (GtkWidget *widget)
   g_return_val_if_fail (GTK_IS_WIDGET (widget), NULL);
 
   parent = widget->parent;
+  regions = reg = NULL;
+
   path = gtk_widget_path_new ();
   gtk_widget_path_prepend_type (path, G_OBJECT_TYPE (widget));
-  regions = reg = NULL;
+
+  if (widget->name)
+    gtk_widget_path_set_element_name (path, 0, widget->name);
 
   context = g_object_get_qdata (G_OBJECT (widget),
                                 quark_style_context);
@@ -11577,7 +11598,13 @@ gtk_widget_get_path (GtkWidget *widget)
 
   while (parent)
     {
-      gtk_widget_path_prepend_type (path, G_OBJECT_TYPE (parent));
+      guint position;
+
+      position = gtk_widget_path_prepend_type (path, G_OBJECT_TYPE (parent));
+
+      if (parent->name)
+        gtk_widget_path_set_element_name (path, position, parent->name);
+
       parent = parent->parent;
     }
 
