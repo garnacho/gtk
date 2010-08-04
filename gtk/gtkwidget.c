@@ -11574,7 +11574,7 @@ gtk_widget_get_path (GtkWidget *widget)
   gtk_widget_path_prepend_type (path, G_OBJECT_TYPE (widget));
 
   if (widget->name)
-    gtk_widget_path_set_element_name (path, 0, widget->name);
+    gtk_widget_path_iter_set_name (path, 0, widget->name);
 
   context = g_object_get_qdata (G_OBJECT (widget),
                                 quark_style_context);
@@ -11603,7 +11603,7 @@ gtk_widget_get_path (GtkWidget *widget)
       position = gtk_widget_path_prepend_type (path, G_OBJECT_TYPE (parent));
 
       if (parent->name)
-        gtk_widget_path_set_element_name (path, position, parent->name);
+        gtk_widget_path_iter_set_name (path, position, parent->name);
 
       parent = parent->parent;
     }
