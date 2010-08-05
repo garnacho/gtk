@@ -5011,18 +5011,18 @@ gtk_notebook_draw_tab (GtkNotebook     *notebook,
   if (gdk_rectangle_intersect (&page_area, area, &child_area))
     {
       GtkStyleContext *context;
-      GtkChildClassFlags flags = 0;
+      GtkRegionFlags flags = 0;
 
       if (position % 2 == 0)
-        flags |= GTK_CHILD_CLASS_ODD;
+        flags |= GTK_REGION_ODD;
       else
-        flags |= GTK_CHILD_CLASS_EVEN;
+        flags |= GTK_REGION_EVEN;
 
       if (position == 0)
-        flags |= GTK_CHILD_CLASS_FIRST;
+        flags |= GTK_REGION_FIRST;
 
       if (is_last)
-        flags |= GTK_CHILD_CLASS_LAST;
+        flags |= GTK_REGION_LAST;
 
       gap_side = get_tab_gap_pos (notebook);
 
@@ -5032,7 +5032,7 @@ gtk_notebook_draw_tab (GtkNotebook     *notebook,
 	state_type = GTK_STATE_ACTIVE;
 
       context = gtk_widget_get_style_context (widget);
-      gtk_style_context_set_child_class (context, "tab", flags);
+      gtk_style_context_set_region (context, "tab", flags);
 
       gtk_paint_extension (widget->style, window,
 			   state_type, GTK_SHADOW_OUT,
@@ -5041,7 +5041,7 @@ gtk_notebook_draw_tab (GtkNotebook     *notebook,
 			   page_area.width, page_area.height,
 			   gap_side);
 
-      gtk_style_context_unset_child_class (context, "tab");
+      gtk_style_context_unset_region (context, "tab");
     }
 }
 
