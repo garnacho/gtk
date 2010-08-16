@@ -3548,9 +3548,6 @@ gtk_default_draw_box (GtkStyle      *style,
 
   switch (state_type)
     {
-    case GTK_STATE_ACTIVE:
-      flags |= GTK_STATE_FLAG_ACTIVE;
-      break;
     case GTK_STATE_PRELIGHT:
       flags |= GTK_STATE_FLAG_PRELIGHT;
       break;
@@ -3563,6 +3560,9 @@ gtk_default_draw_box (GtkStyle      *style,
     default:
       break;
     }
+
+  if (shadow_type == GTK_SHADOW_IN)
+    flags |= GTK_STATE_FLAG_ACTIVE;
 
   gtk_style_context_set_state (context, flags);
 
