@@ -4114,6 +4114,14 @@ gtk_widget_size_allocate (GtkWidget	*widget,
 	      gdk_region_destroy (invalidate);
 	    }
 	}
+
+      if (size_changed || position_changed)
+        {
+          GtkStyleContext *context;
+
+          context = gtk_widget_get_style_context (widget);
+          _gtk_style_context_invalidate_animation_areas (context);
+        }
     }
 
   if ((size_changed || position_changed) && widget->parent &&
@@ -4803,12 +4811,20 @@ gint
 gtk_widget_send_expose (GtkWidget *widget,
 			GdkEvent  *event)
 {
+  GtkStyleContext *context;
+  gint retval;
+
   g_return_val_if_fail (GTK_IS_WIDGET (widget), TRUE);
   g_return_val_if_fail (gtk_widget_get_realized (widget), TRUE);
   g_return_val_if_fail (event != NULL, TRUE);
   g_return_val_if_fail (event->type == GDK_EXPOSE, TRUE);
 
-  return gtk_widget_event_internal (widget, event);
+  retval = gtk_widget_event_internal (widget, event);
+
+  context = gtk_widget_get_style_context (widget);
+  _gtk_style_context_coalesce_animation_areas (context);
+
+  return retval;
 }
 
 static gboolean
